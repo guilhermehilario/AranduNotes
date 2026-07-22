@@ -19,8 +19,8 @@ export class EmailService {
     const host = this.configService.get<string>('SMTP_HOST');
     const portString = this.configService.get<string>('SMTP_PORT');
     const port = portString ? parseInt(portString, 10) : 587;
-    const user = this.configService.get<string>('SMTP_USER');
-    const pass = this.configService.get<string>('SMTP_PASS');
+    const user = this.configService.get<string>('EMAIL_USER');
+    const pass = this.configService.get<string>('EMAIL_PASSWORD');
     const rawFrom =
       this.configService.get<string>('SMTP_FROM') || 'noreply@arandu.app';
 

@@ -193,8 +193,13 @@ JWT_SECRET=minha-chave-secreta-aqui
 # Frontend (para CORS em desenvolvimento)
 FRONTEND_URL=http://localhost:5173
 
-# Email (opcional — para verificação de email)
-RESEND_API_KEY=
+# Email (opcional — via Nodemailer com Gmail SMTP)
+# Use senha de app do Google: https://myaccount.google.com/apppasswords
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=seu-email@gmail.com
+SMTP_PASS=sua-senha-de-app
+SMTP_FROM=Arandu <seu-email@gmail.com>
 ```
 
 **Frontend** — crie o arquivo `apps/frontend/.env`:
