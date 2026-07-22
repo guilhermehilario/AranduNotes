@@ -507,12 +507,25 @@ export class AuthService {
         resetToken,
       );
     } catch (error) {
-      this.logger.error('Falha ao enviar e-mail de recuperação');
-      throw new Error('Erro ao enviar e-mail de recuperação. Tente novamente mais tarde.');
+      // Não lançamos erro para não vazar informação sobre a existência do e-mail
+      // (segurança: sempre retornar a mesma mensagem, evitando enumeração de usuários).
+      // Remove o token do banco para não deixar token órfão.
+      const err = error as Error;
+      this.logger.error(
+        `Falha ao enviar e-mail de recuperação para ${email}: ${err.message}`,
+      );
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: {
+          resetPasswordToken: null,
+          resetPasswordTokenExpires: null,
+        },
+      });
     }
 
     return {
-      message: 'Se o e-mail estiver cadastrado, enviaremos um link de recuperação.',
+      message:
+        'Se o e-mail estiver cadastrado, enviaremos um link de recuperação.',
     };
   }
 
