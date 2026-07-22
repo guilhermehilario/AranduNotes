@@ -221,19 +221,7 @@ export const VerifyEmailView: React.FC = () => {
   };
 
   return (
-    <AuthLayout
-      title="Confirmação de E-mail"
-      footer={
-        <Link
-          to="/login"
-          className="text-sm text-slate-500 dark:text-dark-400 hover:text-slate-700 dark:hover:text-dark-200"
-        >
-          Voltar para o login
-        </Link>
-      }
-    >
-      {renderContent()}
-    </AuthLayout>
+    <AuthLayout title="Confirmação de E-mail">{renderContent()}</AuthLayout>
   );
 };
 
