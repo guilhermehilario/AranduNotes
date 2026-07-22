@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { AlertTriangle, Mail } from "lucide-react";
 import { Modal } from "../../components/ui/Modal.tsx";
 import { Button } from "../../components/ui/Button.tsx";
@@ -24,11 +24,16 @@ export const DeleteAccountModals: React.FC<DeleteAccountModalsProps> = ({
     sendingEmail,
     deleting,
     isDevCode,
+    startDeleteFlow,
     confirmStep1,
     sendEmailConfirmation,
     confirmDeleteWithCode,
     resetDeleteFlow,
   } = useDeleteAccount({ onComplete });
+
+  useEffect(() => {
+    startDeleteFlow();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <>
