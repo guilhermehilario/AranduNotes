@@ -20,7 +20,12 @@ services:
     buildCommand: yarn install && npx turbo run build --filter=api
     # ── Runtime ──
     startCommand: node apps/api/dist/main.js
-    healthCheckPath: /health
+    healthCheckPath: /api/health
+    # ── Pós-deploy: sincroniza schema do Prisma (antes de aceitar tráfego) ──
+    # Usa `db push` em vez de `migrate deploy` para compatibilidade tanto com
+    # SQLite local quanto com Turso/LibSQL (distribuído). Se preferir migrations
+    # versionadas, troque para: yarn workspace api prisma migrate deploy
+    postDeployCommand: yarn workspace api prisma db push
     # ── Build Filters (evita build quando só o frontend mudou) ──
     filters:
       - paths:
@@ -33,11 +38,28 @@ services:
       - key: NODE_ENV
         value: production
       - key: DATABASE_URL
-        sync: false       # Preencher manualmente no painel do Render
+        sync: false
+        # ☝️ Preencher manualmente com URL do Turso/LibSQL ou SQLite
+        #    Ex: libsql://arandu-prod-username.turso.io?authToken=xxxx
       - key: JWT_SECRET
+        generateValue: true
+      - key: REFRESH_SECRET
         generateValue: true
       - key: FRONTEND_URL
         value: https://arandu-frontend.onrender.com
+      # ── SMTP (Nodemailer) — opcional ──
+      # Se não configurado, e-mails são logados no console (útil para testes).
+      # Para envio real, use serviços como Resend, SendGrid, Mailgun, etc.
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: SMTP_FROM
+        sync: false
 
 
   # ────────────────────────────────────────────────────────────────

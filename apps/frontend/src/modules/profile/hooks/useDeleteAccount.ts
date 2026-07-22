@@ -24,6 +24,8 @@ interface UseDeleteAccountReturn {
   confirmationCode: string;
   sendingEmail: boolean;
   deleting: boolean;
+  /** true quando o código veio direto da API (SMTP não configurado) */
+  isDevCode: boolean;
   startDeleteFlow: () => void;
   confirmStep1: () => void;
   sendEmailConfirmation: () => Promise<void>;
@@ -41,6 +43,8 @@ export function useDeleteAccount(options?: UseDeleteAccountOptions): UseDeleteAc
   const [deleteToken, setDeleteToken] = useState<string | null>(null);
   const [sendingEmail, setSendingEmail] = useState(false);
   const [confirmationCode, setConfirmationCode] = useState(generateCode);
+  /** true quando a API devolveu o código diretamente (SMTP desligado) */
+  const [isDevCode, setIsDevCode] = useState(false);
 
   useEffect(() => {
     if (deleteStep === 1) {
@@ -55,6 +59,7 @@ export function useDeleteAccount(options?: UseDeleteAccountOptions): UseDeleteAc
     setDeleteToken(null);
     setDeleting(false);
     setSendingEmail(false);
+    setIsDevCode(false);
     onComplete?.();
   }, [onComplete]);
 
@@ -73,6 +78,12 @@ export function useDeleteAccount(options?: UseDeleteAccountOptions): UseDeleteAc
     try {
       const result = await authService.sendDeleteConfirmation();
       setDeleteToken(result.token);
+      // Se SMTP não está configurado, a API devolve o código diretamente
+      // (modo desenvolvimento). O código é exibido na tela no passo 3.
+      if (result.code) {
+        setEmailCode(result.code);
+        setIsDevCode(true);
+      }
       setDeleteStep(3);
     } catch {
       useToastStore.getState().addToast(
@@ -114,6 +125,7 @@ export function useDeleteAccount(options?: UseDeleteAccountOptions): UseDeleteAc
     confirmationCode,
     sendingEmail,
     deleting,
+    isDevCode,
     startDeleteFlow,
     confirmStep1,
     sendEmailConfirmation,

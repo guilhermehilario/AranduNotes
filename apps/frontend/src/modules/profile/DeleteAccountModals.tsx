@@ -23,6 +23,7 @@ export const DeleteAccountModals: React.FC<DeleteAccountModalsProps> = ({
     confirmationCode,
     sendingEmail,
     deleting,
+    isDevCode,
     confirmStep1,
     sendEmailConfirmation,
     confirmDeleteWithCode,
@@ -136,7 +137,7 @@ export const DeleteAccountModals: React.FC<DeleteAccountModalsProps> = ({
         </div>
       </Modal>
 
-      {/* Step 3: Type email code */}
+      {/* Step 3: Type email code (or dev code shown on screen) */}
       <Modal
         isOpen={deleteStep === 3}
         onClose={resetDeleteFlow}
@@ -144,18 +145,36 @@ export const DeleteAccountModals: React.FC<DeleteAccountModalsProps> = ({
         size="sm"
       >
         <div className="flex flex-col gap-5">
-          <div className="flex items-start gap-3 p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/30">
-            <Mail className="h-5 w-5 text-emerald-500 flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">
-                E-mail enviado!
-              </p>
-              <p className="text-sm text-emerald-600 dark:text-emerald-400/80 mt-0.5">
-                Enviamos um código de 6 dígitos para{" "}
-                <strong>{userEmail}</strong>. O código expira em 15 minutos.
-              </p>
+          {isDevCode ? (
+            /* SMTP não configurado: código devolvido direto pela API */
+            <div className="flex items-start gap-3 p-3 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900/30">
+              <AlertTriangle className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-semibold text-amber-700 dark:text-amber-300">
+                  Modo Desenvolvimento
+                </p>
+                <p className="text-sm text-amber-600 dark:text-amber-400/80 mt-0.5">
+                  SMTP não configurado. O código de confirmação foi gerado
+                  diretamente na interface. Clique em "Confirmar e Excluir Conta"
+                  para prosseguir.
+                </p>
+              </div>
             </div>
-          </div>
+          ) : (
+            /* SMTP configurado: código enviado por e-mail */
+            <div className="flex items-start gap-3 p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/30">
+              <Mail className="h-5 w-5 text-emerald-500 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">
+                  E-mail enviado!
+                </p>
+                <p className="text-sm text-emerald-600 dark:text-emerald-400/80 mt-0.5">
+                  Enviamos um código de 6 dígitos para{" "}
+                  <strong>{userEmail}</strong>. O código expira em 15 minutos.
+                </p>
+              </div>
+            </div>
+          )}
 
           <div className="flex flex-col gap-2">
             <label className="text-sm font-medium text-slate-700 dark:text-dark-200">
@@ -172,7 +191,9 @@ export const DeleteAccountModals: React.FC<DeleteAccountModalsProps> = ({
               maxLength={6}
             />
             <p className="text-xs text-slate-400 dark:text-dark-500 text-center">
-              Digite o código de 6 dígitos recebido no e-mail
+              {isDevCode
+                ? "O código já está preenchido. Clique em Confirmar para excluir a conta."
+                : "Digite o código de 6 dígitos recebido no e-mail"}
             </p>
           </div>
 
@@ -195,16 +216,18 @@ export const DeleteAccountModals: React.FC<DeleteAccountModalsProps> = ({
             </Button>
           </div>
 
-          <div className="text-center">
-            <button
-              type="button"
-              onClick={sendEmailConfirmation}
-              disabled={sendingEmail}
-              className="text-xs text-brand-500 hover:text-brand-600 dark:hover:text-brand-400 underline cursor-pointer disabled:opacity-50"
-            >
-              {sendingEmail ? "Reenviando..." : "Reenviar e-mail"}
-            </button>
-          </div>
+          {!isDevCode && (
+            <div className="text-center">
+              <button
+                type="button"
+                onClick={sendEmailConfirmation}
+                disabled={sendingEmail}
+                className="text-xs text-brand-500 hover:text-brand-600 dark:hover:text-brand-400 underline cursor-pointer disabled:opacity-50"
+              >
+                {sendingEmail ? "Reenviando..." : "Reenviar e-mail"}
+              </button>
+            </div>
+          )}
         </div>
       </Modal>
     </>

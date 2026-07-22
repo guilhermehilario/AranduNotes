@@ -509,7 +509,7 @@ export class AuthService {
     return { message: 'Senha redefinida com sucesso! Faça login com sua nova senha.' };
   }
 
-  async sendDeleteConfirmation(userId: string): Promise<{ message: string; token: string }> {
+  async sendDeleteConfirmation(userId: string): Promise<{ message: string; token: string; code?: string }> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
     });
@@ -521,15 +521,28 @@ export class AuthService {
       { expiresIn: '15m' },
     );
 
-    await this.emailService.sendDeleteConfirmationEmail(
-      user.email,
-      user.name,
-      code,
-    );
+    const smtpConfigured = this.emailService.isSmtpConfigured;
 
+    if (smtpConfigured) {
+      await this.emailService.sendDeleteConfirmationEmail(
+        user.email,
+        user.name,
+        code,
+      );
+      return {
+        message: 'E-mail de confirmação enviado. Verifique sua caixa de entrada.',
+        token,
+      };
+    }
+
+    // SMTP não configurado — retorna o código diretamente para exibição na tela
+    this.logger.log(
+      `[DEV] Código de exclusão para ${user.email}: ${code}`,
+    );
     return {
-      message: 'E-mail de confirmação enviado. Verifique sua caixa de entrada.',
+      message: 'Código de confirmação gerado (modo desenvolvimento).',
       token,
+      code,
     };
   }
 

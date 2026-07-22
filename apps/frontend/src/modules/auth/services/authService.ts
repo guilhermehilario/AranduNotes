@@ -62,8 +62,8 @@ export const authService = {
     return response.data;
   },
 
-  async sendDeleteConfirmation(): Promise<{ message: string; token: string }> {
-    const response = await api.post<{ message: string; token: string }>(
+  async sendDeleteConfirmation(): Promise<{ message: string; token: string; code?: string }> {
+    const response = await api.post<{ message: string; token: string; code?: string }>(
       "/auth/send-delete-confirmation",
     );
     return response.data;

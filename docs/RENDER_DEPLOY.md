@@ -23,9 +23,14 @@ Antes do primeiro deploy, prepare os valores das variáveis de ambiente.
 |---|---|---|---|
 | `DATABASE_URL` | URL de conexão com o banco de dados (Turso/LibSQL) | ✅ Sim | Criar uma conta no [Turso](https://turso.tech) e criar um banco remoto, ou usar SQLite apenas localmente |
 | `JWT_SECRET` | Chave secreta para assinar tokens JWT | ✅ Sim | O próprio Render pode **gerar automaticamente** (`generateValue: true`) |
+| `REFRESH_SECRET` | Chave secreta para refresh tokens JWT | ✅ Sim | O Render pode **gerar automaticamente** (`generateValue: true`) |
 | `NODE_ENV` | Ambiente de execução | ✅ Sim | Definir como `production` |
 | `FRONTEND_URL` | URL do frontend para liberar CORS | ✅ Sim | Ex: `https://arandu-frontend.onrender.com` |
 | `PORT` | Porta que o servidor irá escutar | ❌ Opcional | Padrão: `10000` (definida automaticamente pelo Render) |
+
+**SMTP (opcional):** Para enviar e-mails reais (confirmação de cadastro, recuperação de senha), configure:
+`SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`. Se não configurado,
+e-mails são logados no console.
 
 **Para o Turso (banco de dados remoto recomendado):**
 
@@ -131,29 +136,29 @@ Após o primeiro deploy da API, é necessário criar as tabelas no banco de dado
 > cd apps/api && npx prisma migrate deploy
 > ```
 
-### Opção B: Via Comando pós-deploy no `render.yaml`
+### Pós-deploy automático
 
-Você pode adicionar um script de pós-deploy editando o `render.yaml`:
+O `render.yaml` já inclui um `postDeployCommand` que sincroniza o schema do Prisma:
 
 ```yaml
-  - type: web
-    name: arandu-api
-    # ... demais configurações ...
-    postDeployCommand: npx prisma migrate deploy
+postDeployCommand: yarn workspace api prisma db push
 ```
 
-> **Nota:** O comando `postDeploy` executa **após** o build e antes do serviço
-> começar a receber tráfego. Isso garante que as migrations rodem antes do
-> servidor iniciar.
+> **Nota:** O comando `postDeploy` executa **após** o build e **antes** do serviço
+> começar a receber tráfego. É compatível com SQLite local e Turso/LibSQL.
+> Se preferir migrations versionadas, troque para `yarn workspace api prisma migrate deploy`.
 
 ### Verificação
 
-Para confirmar que as migrations funcionaram:
+Para confirmar que a API está ativa:
 
 ```bash
-curl https://arandu-api.onrender.com/health
+curl https://arandu-api.onrender.com/api/health
 # Resposta esperada: { "status": "healthy", "timestamp": "..." }
 ```
+
+> 💡 **Importante:** O health check do Render está configurado para `GET /api/health`
+> (com prefixo `/api`), pois a API do NestJS usa `setGlobalPrefix('api')`.
 
 ---
 
