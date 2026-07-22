@@ -1,37 +1,44 @@
-import React from 'react';
-import { useSearchParams, useNavigate, Link } from 'react-router-dom';
-import { Mail, CheckCircle, AlertTriangle, Loader2, RefreshCw, ArrowLeft } from 'lucide-react';
-import { authService } from '../services/authService';
-import { Button } from '../../../components/ui/Button.tsx';
-import { ApiErrorAlert } from '../../../components/ui/ApiErrorAlert.tsx';
-import { AuthLayout } from '../AuthLayout.tsx';
-import { extractApiError } from '../../../utils/api-errors.ts';
+import React from "react";
+import { useSearchParams, useNavigate, Link } from "react-router-dom";
+import {
+  Mail,
+  CheckCircle,
+  AlertTriangle,
+  Loader2,
+  RefreshCw,
+  ArrowLeft,
+} from "lucide-react";
+import { authService } from "../services/authService";
+import { Button } from "../../../components/ui/Button.tsx";
+import { ApiErrorAlert } from "../../../components/ui/ApiErrorAlert.tsx";
+import { AuthLayout } from "../AuthLayout.tsx";
+import { extractApiError } from "../../../utils/api-errors.ts";
 
 type VerificationStep =
-  | 'check-email'     // Após registro: mostra "verifique seu email"
-  | 'verifying'       // Token presente na URL, verificando
-  | 'success'         // Verificado com sucesso
-  | 'expired'         // Token expirado
-  | 'error';          // Erro na verificação
+  | "check-email" // Após registro: mostra "verifique seu email"
+  | "verifying" // Token presente na URL, verificando
+  | "success" // Verificado com sucesso
+  | "expired" // Token expirado
+  | "error"; // Erro na verificação
 
 export const VerifyEmailView: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const token = searchParams.get('token');
-  const emailFromRegister = searchParams.get('email');
+  const token = searchParams.get("token");
+  const emailFromRegister = searchParams.get("email");
 
   const [step, setStep] = React.useState<VerificationStep>(
-    token ? 'verifying' : 'check-email',
+    token ? "verifying" : "check-email",
   );
-  const [message, setMessage] = React.useState<string>('');
+  const [message, setMessage] = React.useState<string>("");
   const [apiError, setApiError] = React.useState<string | null>(null);
   const [isResending, setIsResending] = React.useState(false);
-  const [resendEmail, setResendEmail] = React.useState(emailFromRegister || '');
+  const [resendEmail, setResendEmail] = React.useState(emailFromRegister || "");
   const [resendMessage, setResendMessage] = React.useState<string | null>(null);
 
   // Verifica o token na inicialização
   React.useEffect(() => {
-    if (token && step === 'verifying') {
+    if (token && step === "verifying") {
       verifyToken(token);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -41,17 +48,17 @@ export const VerifyEmailView: React.FC = () => {
     try {
       const result = await authService.verifyEmail(verificationToken);
       setMessage(result.message);
-      setStep('success');
+      setStep("success");
     } catch (error) {
-      const errorMsg = extractApiError(error, '');
+      const errorMsg = extractApiError(error, "");
       if (
-        errorMsg.toLowerCase().includes('expirado') ||
-        errorMsg.toLowerCase().includes('inválido')
+        errorMsg.toLowerCase().includes("expirado") ||
+        errorMsg.toLowerCase().includes("inválido")
       ) {
-        setStep('expired');
+        setStep("expired");
         setMessage(errorMsg);
       } else {
-        setStep('error');
+        setStep("error");
         setApiError(errorMsg);
       }
     }
@@ -66,7 +73,7 @@ export const VerifyEmailView: React.FC = () => {
       const result = await authService.resendVerification(resendEmail);
       setResendMessage(result.message);
     } catch (error) {
-      setApiError(extractApiError(error, 'Erro ao reenviar e-mail.'));
+      setApiError(extractApiError(error, "Erro ao reenviar e-mail."));
     } finally {
       setIsResending(false);
     }
@@ -74,7 +81,7 @@ export const VerifyEmailView: React.FC = () => {
 
   const renderContent = () => {
     switch (step) {
-      case 'verifying':
+      case "verifying":
         return (
           <div className="flex flex-col items-center gap-5">
             <Loader2 className="h-10 w-10 text-brand-500 animate-spin" />
@@ -84,7 +91,7 @@ export const VerifyEmailView: React.FC = () => {
           </div>
         );
 
-      case 'success':
+      case "success":
         return (
           <div className="flex flex-col items-center gap-5">
             <div className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center shrink-0">
@@ -98,13 +105,11 @@ export const VerifyEmailView: React.FC = () => {
                 Sua conta foi verificada com sucesso.
               </p>
             </div>
-            <Button onClick={() => navigate('/login')}>
-              Fazer Login
-            </Button>
+            <Button onClick={() => navigate("/login")}>Fazer Login</Button>
           </div>
         );
 
-      case 'expired':
+      case "expired":
         return (
           <div className="flex flex-col items-center gap-5">
             <div className="w-16 h-16 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center shrink-0">
@@ -115,7 +120,7 @@ export const VerifyEmailView: React.FC = () => {
                 Link Expirado
               </h3>
               <p className="text-slate-600 dark:text-dark-300 text-sm">
-                {message || 'Este link de verificação expirou.'}
+                {message || "Este link de verificação expirou."}
               </p>
               <p className="text-slate-500 dark:text-dark-400 text-xs">
                 Solicite um novo link informando seu e-mail abaixo.
@@ -148,7 +153,7 @@ export const VerifyEmailView: React.FC = () => {
           </div>
         );
 
-      case 'error':
+      case "error":
         return (
           <div className="flex flex-col items-center gap-5">
             <div className="w-16 h-16 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center shrink-0">
@@ -170,7 +175,7 @@ export const VerifyEmailView: React.FC = () => {
           </div>
         );
 
-      case 'check-email':
+      case "check-email":
       default:
         return (
           <div className="flex flex-col items-center gap-5">
@@ -182,15 +187,15 @@ export const VerifyEmailView: React.FC = () => {
                 Verifique seu E-mail
               </h3>
               <p className="text-slate-600 dark:text-dark-300 text-sm">
-                Enviamos um link de confirmação para{' '}
+                Enviamos um link de confirmação para{" "}
                 <strong className="text-slate-900 dark:text-dark-50">
-                  {emailFromRegister || 'seu e-mail'}
+                  {emailFromRegister || "seu e-mail"}
                 </strong>
                 .
               </p>
               <p className="text-slate-500 dark:text-dark-400 text-xs">
-                Clique no link recebido para ativar sua conta. Não esqueça de verificar a
-                caixa de spam se não encontrar o e-mail.
+                Clique no link recebido para ativar sua conta. Não esqueça de
+                verificar a caixa de spam se não encontrar o e-mail.
               </p>
             </div>
 
@@ -209,13 +214,6 @@ export const VerifyEmailView: React.FC = () => {
                 <RefreshCw className="h-4 w-4 mr-2" />
                 Reenviar E-mail
               </Button>
-
-              <Link
-                to="/login"
-                className="block text-center text-sm text-slate-500 dark:text-dark-400 hover:text-slate-700 dark:hover:text-dark-200"
-              >
-                Voltar para o login
-              </Link>
             </div>
           </div>
         );
@@ -225,13 +223,12 @@ export const VerifyEmailView: React.FC = () => {
   return (
     <AuthLayout
       title="Confirmação de E-mail"
-
       footer={
         <Link
           to="/login"
           className="text-sm text-slate-500 dark:text-dark-400 hover:text-slate-700 dark:hover:text-dark-200"
         >
-          Ir para o login
+          Voltar para o login
         </Link>
       }
     >
