@@ -8,8 +8,11 @@
     ],
     "scripts": {
         "dev": "turbo run dev",
+        "start:frontend": "turbo run start --filter=frontend",
         "start:api": "turbo run start --filter=api",
         "build": "turbo run build",
+        "build:frontend": "turbo run build --filter=frontend",
+        "build:api": "turbo run build --filter=api",
         "lint": "turbo run lint",
         "test": "turbo run test"
     },
