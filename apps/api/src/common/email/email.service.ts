@@ -1,17 +1,13 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Resend } from 'resend';
 import * as nodemailer from 'nodemailer';
 
 @Injectable()
 export class EmailService {
   private readonly logger = new Logger(EmailService.name);
-  private resend: Resend | null = null;
   private transporter: nodemailer.Transporter | null = null;
-  /** true se Resend API ou SMTP estiver configurado */
+  /** true se o SMTP estiver configurado */
   private isConfigured = false;
-  /** true se estiver usando Resend API (preferencial) */
-  private usingResend = false;
   private readonly frontendUrl: string;
   private readonly fromName: string;
   private readonly fromEmail: string;
@@ -20,51 +16,40 @@ export class EmailService {
     this.frontendUrl =
       this.configService.get<string>('FRONTEND_URL') || 'http://localhost:5173';
 
-    const resendApiKey = this.configService.get<string>('RESEND_API_KEY');
     const host = this.configService.get<string>('SMTP_HOST');
-    const port = this.configService.get<number>('SMTP_PORT');
+    const portString = this.configService.get<string>('SMTP_PORT');
+    const port = portString ? parseInt(portString, 10) : 587;
     const user = this.configService.get<string>('SMTP_USER');
     const pass = this.configService.get<string>('SMTP_PASS');
     const rawFrom =
-      this.configService.get<string>('SMTP_FROM') || 'noreply@revisaaula.app';
+      this.configService.get<string>('SMTP_FROM') || 'noreply@arandu.app';
 
-    // Extrai nome e email do campo from (ex: "Nome <email@domínio.com>")
+    // Extrai nome e email do campo from (ex: "Nome <email@dominio.com>")
     const fromMatch = rawFrom.match(/^(.+)\s*<(.+)>$/);
-    this.fromName = fromMatch ? fromMatch[1].trim() : 'Revisa Aula';
+    this.fromName = fromMatch ? fromMatch[1].trim() : 'Arandu';
     this.fromEmail = fromMatch ? fromMatch[2].trim() : rawFrom;
 
-    // ── 1. Tenta Resend API primeiro (mais confiável) ──
-    if (resendApiKey) {
-      this.resend = new Resend(resendApiKey);
-      this.usingResend = true;
-      this.isConfigured = true;
-      this.logger.log(
-        `Email service configured: Resend API (from: ${this.fromEmail})`,
-      );
-    }
-    // ── 2. Fallback: Nodemailer com SMTP ──
-    else if (host && user && pass) {
+    // ── Configura Nodemailer com SMTP ──
+    if (host && user && pass) {
       this.transporter = nodemailer.createTransport({
         host,
-        port: port || 587,
-        secure: (port || 587) === 465,
+        port,
+        secure: port === 465,
         auth: { user, pass },
       });
       this.isConfigured = true;
       this.logger.log(
-        `Email service configured: SMTP ${host}:${port || 587} (from: ${this.fromEmail})`,
+        `Email service configured: SMTP ${host}:${port} (from: ${this.fromName} <${this.fromEmail}>)`,
       );
-    }
-
-    if (!this.isConfigured) {
+    } else {
       this.logger.warn(
-        'Nenhum serviço de email configurado (RESEND_API_KEY ou SMTP). ' +
+        'SMTP não configurado. Defina SMTP_HOST, SMTP_USER e SMTP_PASS no .env. ' +
         'E-mails serão simulados no console.',
       );
     }
   }
 
-  /** Retorna se o serviço de email está realmente configurado para enviar */
+  /** Retorna se o SMTP está configurado para envio real */
   get isSmtpConfigured(): boolean {
     return this.isConfigured;
   }
@@ -75,9 +60,9 @@ export class EmailService {
     html: string;
     text?: string;
   }): Promise<void> {
-    // ── Modo dev: apenas log ──
-    if (!this.isConfigured) {
-      this.logger.log('━━━━━━━━━━━━ EMAIL (DEV MODE) ─━━━━━━━━━━━━');
+    // ── Modo dev/sem SMTP: apenas log ──
+    if (!this.isConfigured || !this.transporter) {
+      this.logger.log('━━━━━━━━━━━━ EMAIL (DEV MODE) ━━━━━━━━━━━━━');
       this.logger.log(`To: ${options.to}`);
       this.logger.log(`From: ${this.fromName} <${this.fromEmail}>`);
       this.logger.log(`Subject: ${options.subject}`);
@@ -86,48 +71,19 @@ export class EmailService {
       return;
     }
 
-    // ── Resend API (preferencial) ──
-    if (this.usingResend && this.resend) {
-      try {
-        const { data, error } = await this.resend.emails.send({
-          from: `${this.fromName} <${this.fromEmail}>`,
-          to: options.to,
-          subject: options.subject,
-          html: options.html,
-          text: options.text || options.html.replace(/<[^>]*>/g, ''),
-        });
-
-        if (error) {
-          this.logger.error('Resend API error', error);
-          throw new Error(
-            `Falha ao enviar e-mail via Resend: ${error.message}`,
-          );
-        }
-
-        this.logger.log(`Email sent via Resend: ${data?.id}`);
-        return;
-      } catch (error) {
-        this.logger.error('Failed to send email via Resend', error);
-        throw new Error('Falha ao enviar e-mail de confirmação');
-      }
-    }
-
-    // ── Nodemailer / SMTP (fallback) ──
-    if (this.transporter) {
-      try {
-        const info = await this.transporter.sendMail({
-          from: `${this.fromName} <${this.fromEmail}>`,
-          to: options.to,
-          subject: options.subject,
-          text: options.text || options.html.replace(/<[^>]*>/g, ''),
-          html: options.html,
-        });
-        this.logger.log(`Email sent via SMTP: ${info.messageId}`);
-        return;
-      } catch (error) {
-        this.logger.error('Failed to send email via SMTP', error);
-        throw new Error('Falha ao enviar e-mail de confirmação');
-      }
+    // ── Envio via Nodemailer / SMTP ──
+    try {
+      const info = await this.transporter.sendMail({
+        from: `${this.fromName} <${this.fromEmail}>`,
+        to: options.to,
+        subject: options.subject,
+        text: options.text || options.html.replace(/<[^>]*>/g, ''),
+        html: options.html,
+      });
+      this.logger.log(`Email sent via SMTP: ${info.messageId}`);
+    } catch (error) {
+      this.logger.error('Failed to send email via SMTP', error);
+      throw new Error('Falha ao enviar e-mail. Verifique as configurações de SMTP e tente novamente.');
     }
   }
 
@@ -136,13 +92,13 @@ export class EmailService {
     userName: string,
     verificationToken: string,
   ): Promise<void> {
-    const subject = 'Confirme seu e-mail - Revisa Aula';
+    const subject = 'Confirme seu e-mail - Arandu';
     const verificationUrl = `${this.frontendUrl}/verify-email?token=${verificationToken}`;
 
     const html = `
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 560px; margin: 0 auto; padding: 24px; background: #fafafa; border-radius: 16px;">
         <div style="text-align: center; margin-bottom: 24px;">
-          <h1 style="color: #1e293b; font-size: 24px; margin: 0;">Revisa Aula</h1>
+          <h1 style="color: #1e293b; font-size: 24px; margin: 0;">Arandu</h1>
           <p style="color: #64748b; font-size: 14px; margin: 4px 0 0;">Confirmação de E-mail</p>
         </div>
 
@@ -150,7 +106,7 @@ export class EmailService {
           <p style="color: #1e293b; font-size: 16px; line-height: 1.5;">Olá, <strong>${userName}</strong>!</p>
 
           <p style="color: #475569; font-size: 14px; line-height: 1.6;">
-            Obrigado por criar sua conta no Revisa Aula! Para começar a usar, confirme seu endereço de e-mail clicando no botão abaixo:
+            Obrigado por criar sua conta no Arandu! Para começar a usar, confirme seu endereço de e-mail clicando no botão abaixo:
           </p>
 
           <div style="text-align: center; margin: 24px 0;">
@@ -172,7 +128,7 @@ export class EmailService {
 
         <div style="text-align: center; margin-top: 16px;">
           <p style="color: #94a3b8; font-size: 12px;">
-            Revisa Aula • App de Estudos Inteligente<br>
+            Arandu • Plataforma de Estudos Inteligente<br>
             Se você não criou uma conta, ignore este e-mail.
           </p>
         </div>
@@ -187,12 +143,12 @@ export class EmailService {
     userName: string,
     confirmationCode: string,
   ): Promise<void> {
-    const subject = 'Confirmação de Exclusão de Conta - Revisa Aula';
+    const subject = 'Confirmação de Exclusão de Conta - Arandu';
 
     const html = `
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 560px; margin: 0 auto; padding: 24px; background: #fafafa; border-radius: 16px;">
         <div style="text-align: center; margin-bottom: 24px;">
-          <h1 style="color: #1e293b; font-size: 24px; margin: 0;">Revisa Aula</h1>
+          <h1 style="color: #1e293b; font-size: 24px; margin: 0;">Arandu</h1>
           <p style="color: #64748b; font-size: 14px; margin: 4px 0 0;">Confirmação de Exclusão de Conta</p>
         </div>
 
@@ -200,7 +156,7 @@ export class EmailService {
           <p style="color: #1e293b; font-size: 16px; line-height: 1.5;">Olá, <strong>${userName}</strong>!</p>
 
           <p style="color: #475569; font-size: 14px; line-height: 1.6;">
-            Recebemos uma solicitação de exclusão da sua conta no Revisa Aula.
+            Recebemos uma solicitação de exclusão da sua conta no Arandu.
             Para confirmar e prosseguir com a exclusão permanente, utilize o código abaixo:
           </p>
 
@@ -224,7 +180,7 @@ export class EmailService {
 
         <div style="text-align: center; margin-top: 16px;">
           <p style="color: #94a3b8; font-size: 12px;">
-            Revisa Aula • App de Estudos Inteligente<br>
+            Arandu • Plataforma de Estudos Inteligente<br>
             Se tiver dúvidas, entre em contato com nosso suporte.
           </p>
         </div>
@@ -239,13 +195,13 @@ export class EmailService {
     userName: string,
     resetToken: string,
   ): Promise<void> {
-    const subject = 'Recuperação de Senha - Revisa Aula';
+    const subject = 'Recuperação de Senha - Arandu';
     const resetUrl = `${this.frontendUrl}/reset-password?token=${resetToken}`;
 
     const html = `
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 560px; margin: 0 auto; padding: 24px; background: #fafafa; border-radius: 16px;">
         <div style="text-align: center; margin-bottom: 24px;">
-          <h1 style="color: #1e293b; font-size: 24px; margin: 0;">Revisa Aula</h1>
+          <h1 style="color: #1e293b; font-size: 24px; margin: 0;">Arandu</h1>
           <p style="color: #64748b; font-size: 14px; margin: 4px 0 0;">Recuperação de Senha</p>
         </div>
 
@@ -253,7 +209,7 @@ export class EmailService {
           <p style="color: #1e293b; font-size: 16px; line-height: 1.5;">Olá, <strong>${userName}</strong>!</p>
 
           <p style="color: #475569; font-size: 14px; line-height: 1.6;">
-            Recebemos uma solicitação de redefinição de senha para sua conta no Revisa Aula.
+            Recebemos uma solicitação de redefinição de senha para sua conta no Arandu.
             Para criar uma nova senha, clique no botão abaixo:
           </p>
 
@@ -276,7 +232,7 @@ export class EmailService {
 
         <div style="text-align: center; margin-top: 16px;">
           <p style="color: #94a3b8; font-size: 12px;">
-            Revisa Aula • App de Estudos Inteligente
+            Arandu • Plataforma de Estudos Inteligente
           </p>
         </div>
       </div>

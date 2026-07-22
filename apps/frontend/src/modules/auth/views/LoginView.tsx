@@ -38,7 +38,10 @@ export const LoginView: React.FC = () => {
     } catch (error) {
       const errorMsg = extractApiError(error, 'E-mail ou senha incorretos. Tente novamente.');
       // Detecta erro específico de e-mail não verificado
-      if (errorMsg.includes('EMAIL_NOT_VERIFIED')) {
+      if (
+        errorMsg.includes('não verificado') ||
+        errorMsg.includes('confira sua caixa de entrada')
+      ) {
         setIsEmailNotVerified(true);
         setApiError(
           'Seu e-mail ainda não foi verificado. Verifique sua caixa de entrada ou solicite um novo link.',

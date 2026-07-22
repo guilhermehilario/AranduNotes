@@ -10,42 +10,62 @@ import { Button } from '../../../components/ui/Button.tsx';
 import { ApiErrorAlert } from '../../../components/ui/ApiErrorAlert.tsx';
 import { extractApiError } from '../../../utils/api-errors.ts';
 import { AuthLayout } from '../AuthLayout.tsx';
+import { TermsOfUse } from '../components/TermsOfUse.tsx';
 
 export const RegisterView: React.FC = () => {
   const { register: registerUser, isRegistering } = useAuth();
   const navigate = useNavigate();
   const [apiError, setApiError] = React.useState<string | null>(null);
+  const [termsModalOpen, setTermsModalOpen] = React.useState(false);
 
   const {
     register,
     handleSubmit,
     formState: { errors },
+    watch,
+    setValue,
   } = useForm<RegisterInput>({
     resolver: zodResolver(RegisterSchema),
-    defaultValues: { name: '', email: '', password: '', confirmPassword: '' },
+    defaultValues: {
+      name: '',
+      email: '',
+      password: '',
+      confirmPassword: '',
+      acceptedTerms: false,
+    },
   });
+
+  const acceptedTerms = watch('acceptedTerms');
 
   const onSubmit = async (data: RegisterInput) => {
     setApiError(null);
     try {
       const result = await registerUser(data);
       // Se o email já foi verificado (ex: modo dev sem SMTP), vai direto pro login
-      if (result.message?.toLowerCase().includes('auto-verificado') ||
-          result.message?.toLowerCase().includes('já pode fazer login')) {
-        navigate(`/login?email=${encodeURIComponent(data.email)}&verified=true`);
+      if (
+        result.message?.toLowerCase().includes('auto-verificado') ||
+        result.message?.toLowerCase().includes('já pode fazer login')
+      ) {
+        navigate(
+          `/login?email=${encodeURIComponent(data.email)}&verified=true`,
+        );
       } else {
         // Precisa verificar o email — redireciona pra tela de verificação
         navigate(`/verify-email?email=${encodeURIComponent(data.email)}`);
       }
     } catch (error) {
-      setApiError(extractApiError(error, 'Erro ao criar conta. Tente novamente mais tarde.'));
+      setApiError(
+        extractApiError(
+          error,
+          'Erro ao criar conta. Tente novamente mais tarde.',
+        ),
+      );
     }
   };
 
   return (
     <AuthLayout
       title="Crie sua conta"
-
       footer={
         <>
           Já possui uma conta?{' '}
@@ -93,10 +113,55 @@ export const RegisterView: React.FC = () => {
           {...register('confirmPassword')}
         />
 
-        <Button type="submit" className="w-full mt-2" isLoading={isRegistering}>
+        {/* ── Terms of Use Checkbox ── */}
+        <div className="flex items-start gap-3 mt-1">
+          <input
+            type="checkbox"
+            id="acceptedTerms"
+            className="mt-0.5 h-4 w-4 shrink-0 rounded border-slate-300 dark:border-dark-600 text-brand-500 focus:ring-brand-500/50 cursor-pointer"
+            checked={!!acceptedTerms}
+            onChange={(e) =>
+              setValue('acceptedTerms', e.target.checked ? true : (false as unknown as true), {
+                shouldValidate: true,
+              })
+            }
+          />
+          <label
+            htmlFor="acceptedTerms"
+            className="text-sm text-slate-600 dark:text-dark-300 leading-relaxed cursor-pointer select-none"
+          >
+            Li e aceito os{' '}
+            <button
+              type="button"
+              onClick={() => setTermsModalOpen(true)}
+              className="font-semibold text-brand-500 hover:text-brand-600 underline underline-offset-2 transition-colors"
+            >
+              Termos de Uso e Responsabilidade
+            </button>
+            .
+          </label>
+        </div>
+        {errors.acceptedTerms && (
+          <p className="text-xs text-red-500 dark:text-red-400 -mt-2">
+            {errors.acceptedTerms.message}
+          </p>
+        )}
+
+        <Button
+          type="submit"
+          className="w-full mt-2"
+          isLoading={isRegistering}
+          disabled={!acceptedTerms}
+        >
           Criar Conta
         </Button>
       </form>
+
+      {/* Terms of Use Modal */}
+      <TermsOfUse
+        isOpen={termsModalOpen}
+        onClose={() => setTermsModalOpen(false)}
+      />
     </AuthLayout>
   );
 };

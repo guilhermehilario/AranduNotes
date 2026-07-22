@@ -82,6 +82,7 @@ export class AuthService {
     name: string,
     email: string,
     password: string,
+    acceptedTerms: boolean,
   ): Promise<{ message: string; email: string }> {
     if (!this.validateEmail(email)) {
       throw new UnauthorizedException('Formato de e-mail inválido');
@@ -89,6 +90,12 @@ export class AuthService {
 
     if (!this.validatePassword(password)) {
       throw new UnauthorizedException(`A senha deve ter no mínimo ${MIN_PASSWORD_LENGTH} caracteres`);
+    }
+
+    // A validação do DTO com @Equals(true) já garante que acceptedTerms é true,
+    // mas fazemos uma dupla verificação aqui por segurança.
+    if (!acceptedTerms) {
+      throw new BadRequestException('Você deve aceitar os Termos de Uso e Responsabilidade para criar uma conta.');
     }
 
     const existing = await this.prisma.user.findUnique({
@@ -117,6 +124,8 @@ export class AuthService {
         emailVerified,
         verificationToken,
         verificationTokenExpires,
+        acceptedTerms: true,
+        acceptedTermsAt: new Date(),
       },
     });
 
@@ -221,7 +230,7 @@ export class AuthService {
     const smtpConfigured = this.emailService.isSmtpConfigured;
     if (smtpConfigured && !user.emailVerified) {
       throw new UnauthorizedException(
-        'EMAIL_NOT_VERIFIED: Verifique seu e-mail antes de fazer login.',
+        'E-mail não verificado. Por favor, confira sua caixa de entrada.',
       );
     }
 
@@ -328,7 +337,7 @@ export class AuthService {
       const smtpConfigured = this.emailService.isSmtpConfigured;
       if (smtpConfigured && !user.emailVerified) {
         throw new UnauthorizedException(
-          'EMAIL_NOT_VERIFIED: Verifique seu e-mail antes de continuar.',
+          'E-mail não verificado. Por favor, confira sua caixa de entrada.',
         );
       }
 
@@ -357,7 +366,7 @@ export class AuthService {
     const smtpConfigured = this.emailService.isSmtpConfigured;
     if (smtpConfigured && !user.emailVerified) {
       throw new UnauthorizedException(
-        'EMAIL_NOT_VERIFIED: Verifique seu e-mail para acessar o perfil.',
+        'E-mail não verificado. Por favor, confira sua caixa de entrada.',
       );
     }
 

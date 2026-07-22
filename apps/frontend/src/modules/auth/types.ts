@@ -24,6 +24,11 @@ export const RegisterSchema = z.object({
   email: z.string().email('E-mail inválido'),
   password: z.string().min(8, 'A senha deve ter pelo menos 8 caracteres'),
   confirmPassword: z.string().min(8, 'A confirmação de senha deve ter pelo menos 8 caracteres'),
+  acceptedTerms: z
+    .boolean()
+    .refine((val) => val === true, {
+      message: 'Você deve aceitar os Termos de Uso e Responsabilidade para criar uma conta.',
+    }),
 }).refine((data) => data.password === data.confirmPassword, {
   message: 'As senhas não coincidem',
   path: ['confirmPassword'],

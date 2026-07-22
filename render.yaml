@@ -1,38 +1,67 @@
+# ──────────────────────────────────────────────────────────────────
+# Render Blueprint — Deploy Automatizado do Arandu
+# ──────────────────────────────────────────────────────────────────
+# Use este arquivo com a funcionalidade "Blueprint" do Render:
+#   New + → Blueprint → Conecte o repositório GitHub
+# Ele criará automaticamente os dois serviços abaixo.
+# ──────────────────────────────────────────────────────────────────
+
 services:
-  # -------------------------------------------------------------
-  # 1. SERVIÇO DA API (NestJS + Prisma)
-  # -------------------------------------------------------------
+
+  # ────────────────────────────────────────────────────────────────
+  # 1. API — NestJS + Prisma (Web Service)
+  # ────────────────────────────────────────────────────────────────
   - type: web
     name: arandu-api
     env: node
-    region: ohio # Ou a região de sua preferência (ex: oregon, frankfurt)
+    region: ohio
     plan: free
-    # Roda o install da raiz e faz o build filtrando apenas a API no Turbo
+    # ── Build ──
     buildCommand: yarn install && npx turbo run build --filter=api
-    # Executa a API compilada
+    # ── Runtime ──
     startCommand: node apps/api/dist/main.js
+    healthCheckPath: /health
+    # ── Build Filters (evita build quando só o frontend mudou) ──
+    filters:
+      - paths:
+          - apps/api/**
+          - package.json
+          - yarn.lock
+          - turbo.json
+    # ── Variáveis de Ambiente ──
     envVars:
       - key: NODE_ENV
         value: production
       - key: DATABASE_URL
-        sync: false # Você preencherá manualmente no painel do Render
+        sync: false       # Preencher manualmente no painel do Render
       - key: JWT_SECRET
         generateValue: true
+      - key: FRONTEND_URL
+        value: https://arandu-frontend.onrender.com
 
-  # -------------------------------------------------------------
-  # 2. SERVIÇO DO FRONTEND (Vite / React - Static Site)
-  # -------------------------------------------------------------
+
+  # ────────────────────────────────────────────────────────────────
+  # 2. Frontend — React + Vite (Static Site)
+  # ────────────────────────────────────────────────────────────────
   - type: web
     name: arandu-frontend
     env: static
+    region: ohio
     buildCommand: yarn install && npx turbo run build --filter=frontend
-    # O Vite gera os arquivos compilados dentro de apps/frontend/dist
     staticPublishPath: ./apps/frontend/dist
-    # Reescreve as rotas para o SPA (React Router) funcionar no refresh
+    # ── Build Filters (evita build quando só a API mudou) ──
+    filters:
+      - paths:
+          - apps/frontend/**
+          - package.json
+          - yarn.lock
+          - turbo.json
+    # ── SPA Fallback — React Router ──
     routes:
       - type: rewrite
         source: /*
         destination: /index.html
+    # ── Variáveis de Ambiente ──
     envVars:
       - key: VITE_API_URL
-        value: https://arandu-api.onrender.com # URL da sua API no Render
+        value: https://arandu-api.onrender.com/api

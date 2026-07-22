@@ -39,7 +39,12 @@ export class AuthController {
   async register(
     @Body() dto: RegisterDto,
   ) {
-    const result = await this.authService.register(dto.name, dto.email, dto.password);
+    const result = await this.authService.register(
+      dto.name,
+      dto.email,
+      dto.password,
+      dto.acceptedTerms,
+    );
     return result;
   }
 
