@@ -1,0 +1,53 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-heading: 'Plus Jakarta Sans', system-ui, sans-serif;
+
+  /* Cores personalizadas premium baseadas em OKLCH */
+  --color-brand-50: oklch(0.97 0.015 260);
+  --color-brand-100: oklch(0.93 0.035 260);
+  --color-brand-200: oklch(0.85 0.075 260);
+  --color-brand-300: oklch(0.75 0.125 260);
+  --color-brand-400: oklch(0.63 0.175 260);
+  --color-brand-500: oklch(0.52 0.21 260);
+  --color-brand-600: oklch(0.44 0.19 260);
+  --color-brand-700: oklch(0.36 0.16 260);
+  --color-brand-800: oklch(0.28 0.12 260);
+  --color-brand-900: oklch(0.20 0.08 260);
+  --color-brand-950: oklch(0.13 0.05 260);
+
+  --color-dark-50: oklch(0.95 0.01 240);
+  --color-dark-100: oklch(0.88 0.02 240);
+  --color-dark-200: oklch(0.74 0.02 240);
+  --color-dark-300: oklch(0.60 0.03 240);
+  --color-dark-400: oklch(0.44 0.03 240);
+  --color-dark-500: oklch(0.30 0.04 240);
+  --color-dark-600: oklch(0.24 0.03 240);
+  --color-dark-700: oklch(0.18 0.03 240);
+  --color-dark-800: oklch(0.13 0.02 240);
+  --color-dark-900: oklch(0.09 0.02 240);
+  --color-dark-950: oklch(0.06 0.01 240);
+
+  --color-accent-gold: oklch(0.78 0.14 85);
+  --color-accent-teal: oklch(0.72 0.16 195);
+}
+
+@layer base {
+  html, body {
+    @apply font-sans bg-slate-50 text-slate-900 antialiased scroll-smooth transition-colors duration-200;
+  }
+
+  html.dark body {
+    @apply bg-dark-950 text-dark-50;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading tracking-tight font-semibold;
+  }
+}

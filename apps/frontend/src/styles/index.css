@@ -1,0 +1,9 @@
+/* =========================================
+   StudyNotes AI — Global Styles
+   Organized into modular CSS files
+   ========================================= */
+
+@import './base.css';
+@import './components.css';
+@import './annotations.css';
+@import './tiptap.css';

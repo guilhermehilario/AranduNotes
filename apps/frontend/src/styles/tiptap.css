@@ -1,0 +1,91 @@
+/* Container do editor — garante largura, só esconde overflow horizontal, scroll suave */
+.tiptap-editor {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  scroll-behavior: smooth;
+}
+
+/* Garante que o elemento raiz do editor não ultrapasse o container */
+div.tiptap-content {
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+
+/* Base ProseMirror — !important como última barreira contra conflitos de CSS */
+.tiptap-content .ProseMirror {
+  outline: none;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+  min-height: 300px;
+  overflow-wrap: break-word !important;
+  overflow-wrap: anywhere !important;
+  word-break: break-word !important;
+  white-space: pre-wrap !important;
+  overflow-x: hidden;
+  @apply leading-relaxed text-base caret-slate-800;
+}
+
+.dark .tiptap-content .ProseMirror {
+  @apply caret-dark-100;
+}
+
+/* Paragraphs */
+.tiptap-content .ProseMirror p {
+  @apply my-2;
+}
+
+.tiptap-content {
+  max-width: 100%;
+}
+
+.tiptap-content .ProseMirror p:first-child {
+  @apply mt-0;
+}
+
+/* Heading 1 */
+.tiptap-content .ProseMirror h1 {
+  @apply text-3xl font-heading font-extrabold tracking-tight mb-3 mt-6 text-slate-900;
+}
+
+.dark .tiptap-content .ProseMirror h1 {
+  @apply text-dark-50;
+}
+
+/* Heading 2 */
+.tiptap-content .ProseMirror h2 {
+  @apply text-2xl font-heading font-bold tracking-tight mb-2 mt-4 text-slate-800;
+}
+
+.dark .tiptap-content .ProseMirror h2 {
+  @apply text-dark-100;
+}
+
+/* Heading 3 */
+.tiptap-content .ProseMirror h3 {
+  @apply text-xl font-heading font-semibold tracking-tight mb-1.5 mt-3 text-slate-700;
+}
+
+.dark .tiptap-content .ProseMirror h3 {
+  @apply text-dark-200;
+}
+
+/* Lists */
+.tiptap-content .ProseMirror ul {
+  @apply pl-6;
+}
+
+.tiptap-content .ProseMirror ol {
+  @apply pl-6;
+}
+
+.tiptap-content .ProseMirror li {
+  @apply my-1.5;
+}
+
+.tiptap-content .ProseMirror li p {
+  @apply my-0;
+}
