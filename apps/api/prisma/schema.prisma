@@ -20,6 +20,7 @@ model User {
   resetPasswordTokenExpires DateTime?
   acceptedTerms             Boolean  @default(false)
   acceptedTermsAt           DateTime?
+  deletedAt          DateTime? // Soft-delete: nulo = ativo, preenchido = conta excluída
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 

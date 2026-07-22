@@ -53,10 +53,11 @@ export class AuthService {
     password: string;
     avatarUrl: string;
     emailVerified: boolean;
+    deletedAt: Date | null;
     createdAt: Date;
     updatedAt: Date;
   }): UserPublic {
-    const { password: _, ...rest } = user;
+    const { password: _, deletedAt: __, ...rest } = user;
     return rest;
   }
 
@@ -225,6 +226,12 @@ export class AuthService {
       throw new UnauthorizedException('E-mail ou senha incorretos');
     }
 
+    if (user.deletedAt) {
+      throw new UnauthorizedException(
+        'Esta conta foi excluída. Não é possível fazer login.',
+      );
+    }
+
     // Se SMTP não estiver configurado, pula a verificação de email
     // (o email foi auto-verificado no registro ou é um usuário migrado).
     const smtpConfigured = this.emailService.isSmtpConfigured;
@@ -244,6 +251,12 @@ export class AuthService {
     });
 
     if (!user) {
+      throw new BadRequestException(
+        'Token de verificação inválido. Solicite um novo link.',
+      );
+    }
+
+    if (user.deletedAt) {
       throw new BadRequestException(
         'Token de verificação inválido. Solicite um novo link.',
       );
@@ -280,6 +293,14 @@ export class AuthService {
     });
 
     if (!user) {
+      return {
+        message:
+          'Se o e-mail estiver cadastrado, um novo link de verificação será enviado.',
+      };
+    }
+
+    // Contas excluídas não devem receber e-mails de verificação
+    if (user.deletedAt) {
       return {
         message:
           'Se o e-mail estiver cadastrado, um novo link de verificação será enviado.',
@@ -333,6 +354,10 @@ export class AuthService {
         throw new UnauthorizedException('Usuário não encontrado');
       }
 
+      if (user.deletedAt) {
+        throw new UnauthorizedException('Usuário não encontrado');
+      }
+
       // Se SMTP não estiver configurado, pula a verificação de email
       const smtpConfigured = this.emailService.isSmtpConfigured;
       if (smtpConfigured && !user.emailVerified) {
@@ -362,6 +387,10 @@ export class AuthService {
       throw new UnauthorizedException('Usuário não encontrado');
     }
 
+    if (user.deletedAt) {
+      throw new UnauthorizedException('Usuário não encontrado');
+    }
+
     // Se SMTP não estiver configurado, pula a verificação de email
     const smtpConfigured = this.emailService.isSmtpConfigured;
     if (smtpConfigured && !user.emailVerified) {
@@ -378,6 +407,7 @@ export class AuthService {
       where: { id: userId },
     });
     if (!user) return null;
+    if (user.deletedAt) return null;
     return this.stripPassword(user);
   }
 
@@ -441,6 +471,14 @@ export class AuthService {
       };
     }
 
+    // Contas excluídas não devem receber e-mails de recuperação
+    if (user.deletedAt) {
+      return {
+        message:
+          'Se o e-mail estiver cadastrado, enviaremos um link de recuperação.',
+      };
+    }
+
     const resetToken = uuidv4();
     const resetTokenExpires = new Date(Date.now() + 60 * 60 * 1000);
 
@@ -482,6 +520,13 @@ export class AuthService {
       );
     }
 
+    // Contas excluídas não podem redefinir senha
+    if (user.deletedAt) {
+      throw new BadRequestException(
+        'Token de recuperação inválido. Solicite um novo link.',
+      );
+    }
+
     if (
       !user.resetPasswordTokenExpires ||
       user.resetPasswordTokenExpires < new Date()
@@ -514,6 +559,8 @@ export class AuthService {
       where: { id: userId },
     });
     if (!user) throw new NotFoundException('Usuário não encontrado');
+
+    if (user.deletedAt) throw new NotFoundException('Usuário não encontrado');
 
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     const token = this.jwtService.sign(
@@ -576,8 +623,9 @@ export class AuthService {
     });
     if (!user) throw new NotFoundException('Usuário não encontrado');
 
-    await this.prisma.user.delete({
+    await this.prisma.user.update({
       where: { id: payload.userId },
+      data: { deletedAt: new Date() },
     });
 
     return { message: 'Conta excluída permanentemente' };
