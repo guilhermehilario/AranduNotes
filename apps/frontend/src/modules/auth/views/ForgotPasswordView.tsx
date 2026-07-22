@@ -1,24 +1,24 @@
-import React from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { Link } from 'react-router-dom';
-import { z } from 'zod';
-import { authService } from '../services/authService';
-import { Input } from '../../../components/ui/Input.tsx';
-import { Button } from '../../../components/ui/Button.tsx';
-import { ApiErrorAlert } from '../../../components/ui/ApiErrorAlert.tsx';
-import { extractApiError } from '../../../utils/api-errors.ts';
-import { AuthLayout } from '../AuthLayout.tsx';
-import { Mail, ArrowLeft, CheckCircle } from 'lucide-react';
+import React from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Link } from "react-router-dom";
+import { z } from "zod";
+import { authService } from "../services/authService";
+import { Input } from "../../../components/ui/Input.tsx";
+import { Button } from "../../../components/ui/Button.tsx";
+import { ApiErrorAlert } from "../../../components/ui/ApiErrorAlert.tsx";
+import { extractApiError } from "../../../utils/api-errors.ts";
+import { AuthLayout } from "../AuthLayout.tsx";
+import { Mail, ArrowLeft, CheckCircle } from "lucide-react";
 
 const ForgotPasswordSchema = z.object({
-  email: z.string().email('E-mail inválido'),
+  email: z.string().email("E-mail inválido"),
 });
 
 type ForgotPasswordInput = z.infer<typeof ForgotPasswordSchema>;
 
 export const ForgotPasswordView: React.FC = () => {
-  const [step, setStep] = React.useState<'form' | 'sent'>('form');
+  const [step, setStep] = React.useState<"form" | "sent">("form");
   const [apiError, setApiError] = React.useState<string | null>(null);
   const [isLoading, setIsLoading] = React.useState(false);
 
@@ -28,7 +28,7 @@ export const ForgotPasswordView: React.FC = () => {
     formState: { errors },
   } = useForm<ForgotPasswordInput>({
     resolver: zodResolver(ForgotPasswordSchema),
-    defaultValues: { email: '' },
+    defaultValues: { email: "" },
   });
 
   const onSubmit = async (data: ForgotPasswordInput) => {
@@ -36,27 +36,19 @@ export const ForgotPasswordView: React.FC = () => {
     setIsLoading(true);
     try {
       await authService.forgotPassword(data.email);
-      setStep('sent');
+      setStep("sent");
     } catch (error) {
-      setApiError(extractApiError(error, 'Erro ao enviar e-mail. Tente novamente.'));
+      setApiError(
+        extractApiError(error, "Erro ao enviar e-mail. Tente novamente."),
+      );
     } finally {
       setIsLoading(false);
     }
   };
 
-  if (step === 'sent') {
+  if (step === "sent") {
     return (
-      <AuthLayout
-        title="E-mail Enviado"
-      footer={
-          <Link
-            to="/login"
-            className="text-sm text-slate-500 dark:text-dark-400 hover:text-slate-700 dark:hover:text-dark-200"
-          >
-            Voltar para o login
-          </Link>
-        }
-      >
+      <AuthLayout title="E-mail Enviado">
         <div className="flex flex-col items-center gap-5">
           <div className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center shrink-0">
             <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
@@ -88,10 +80,9 @@ export const ForgotPasswordView: React.FC = () => {
   return (
     <AuthLayout
       title="Recuperar Senha"
-
       footer={
         <>
-          Lembrou sua senha?{' '}
+          Lembrou sua senha?{" "}
           <Link
             to="/login"
             className="font-bold text-brand-500 hover:text-brand-600 transition-colors"
@@ -104,7 +95,8 @@ export const ForgotPasswordView: React.FC = () => {
       <ApiErrorAlert message={apiError} />
 
       <p className="text-sm text-slate-600 dark:text-dark-300 mb-4">
-        Digite seu e-mail cadastrado e enviaremos um link para redefinir sua senha.
+        Digite seu e-mail cadastrado e enviaremos um link para redefinir sua
+        senha.
       </p>
 
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
@@ -113,7 +105,7 @@ export const ForgotPasswordView: React.FC = () => {
           type="email"
           placeholder="exemplo@email.com"
           error={errors.email?.message}
-          {...register('email')}
+          {...register("email")}
         />
 
         <Button type="submit" className="w-full mt-2" isLoading={isLoading}>
