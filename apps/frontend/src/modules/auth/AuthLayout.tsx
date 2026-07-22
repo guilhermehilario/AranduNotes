@@ -5,7 +5,7 @@ import { Card } from "../../components/ui/Card.tsx";
 interface AuthLayoutProps {
   title: string;
   children: React.ReactNode;
-  footer: React.ReactNode;
+  footer?: React.ReactNode;
 }
 
 /**
@@ -43,9 +43,11 @@ export const AuthLayout: React.FC<AuthLayoutProps> = ({
             {title}
           </h2>
           {children}
-          <div className="mt-6 text-center text-sm text-slate-500 dark:text-dark-300">
-            {footer}
-          </div>
+          {footer && (
+            <div className="mt-6 text-center text-sm text-slate-500 dark:text-dark-300">
+              {footer}
+            </div>
+          )}
         </Card>
       </div>
     </div>
