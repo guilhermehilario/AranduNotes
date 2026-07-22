@@ -143,8 +143,9 @@ export class AuthService {
           email: email.toLowerCase(),
         };
       } catch (error) {
+        const err = error as Error;
         this.logger.error(
-          `Falha ao enviar e-mail de verificação para ${email}. Conta criada sem verificação.`,
+          `Falha ao enviar e-mail de verificação para ${email}. Conta criada sem verificação. ${err.message}`,
         );
 
         // Fallback para desenvolvimento: se o email não foi enviado,
@@ -169,12 +170,21 @@ export class AuthService {
             email: email.toLowerCase(),
           };
         }
+
+        // Se for timeout, inclui info no log
+        const isTimeout = err.message?.includes('timeout') || err.message?.includes('ETIMEDOUT');
+        if (isTimeout && !isDev) {
+          this.logger.warn(
+            `TIMEOUT SMTP ao enviar e-mail para ${email}. A conta foi criada mas a verificação falhou.`,
+          );
+        }
       }
 
       return {
         message:
           'Conta criada, mas não foi possível enviar o e-mail de verificação. ' +
-          'Use a opção "Reenviar verificação" para tentar novamente.',
+          'O servidor SMTP não respondeu a tempo. Tente novamente mais tarde ou use a opção ' +
+          '"Reenviar verificação" na tela de login.',
         email: email.toLowerCase(),
       };
     }

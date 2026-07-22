@@ -24,6 +24,14 @@ export class EmailService {
     const rawFrom =
       this.configService.get<string>('SMTP_FROM') || 'noreply@arandu.app';
 
+    // Timeouts configuráveis via env (em ms)
+    const connectionTimeout =
+      parseInt(this.configService.get<string>('SMTP_CONNECTION_TIMEOUT') || '10000', 10);
+    const greetingTimeout =
+      parseInt(this.configService.get<string>('SMTP_GREETING_TIMEOUT') || '10000', 10);
+    const socketTimeout =
+      parseInt(this.configService.get<string>('SMTP_SOCKET_TIMEOUT') || '30000', 10);
+
     // Extrai nome e email do campo from (ex: "Nome <email@dominio.com>")
     const fromMatch = rawFrom.match(/^(.+)\s*<(.+)>$/);
     this.fromName = fromMatch ? fromMatch[1].trim() : 'Arandu';
@@ -36,10 +44,21 @@ export class EmailService {
         port,
         secure: port === 465,
         auth: { user, pass },
+        connectionTimeout,
+        greetingTimeout,
+        socketTimeout,
+        // Desabilita TLS se não for necessário (alguns relays exigem)
+        requireTLS: port === 465 || port === 587,
+        // Pool de conexões — maxMessages: 1 força uma conexão nova por envio
+        // para evitar reuso de conexões quebradas após timeout
+        pool: true,
+        maxConnections: 3,
+        maxMessages: 1,
       });
       this.isConfigured = true;
       this.logger.log(
-        `Email service configured: SMTP ${host}:${port} (from: ${this.fromName} <${this.fromEmail}>)`,
+        `Email service configured: SMTP ${host}:${port} (from: ${this.fromName} <${this.fromEmail}>) ` +
+        `timeouts: conn=${connectionTimeout}ms greet=${greetingTimeout}ms socket=${socketTimeout}ms`,
       );
     } else {
       this.logger.warn(
@@ -82,8 +101,31 @@ export class EmailService {
       });
       this.logger.log(`Email sent via SMTP: ${info.messageId}`);
     } catch (error) {
-      this.logger.error('Failed to send email via SMTP', error);
-      throw new Error('Falha ao enviar e-mail. Verifique as configurações de SMTP e tente novamente.');
+      const err = error as Error & { code?: string };
+      this.logger.error('Failed to send email via SMTP', err);
+
+      // Mensagens específicas por tipo de erro
+      if (err.code === 'ETIMEDOUT' || err.code === 'ESOCKET') {
+        throw new Error(
+          'O servidor de e-mail não respondeu a tempo (timeout). ' +
+          'Verifique se o host SMTP está acessível e as configurações de firewall.',
+        );
+      }
+      if (err.code === 'ECONNREFUSED') {
+        throw new Error(
+          'Conexão recusada pelo servidor SMTP. ' +
+          'Verifique se o host e porta SMTP estão corretos.',
+        );
+      }
+      if (err.code === 'EAUTH') {
+        throw new Error(
+          'Autenticação SMTP falhou. Verifique SMTP_USER e SMTP_PASS.',
+        );
+      }
+
+      throw new Error(
+        'Falha ao enviar e-mail. Verifique as configurações de SMTP e tente novamente.',
+      );
     }
   }
 

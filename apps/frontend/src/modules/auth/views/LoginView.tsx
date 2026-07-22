@@ -10,6 +10,7 @@ import { Button } from '../../../components/ui/Button.tsx';
 import { ApiErrorAlert } from '../../../components/ui/ApiErrorAlert.tsx';
 import { extractApiError } from '../../../utils/api-errors.ts';
 import { AuthLayout } from '../AuthLayout.tsx';
+import { useToastStore } from '../../../store/toastStore.ts';
 
 export const LoginView: React.FC = () => {
   const { login, isLoggingIn } = useAuth();
@@ -37,6 +38,8 @@ export const LoginView: React.FC = () => {
       navigate('/dashboard');
     } catch (error) {
       const errorMsg = extractApiError(error, 'E-mail ou senha incorretos. Tente novamente.');
+      const addToast = useToastStore.getState().addToast;
+
       // Detecta erro específico de e-mail não verificado
       if (
         errorMsg.includes('não verificado') ||
@@ -46,6 +49,13 @@ export const LoginView: React.FC = () => {
         setApiError(
           'Seu e-mail ainda não foi verificado. Verifique sua caixa de entrada ou solicite um novo link.',
         );
+        addToast('Verifique seu e-mail e clique no link de confirmação para ativar sua conta.', 'info');
+      } else if (
+        errorMsg.toLowerCase().includes('timeout') ||
+        errorMsg.toLowerCase().includes('não respondeu')
+      ) {
+        setApiError('O servidor de autenticação está demorando para responder. Tente novamente.');
+        addToast('Erro de conexão com o servidor. Verifique sua internet e tente novamente.', 'error');
       } else {
         setApiError(errorMsg);
       }

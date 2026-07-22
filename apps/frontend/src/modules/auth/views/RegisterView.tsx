@@ -11,6 +11,7 @@ import { ApiErrorAlert } from '../../../components/ui/ApiErrorAlert.tsx';
 import { extractApiError } from '../../../utils/api-errors.ts';
 import { AuthLayout } from '../AuthLayout.tsx';
 import { TermsOfUse } from '../components/TermsOfUse.tsx';
+import { useToastStore } from '../../../store/toastStore.ts';
 
 export const RegisterView: React.FC = () => {
   const { register: registerUser, isRegistering } = useAuth();
@@ -41,25 +42,56 @@ export const RegisterView: React.FC = () => {
     setApiError(null);
     try {
       const result = await registerUser(data);
+      const addToast = useToastStore.getState().addToast;
+
+      // Detecta se o email não pôde ser enviado (timeout SMTP)
+      const hasEmailTimeout =
+        result.message?.toLowerCase().includes('não foi possível') ||
+        result.message?.toLowerCase().includes('não respondeu') ||
+        result.message?.toLowerCase().includes('timeout');
+
+      if (hasEmailTimeout) {
+        addToast(
+          'Conta criada, mas o e-mail de verificação não pôde ser enviado ' +
+          'por um timeout no servidor. Você pode reenviar na tela de verificação.',
+          'info',
+        );
+      }
+
       // Se o email já foi verificado (ex: modo dev sem SMTP), vai direto pro login
       if (
         result.message?.toLowerCase().includes('auto-verificado') ||
         result.message?.toLowerCase().includes('já pode fazer login')
       ) {
+        addToast('Conta criada com sucesso! Faça login para continuar.', 'success');
         navigate(
           `/login?email=${encodeURIComponent(data.email)}&verified=true`,
         );
       } else {
         // Precisa verificar o email — redireciona pra tela de verificação
+        if (!hasEmailTimeout) {
+          addToast('Conta criada! Verifique seu e-mail para ativar.', 'success');
+        }
         navigate(`/verify-email?email=${encodeURIComponent(data.email)}`);
       }
     } catch (error) {
-      setApiError(
-        extractApiError(
-          error,
-          'Erro ao criar conta. Tente novamente mais tarde.',
-        ),
+      const errorMsg = extractApiError(
+        error,
+        'Erro ao criar conta. Tente novamente mais tarde.',
       );
+
+      // Se for um erro de timeout do SMTP, mostra mensagem mais amigável
+      if (
+        errorMsg.toLowerCase().includes('timeout') ||
+        errorMsg.toLowerCase().includes('não respondeu')
+      ) {
+        setApiError(
+          'O servidor de e-mail está demorando para responder. ' +
+          'Sua conta foi criada, mas pode ser necessário reenviar a verificação depois.',
+        );
+      } else {
+        setApiError(errorMsg);
+      }
     }
   };
 
