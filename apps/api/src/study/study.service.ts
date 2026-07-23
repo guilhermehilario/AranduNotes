@@ -70,9 +70,11 @@ export class StudyService {
       throw new InternalServerErrorException('reviewedCount inválido');
     }
 
-    const notebook = await this.prisma.notebook.findFirst({
-      where: { id: notebookId, userId },
-    });
+    const notebook = await this.prisma.withConnection(() =>
+      this.prisma.notebook.findFirst({
+        where: { id: notebookId, userId },
+      }),
+    );
     if (!notebook) throw new NotFoundException('Caderno não encontrado');
 
     try {
@@ -108,11 +110,13 @@ export class StudyService {
   }
 
   async loadSession(notebookId: string, userId: string) {
-    const session = await this.prisma.studySession.findUnique({
-      where: {
-        notebookId_userId: { notebookId, userId },
-      },
-    });
+    const session = await this.prisma.withConnection(() =>
+      this.prisma.studySession.findUnique({
+        where: {
+          notebookId_userId: { notebookId, userId },
+        },
+      }),
+    );
 
     if (!session) {
       throw new NotFoundException(
@@ -130,11 +134,13 @@ export class StudyService {
 
   async deleteSession(notebookId: string, userId: string): Promise<void> {
     try {
-      await this.prisma.studySession.delete({
-        where: {
-          notebookId_userId: { notebookId, userId },
-        },
-      });
+      await this.prisma.withConnection(() =>
+        this.prisma.studySession.delete({
+          where: {
+            notebookId_userId: { notebookId, userId },
+          },
+        }),
+      );
     } catch {
       // Se não existe, apenas ignora
     }
@@ -143,15 +149,19 @@ export class StudyService {
   // ── Stats (cálculo robusto e confiável) ──
 
   async getStats(userId: string): Promise<StudyStats> {
-    const notebooks = await this.prisma.notebook.findMany({
-      where: { userId },
-    });
+    const notebooks = await this.prisma.withConnection(() =>
+      this.prisma.notebook.findMany({
+        where: { userId },
+      }),
+    );
 
     const userNotebookIds = notebooks.map((nb) => nb.id);
 
-    const allFlashcards = await this.prisma.flashcard.findMany({
-      where: { notebookId: { in: userNotebookIds } },
-    });
+    const allFlashcards = await this.prisma.withConnection(() =>
+      this.prisma.flashcard.findMany({
+        where: { notebookId: { in: userNotebookIds } },
+      }),
+    );
 
     const todayStart = this.getTodayStart();
     const now = new Date();

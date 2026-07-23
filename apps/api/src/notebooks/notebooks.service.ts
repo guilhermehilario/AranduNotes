@@ -10,16 +10,20 @@ export class NotebooksService {
   ) {}
 
   async findAll(userId: string) {
-    const notebooks = await this.prisma.notebook.findMany({
-      where: { userId, deletedAt: null },
-      orderBy: { createdAt: 'desc' },
-    });
+    const notebooks = await this.prisma.withConnection(() =>
+      this.prisma.notebook.findMany({
+        where: { userId, deletedAt: null },
+        orderBy: { createdAt: 'desc' },
+      }),
+    );
 
     const enriched = await Promise.all(
       notebooks.map(async (nb) => {
-        const leavesCount = await this.prisma.leaf.count({
-          where: { notebookId: nb.id, deletedAt: null },
-        });
+        const leavesCount = await this.prisma.withConnection(() =>
+          this.prisma.leaf.count({
+            where: { notebookId: nb.id, deletedAt: null },
+          }),
+        );
         return { ...nb, leavesCount };
       }),
     );
@@ -28,15 +32,19 @@ export class NotebooksService {
   }
 
   async findOne(id: string, userId: string) {
-    const notebook = await this.prisma.notebook.findFirst({
-      where: { id, userId, deletedAt: null },
-    });
+    const notebook = await this.prisma.withConnection(() =>
+      this.prisma.notebook.findFirst({
+        where: { id, userId, deletedAt: null },
+      }),
+    );
 
     if (!notebook) throw new NotFoundException('Caderno não encontrado');
 
-    const leavesCount = await this.prisma.leaf.count({
-      where: { notebookId: id, deletedAt: null },
-    });
+    const leavesCount = await this.prisma.withConnection(() =>
+      this.prisma.leaf.count({
+        where: { notebookId: id, deletedAt: null },
+      }),
+    );
 
     return { ...notebook, leavesCount };
   }
@@ -45,14 +53,16 @@ export class NotebooksService {
     userId: string,
     data: { title: string; description?: string | null; color: string },
   ) {
-    const notebook = await this.prisma.notebook.create({
-      data: {
-        userId,
-        title: data.title,
-        description: data.description ?? null,
-        color: data.color,
-      },
-    });
+    const notebook = await this.prisma.withConnection(() =>
+      this.prisma.notebook.create({
+        data: {
+          userId,
+          title: data.title,
+          description: data.description ?? null,
+          color: data.color,
+        },
+      }),
+    );
 
     await this.editHistory.record(userId, {
       notebookId: notebook.id,
@@ -69,20 +79,24 @@ export class NotebooksService {
     userId: string,
     data: { title?: string; description?: string | null; color?: string },
   ) {
-    const notebook = await this.prisma.notebook.findFirst({
-      where: { id, userId },
-    });
+    const notebook = await this.prisma.withConnection(() =>
+      this.prisma.notebook.findFirst({
+        where: { id, userId },
+      }),
+    );
 
     if (!notebook) throw new NotFoundException('Caderno não encontrado');
 
-    const updated = await this.prisma.notebook.update({
-      where: { id },
-      data: {
-        ...(data.title !== undefined && { title: data.title }),
-        ...(data.description !== undefined && { description: data.description }),
-        ...(data.color !== undefined && { color: data.color }),
-      },
-    });
+    const updated = await this.prisma.withConnection(() =>
+      this.prisma.notebook.update({
+        where: { id },
+        data: {
+          ...(data.title !== undefined && { title: data.title }),
+          ...(data.description !== undefined && { description: data.description }),
+          ...(data.color !== undefined && { color: data.color }),
+        },
+      }),
+    );
 
     if (data.title !== undefined && data.title !== notebook.title) {
       await this.editHistory.record(userId, {
@@ -94,9 +108,11 @@ export class NotebooksService {
       });
     }
 
-    const leavesCount = await this.prisma.leaf.count({
-      where: { notebookId: id, deletedAt: null },
-    });
+    const leavesCount = await this.prisma.withConnection(() =>
+      this.prisma.leaf.count({
+        where: { notebookId: id, deletedAt: null },
+      }),
+    );
 
     return { ...updated, leavesCount };
   }

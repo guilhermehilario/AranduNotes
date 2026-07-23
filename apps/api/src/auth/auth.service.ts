@@ -470,18 +470,22 @@ export class AuthService {
     userId: string,
     data: { name?: string; avatarUrl?: string },
   ): Promise<UserPublic> {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-    });
+    const user = await this.prisma.withConnection(() =>
+      this.prisma.user.findUnique({
+        where: { id: userId },
+      }),
+    );
     if (!user) throw new UnauthorizedException('Usuário não encontrado');
 
-    const updated = await this.prisma.user.update({
-      where: { id: userId },
-      data: {
-        ...(data.name !== undefined && { name: data.name }),
-        ...(data.avatarUrl !== undefined && { avatarUrl: data.avatarUrl }),
-      },
-    });
+    const updated = await this.prisma.withConnection(() =>
+      this.prisma.user.update({
+        where: { id: userId },
+        data: {
+          ...(data.name !== undefined && { name: data.name }),
+          ...(data.avatarUrl !== undefined && { avatarUrl: data.avatarUrl }),
+        },
+      }),
+    );
 
     return this.stripPassword(updated);
   }
@@ -495,9 +499,11 @@ export class AuthService {
       throw new UnauthorizedException(`A nova senha deve ter no mínimo ${MIN_PASSWORD_LENGTH} caracteres`);
     }
 
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-    });
+    const user = await this.prisma.withConnection(() =>
+      this.prisma.user.findUnique({
+        where: { id: userId },
+      }),
+    );
     if (!user) throw new UnauthorizedException('Usuário não encontrado');
 
     const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
@@ -541,13 +547,15 @@ export class AuthService {
     const resetToken = uuidv4();
     const resetTokenExpires = new Date(Date.now() + 60 * 60 * 1000);
 
-    await this.prisma.user.update({
-      where: { id: user.id },
-      data: {
-        resetPasswordToken: resetToken,
-        resetPasswordTokenExpires: resetTokenExpires,
-      },
-    });
+    await this.prisma.withConnection(() =>
+      this.prisma.user.update({
+        where: { id: user.id },
+        data: {
+          resetPasswordToken: resetToken,
+          resetPasswordTokenExpires: resetTokenExpires,
+        },
+      }),
+    );
 
     try {
       await this.emailService.sendPasswordResetEmail(
@@ -563,13 +571,15 @@ export class AuthService {
       this.logger.error(
         `Falha ao enviar e-mail de recuperação para ${email}: ${err.message}`,
       );
-      await this.prisma.user.update({
-        where: { id: user.id },
-        data: {
-          resetPasswordToken: null,
-          resetPasswordTokenExpires: null,
-        },
-      });
+      await this.prisma.withConnection(() =>
+        this.prisma.user.update({
+          where: { id: user.id },
+          data: {
+            resetPasswordToken: null,
+            resetPasswordTokenExpires: null,
+          },
+        }),
+      );
     }
 
     return {
@@ -616,22 +626,26 @@ export class AuthService {
 
     const hashedPassword = await bcrypt.hash(newPassword, SALT_ROUNDS);
 
-    await this.prisma.user.update({
-      where: { id: user.id },
-      data: {
-        password: hashedPassword,
-        resetPasswordToken: null,
-        resetPasswordTokenExpires: null,
-      },
-    });
+    await this.prisma.withConnection(() =>
+      this.prisma.user.update({
+        where: { id: user.id },
+        data: {
+          password: hashedPassword,
+          resetPasswordToken: null,
+          resetPasswordTokenExpires: null,
+        },
+      }),
+    );
 
     return { message: 'Senha redefinida com sucesso! Faça login com sua nova senha.' };
   }
 
   async sendDeleteConfirmation(userId: string): Promise<{ message: string; token: string; code?: string }> {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-    });
+    const user = await this.prisma.withConnection(() =>
+      this.prisma.user.findUnique({
+        where: { id: userId },
+      }),
+    );
     if (!user) throw new NotFoundException('Usuário não encontrado');
 
     if (user.deletedAt) throw new NotFoundException('Usuário não encontrado');
@@ -692,15 +706,19 @@ export class AuthService {
       throw new BadRequestException('Código de confirmação incorreto.');
     }
 
-    const user = await this.prisma.user.findUnique({
-      where: { id: payload.userId },
-    });
+    const user = await this.prisma.withConnection(() =>
+      this.prisma.user.findUnique({
+        where: { id: payload.userId },
+      }),
+    );
     if (!user) throw new NotFoundException('Usuário não encontrado');
 
-    await this.prisma.user.update({
-      where: { id: payload.userId },
-      data: { deletedAt: new Date() },
-    });
+    await this.prisma.withConnection(() =>
+      this.prisma.user.update({
+        where: { id: payload.userId },
+        data: { deletedAt: new Date() },
+      }),
+    );
 
     return { message: 'Conta excluída permanentemente' };
   }

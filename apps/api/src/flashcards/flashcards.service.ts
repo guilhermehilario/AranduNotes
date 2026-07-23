@@ -75,36 +75,44 @@ export class FlashcardsService {
     },
   ) {
     // Verify ownership via notebook
-    const notebook = await this.prisma.notebook.findFirst({
-      where: { id: data.notebookId, userId },
-    });
+    const notebook = await this.prisma.withConnection(() =>
+      this.prisma.notebook.findFirst({
+        where: { id: data.notebookId, userId },
+      }),
+    );
     if (!notebook) throw new NotFoundException('Caderno não encontrado');
 
     const now = new Date();
-    return this.prisma.flashcard.create({
-      data: {
-        leafId: data.leafId,
-        notebookId: data.notebookId,
-        front: data.front,
-        back: data.back,
-        repetitions: 0,
-        interval: 0,
-        easeFactor: 2.5,
-        nextReviewDate: now,
-      },
-    });
+    return this.prisma.withConnection(() =>
+      this.prisma.flashcard.create({
+        data: {
+          leafId: data.leafId,
+          notebookId: data.notebookId,
+          front: data.front,
+          back: data.back,
+          repetitions: 0,
+          interval: 0,
+          easeFactor: 2.5,
+          nextReviewDate: now,
+        },
+      }),
+    );
   }
 
   async findByNotebook(notebookId: string, userId: string) {
-    const notebook = await this.prisma.notebook.findFirst({
-      where: { id: notebookId, userId },
-    });
+    const notebook = await this.prisma.withConnection(() =>
+      this.prisma.notebook.findFirst({
+        where: { id: notebookId, userId },
+      }),
+    );
     if (!notebook) throw new NotFoundException('Caderno não encontrado');
 
-    return this.prisma.flashcard.findMany({
-      where: { notebookId },
-      orderBy: { createdAt: 'desc' },
-    });
+    return this.prisma.withConnection(() =>
+      this.prisma.flashcard.findMany({
+        where: { notebookId },
+        orderBy: { createdAt: 'desc' },
+      }),
+    );
   }
 
   async update(
@@ -112,10 +120,12 @@ export class FlashcardsService {
     userId: string,
     data: { front?: string; back?: string },
   ) {
-    const card = await this.prisma.flashcard.findUnique({
-      where: { id: cardId },
-      include: { notebook: true },
-    });
+    const card = await this.prisma.withConnection(() =>
+      this.prisma.flashcard.findUnique({
+        where: { id: cardId },
+        include: { notebook: true },
+      }),
+    );
 
     if (!card) throw new NotFoundException('Flashcard não encontrado');
     if (card.notebook.userId !== userId) {
@@ -130,17 +140,21 @@ export class FlashcardsService {
       throw new BadRequestException('Nenhum campo para atualizar');
     }
 
-    return this.prisma.flashcard.update({
-      where: { id: cardId },
-      data: updates,
-    });
+    return this.prisma.withConnection(() =>
+      this.prisma.flashcard.update({
+        where: { id: cardId },
+        data: updates,
+      }),
+    );
   }
 
   async review(cardId: string, userId: string, score: number) {
-    const card = await this.prisma.flashcard.findUnique({
-      where: { id: cardId },
-      include: { notebook: true },
-    });
+    const card = await this.prisma.withConnection(() =>
+      this.prisma.flashcard.findUnique({
+        where: { id: cardId },
+        include: { notebook: true },
+      }),
+    );
 
     if (!card) throw new NotFoundException('Flashcard não encontrado');
     if (card.notebook.userId !== userId) {
@@ -149,14 +163,16 @@ export class FlashcardsService {
 
     const sm2Result = this.computeSM2(card, score);
 
-    return this.prisma.flashcard.update({
-      where: { id: cardId },
-      data: {
-        repetitions: sm2Result.repetitions,
-        interval: sm2Result.interval,
-        easeFactor: sm2Result.easeFactor,
-        nextReviewDate: sm2Result.nextReviewDate,
-      },
-    });
+    return this.prisma.withConnection(() =>
+      this.prisma.flashcard.update({
+        where: { id: cardId },
+        data: {
+          repetitions: sm2Result.repetitions,
+          interval: sm2Result.interval,
+          easeFactor: sm2Result.easeFactor,
+          nextReviewDate: sm2Result.nextReviewDate,
+        },
+      }),
+    );
   }
 }

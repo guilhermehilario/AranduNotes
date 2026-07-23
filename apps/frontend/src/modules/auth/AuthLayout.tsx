@@ -33,7 +33,7 @@ export const AuthLayout: React.FC<AuthLayoutProps> = ({
             Arandu
           </h1>
           <p className="text-slate-500 dark:text-dark-300 mt-2 text-center text-sm font-medium">
-            Seu copiloto inteligente para resumos e flashcards
+            Seu caderno inteligente para estudos com resumos e flashcards
           </p>
         </div>
 

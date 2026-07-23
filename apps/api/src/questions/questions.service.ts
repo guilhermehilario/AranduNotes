@@ -8,24 +8,28 @@ export class QuestionsService {
   async findAll(userId: string, notebookId?: string) {
     const where: any = { userId };
     if (notebookId) where.notebookId = notebookId;
-    return this.prisma.question.findMany({
-      where,
-      orderBy: { createdAt: 'desc' },
-      include: {
-        notebook: { select: { title: true, color: true } },
-        leaf: { select: { title: true } },
-      },
-    });
+    return this.prisma.withConnection(() =>
+      this.prisma.question.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          notebook: { select: { title: true, color: true } },
+          leaf: { select: { title: true } },
+        },
+      }),
+    );
   }
 
   async findOne(id: string, userId: string) {
-    const question = await this.prisma.question.findFirst({
-      where: { id, userId },
-      include: {
-        notebook: { select: { title: true, color: true } },
-        leaf: { select: { title: true } },
-      },
-    });
+    const question = await this.prisma.withConnection(() =>
+      this.prisma.question.findFirst({
+        where: { id, userId },
+        include: {
+          notebook: { select: { title: true, color: true } },
+          leaf: { select: { title: true } },
+        },
+      }),
+    );
     if (!question) throw new NotFoundException('Questão não encontrada');
     return question;
   }
@@ -43,23 +47,27 @@ export class QuestionsService {
     },
   ) {
     // Verify notebook ownership
-    const notebook = await this.prisma.notebook.findFirst({
-      where: { id: data.notebookId, userId },
-    });
+    const notebook = await this.prisma.withConnection(() =>
+      this.prisma.notebook.findFirst({
+        where: { id: data.notebookId, userId },
+      }),
+    );
     if (!notebook) throw new NotFoundException('Caderno não encontrado');
 
-    return this.prisma.question.create({
-      data: {
-        userId,
-        leafId: data.leafId || null,
-        notebookId: data.notebookId,
-        question: data.question,
-        options: data.options || '[]',
-        correctAnswer: data.correctAnswer,
-        explanation: data.explanation || null,
-        questionType: data.questionType || 'multiple_choice',
-      },
-    });
+    return this.prisma.withConnection(() =>
+      this.prisma.question.create({
+        data: {
+          userId,
+          leafId: data.leafId || null,
+          notebookId: data.notebookId,
+          question: data.question,
+          options: data.options || '[]',
+          correctAnswer: data.correctAnswer,
+          explanation: data.explanation || null,
+          questionType: data.questionType || 'multiple_choice',
+        },
+      }),
+    );
   }
 
   async update(
@@ -73,9 +81,11 @@ export class QuestionsService {
       questionType?: string;
     },
   ) {
-    const question = await this.prisma.question.findFirst({
-      where: { id, userId },
-    });
+    const question = await this.prisma.withConnection(() =>
+      this.prisma.question.findFirst({
+        where: { id, userId },
+      }),
+    );
     if (!question) throw new NotFoundException('Questão não encontrada');
 
     const updates: Record<string, any> = {};
@@ -85,48 +95,60 @@ export class QuestionsService {
     if (data.explanation !== undefined) updates.explanation = data.explanation;
     if (data.questionType !== undefined) updates.questionType = data.questionType;
 
-    return this.prisma.question.update({
-      where: { id },
-      data: updates,
-    });
+    return this.prisma.withConnection(() =>
+      this.prisma.question.update({
+        where: { id },
+        data: updates,
+      }),
+    );
   }
 
   async remove(id: string, userId: string): Promise<void> {
-    const question = await this.prisma.question.findFirst({
-      where: { id, userId },
-    });
+    const question = await this.prisma.withConnection(() =>
+      this.prisma.question.findFirst({
+        where: { id, userId },
+      }),
+    );
     if (!question) throw new NotFoundException('Questão não encontrada');
 
-    await this.prisma.question.delete({ where: { id } });
+    await this.prisma.withConnection(() =>
+      this.prisma.question.delete({ where: { id } }),
+    );
   }
 
   async getRandomQuestions(userId: string, limit: number = 10, notebookId?: string) {
     const where: any = { userId };
     if (notebookId) where.notebookId = notebookId;
 
-    const total = await this.prisma.question.count({ where });
+    const total = await this.prisma.withConnection(() =>
+      this.prisma.question.count({ where }),
+    );
     if (total === 0) return [];
 
     // Pega uma amostra aleatória usando skip
     const take = Math.min(limit, total);
     const skip = Math.max(0, Math.floor(Math.random() * (total - take + 1)));
 
-    return this.prisma.question.findMany({
-      where,
-      skip,
-      take,
-      orderBy: { createdAt: 'desc' },
-      include: {
-        notebook: { select: { title: true, color: true } },
-      },
-    });
+    return this.prisma.withConnection(() =>
+      this.prisma.question.findMany({
+        where,
+        skip,
+        take,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          notebook: { select: { title: true, color: true } },
+        },
+      }),
+    );
   }
 
   async generateFromFlashcard(flashcardId: string, userId: string) {
-    const flashcard = await this.prisma.flashcard.findUnique({
-      where: { id: flashcardId },
-      include: { notebook: true },
-    });
+    const flashcard = await this.prisma.withConnection(() =>
+      this.prisma.flashcard.findUnique({
+        where: { id: flashcardId },
+        include: { notebook: true },
+      }),
+    );
 
     if (!flashcard || flashcard.notebook.userId !== userId) {
       throw new NotFoundException('Flashcard não encontrado');
@@ -149,6 +171,8 @@ export class QuestionsService {
       questionType: 'multiple_choice' as const,
     };
 
-    return this.prisma.question.create({ data: questionData });
+    return this.prisma.withConnection(() =>
+      this.prisma.question.create({ data: questionData }),
+    );
   }
 }
