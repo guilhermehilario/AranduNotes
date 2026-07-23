@@ -53,9 +53,17 @@ export class AuthController {
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   async login(
     @Body() dto: LoginDto,
+    @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const result = await this.authService.login(dto.email, dto.password);
+    // Verifica sessão existente: se o cookie refreshToken for válido,
+    // o usuário já está logado e o login é rejeitado.
+    const existingRefreshToken = req.cookies?.refreshToken;
+    const result = await this.authService.login(
+      dto.email,
+      dto.password,
+      existingRefreshToken,
+    );
     this.setRefreshCookie(res, result.refreshToken);
     return { user: result.user, accessToken: result.accessToken };
   }

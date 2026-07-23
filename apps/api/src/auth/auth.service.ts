@@ -210,8 +210,24 @@ export class AuthService {
   async login(
     email: string,
     password: string,
+    existingRefreshToken?: string,
   ): Promise<{ user: UserPublic; accessToken: string; refreshToken: string }> {
     const sanitizedEmail = email.trim().toLowerCase();
+
+    // Se o cookie de refresh existe e é válido, o usuário já possui sessão ativa.
+    // Isso impede login duplicado mesmo se o frontend deixar passar.
+    if (existingRefreshToken) {
+      try {
+        this.jwtService.verify(existingRefreshToken, { secret: this.refreshSecret });
+        throw new ConflictException(
+          'Você já está logado. Faça logout primeiro se quiser acessar outra conta.',
+        );
+      } catch (error) {
+        // Se for o ConflictException que acabamos de lançar, propaga
+        if (error instanceof ConflictException) throw error;
+        // Token inválido ou expirado → permite login normalmente
+      }
+    }
 
     try {
       const user = await this.prisma.withConnection(() =>
