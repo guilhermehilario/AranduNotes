@@ -85,7 +85,10 @@ export class AuthService {
     password: string,
     acceptedTerms: boolean,
   ): Promise<{ message: string; email: string }> {
-    if (!this.validateEmail(email)) {
+    // Normaliza: trim + lowercase para evitar espaços acidentais
+    const normalizedEmail = email.trim().toLowerCase();
+
+    if (!this.validateEmail(normalizedEmail)) {
       throw new UnauthorizedException('Formato de e-mail inválido');
     }
 
@@ -101,7 +104,7 @@ export class AuthService {
 
     const existing = await this.prisma.withConnection(() =>
       this.prisma.user.findUnique({
-        where: { email: email.toLowerCase() },
+        where: { email: normalizedEmail },
       }),
     );
     if (existing) {
@@ -122,7 +125,7 @@ export class AuthService {
       this.prisma.user.create({
         data: {
           name,
-          email: email.toLowerCase(),
+          email: normalizedEmail,
           password: hashedPassword,
           avatarUrl,
           emailVerified,
@@ -137,19 +140,19 @@ export class AuthService {
     if (smtpConfigured) {
       try {
         await this.emailService.sendVerificationEmail(
-          email.toLowerCase(),
+          normalizedEmail,
           name,
           verificationToken!,
         );
         return {
           message:
             'Conta criada com sucesso! Verifique seu e-mail para confirmar o cadastro.',
-          email: email.toLowerCase(),
+          email: normalizedEmail,
         };
       } catch (error) {
         const err = error as Error;
         this.logger.error(
-          `Falha ao enviar e-mail de verificação para ${email}. Conta criada sem verificação. ${err.message}`,
+          `Falha ao enviar e-mail de verificação para ${normalizedEmail}. Conta criada sem verificação. ${err.message}`,
         );
 
         // Fallback para desenvolvimento: se o email não foi enviado,
@@ -158,10 +161,10 @@ export class AuthService {
         const isDev = process.env.NODE_ENV === 'development';
         if (isDev) {
           this.logger.warn(
-            `DEV: Auto-verificando ${email} porque o e-mail falhou ao ser enviado.`,
+            `DEV: Auto-verificando ${normalizedEmail} porque o e-mail falhou ao ser enviado.`,
           );    await this.prisma.withConnection(() =>
       this.prisma.user.update({
-        where: { email: email.toLowerCase() },
+        where: { email: normalizedEmail },
         data: {
           emailVerified: true,
           verificationToken: null,
@@ -172,7 +175,7 @@ export class AuthService {
           return {
             message:
               'Conta criada com sucesso! (Modo desenvolvimento: e-mail auto-verificado)',
-            email: email.toLowerCase(),
+            email: normalizedEmail,
           };
         }
 
@@ -180,7 +183,7 @@ export class AuthService {
         const isTimeout = err.message?.includes('timeout') || err.message?.includes('ETIMEDOUT');
         if (isTimeout && !isDev) {
           this.logger.warn(
-            `TIMEOUT SMTP ao enviar e-mail para ${email}. A conta foi criada mas a verificação falhou.`,
+            `TIMEOUT SMTP ao enviar e-mail para ${normalizedEmail}. A conta foi criada mas a verificação falhou.`,
           );
         }
       }
@@ -190,17 +193,17 @@ export class AuthService {
           'Conta criada, mas não foi possível enviar o e-mail de verificação. ' +
           'O servidor SMTP não respondeu a tempo. Tente novamente mais tarde ou use a opção ' +
           '"Reenviar verificação" na tela de login.',
-        email: email.toLowerCase(),
+        email: normalizedEmail,
       };
     }
 
     this.logger.log(
-      `Usuário ${email.toLowerCase()} registrado com email auto-verificado (SMTP não configurado).`,
+      `Usuário ${normalizedEmail} registrado com email auto-verificado (SMTP não configurado).`,
     );
     return {
       message:
         'Conta criada com sucesso! Você já pode fazer login.',
-      email: email.toLowerCase(),
+      email: normalizedEmail,
     };
   }
 
@@ -208,10 +211,12 @@ export class AuthService {
     email: string,
     password: string,
   ): Promise<{ user: UserPublic; accessToken: string; refreshToken: string }> {
+    const sanitizedEmail = email.trim().toLowerCase();
+
     try {
       const user = await this.prisma.withConnection(() =>
         this.prisma.user.findUnique({
-          where: { email: email.toLowerCase() },
+          where: { email: sanitizedEmail },
         }),
       );
 
@@ -243,6 +248,20 @@ export class AuthService {
       }
 
       if (!user || !isPasswordValid) {
+        // ── LOG DIAGNÓSTICO SEGURO ──
+        // NÃO loga senha, hash, ou token.
+        // Apenas identifica se o problema é usuário inexistente ou senha inválida.
+        this.logger.warn(
+          `[LOGIN] Falha para ${sanitizedEmail}: ${
+            !user
+              ? 'usuário não encontrado no banco'
+              : 'senha inválida (bcrypt.compare retornou false)'
+          }` +
+          (user
+            ? ` | hash prefix: ${user.password.substring(0, 6)}...`
+            : ''),
+        );
+
         throw new UnauthorizedException('E-mail ou senha incorretos');
       }
 
@@ -333,9 +352,10 @@ export class AuthService {
   }
 
   async resendVerification(email: string): Promise<{ message: string }> {
+    const normalizedEmail = email.trim().toLowerCase();
     const user = await this.prisma.withConnection(() =>
       this.prisma.user.findUnique({
-        where: { email: email.toLowerCase() },
+        where: { email: normalizedEmail },
       }),
     );
 
@@ -523,9 +543,10 @@ export class AuthService {
   }
 
   async forgotPassword(email: string): Promise<{ message: string }> {
+    const normalizedEmail = email.trim().toLowerCase();
     const user = await this.prisma.withConnection(() =>
       this.prisma.user.findUnique({
-        where: { email: email.toLowerCase() },
+        where: { email: normalizedEmail },
       }),
     );
 
