@@ -4,6 +4,66 @@ import helmet from 'helmet';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
+  // ════════════════════════════════════════════════════════════════
+  //  VALIDAÇÃO DE VARIÁVEIS DE AMBIENTE (antes de criar a app)
+  //  Fail-fast: se faltar secrets em produção, o servidor não sobe.
+  // ════════════════════════════════════════════════════════════════
+  const nodeEnv = process.env.NODE_ENV || 'development';
+  const errors: string[] = [];
+  const warnings: string[] = [];
+
+  if (!process.env.JWT_SECRET) {
+    if (nodeEnv === 'production') {
+      errors.push(
+        'JWT_SECRET é obrigatório em produção. ' +
+        'Gere uma chave forte com: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"',
+      );
+    } else {
+      warnings.push(
+        'JWT_SECRET não definido. Usando fallback \'dev-jwt-secret\' ' +
+        '(apenas para desenvolvimento local).',
+      );
+    }
+  }
+
+  if (!process.env.REFRESH_SECRET) {
+    if (nodeEnv === 'production') {
+      errors.push(
+        'REFRESH_SECRET é obrigatório em produção. ' +
+        'Gere uma chave forte com: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"',
+      );
+    } else {
+      warnings.push(
+        'REFRESH_SECRET não definido. Usando fallback \'dev-refresh-secret\' ' +
+        '(apenas para desenvolvimento local).',
+      );
+    }
+  }
+
+  if (nodeEnv === 'production' && !process.env.FRONTEND_URL) {
+    errors.push(
+      'FRONTEND_URL é obrigatória em produção. ' +
+      'Defina a variável de ambiente FRONTEND_URL com a(s) URL(s) do frontend ' +
+      '(ex: https://meuapp.com ou https://app1.com,https://app2.com).',
+    );
+  }
+
+  if (warnings.length > 0) {
+    console.warn('\n⚠️  AVISOS DE CONFIGURAÇÃO:');
+    warnings.forEach((w) => console.warn(`  • ${w}`));
+    console.warn('');
+  }
+
+  if (errors.length > 0) {
+    console.error('\n❌ ERROS DE CONFIGURAÇÃO — servidor não pode iniciar:');
+    errors.forEach((e) => console.error(`  • ${e}`));
+    console.error('');
+    throw new Error(
+      `Configuração inválida: ${errors.length} erro(s) encontrado(s). ` +
+      'Corrija as variáveis de ambiente acima e reinicie o servidor.',
+    );
+  }
+
   const app = await NestFactory.create(AppModule);
 
   // ── Global API prefix ──
@@ -19,14 +79,6 @@ async function bootstrap() {
   );
 
   // ── CORS ──
-  const nodeEnv = process.env.NODE_ENV || 'development';
-  if (nodeEnv === 'production' && !process.env.FRONTEND_URL) {
-    throw new Error(
-      '❌ FRONTEND_URL é obrigatória em produção. ' +
-        'Defina a variável de ambiente FRONTEND_URL com a(s) URL(s) do frontend ' +
-        '(ex: https://meuapp.com ou https://app1.com,https://app2.com).',
-    );
-  }
 
   // Origens permitidas: FRONTEND_URL pode ser uma lista separada por vírgulas
   const rawOrigins = process.env.FRONTEND_URL || 'http://localhost:5173';
