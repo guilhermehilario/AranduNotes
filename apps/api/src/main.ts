@@ -67,7 +67,12 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   // ── Global API prefix ──
-  app.setGlobalPrefix('api');
+  // Rotas de diagnóstico (health, warmup) ficam sem o prefixo /api
+  // para serem acessadas diretamente por load balancers (Fly.io, Render) e
+  // serviços de monitoramento.
+  app.setGlobalPrefix('api', {
+    exclude: ['health', 'warmup'],
+  });
 
   // ── Security Headers (Helmet) ──
   app.use(

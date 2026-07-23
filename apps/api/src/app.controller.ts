@@ -18,7 +18,7 @@ export class AppController {
     };
   }
 
-  @Get('health')
+  @Get(['health', '/health'])
   async getHealth() {
     const dbHealthy = await this.prisma.isHealthy();
 
