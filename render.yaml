@@ -93,4 +93,4 @@ services:
     # ── Variáveis de Ambiente ──
     envVars:
       - key: VITE_API_URL
-        value: https://arandunotes-api.onrender.com/api
+        value: https://arandu-api.fly.dev/api
