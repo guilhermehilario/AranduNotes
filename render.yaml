@@ -53,9 +53,9 @@ services:
         sync: false
       - key: SMTP_PORT
         sync: false
-      - key: SMTP_USER
+      - key: EMAIL_USER
         sync: false
-      - key: SMTP_PASS
+      - key: EMAIL_PASSWORD
         sync: false
       - key: SMTP_FROM
         sync: false
