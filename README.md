@@ -197,8 +197,8 @@ FRONTEND_URL=http://localhost:5173
 # Use senha de app do Google: https://myaccount.google.com/apppasswords
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
-SMTP_USER=seu-email@gmail.com
-SMTP_PASS=sua-senha-de-app
+EMAIL_USER=seu-email@gmail.com
+EMAIL_PASSWORD=sua-senha-de-app
 SMTP_FROM=Arandu <seu-email@gmail.com>
 ```
 
