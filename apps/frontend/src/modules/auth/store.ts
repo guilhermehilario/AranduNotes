@@ -17,7 +17,9 @@ interface AuthState {
   updateUser: (user: User) => void;
 }
 
-export const useAuthStore = create<AuthState>()(
+// ⚠️ Cria a store primeiro (SEM onRehydrateStorage para evitar
+//    referência circular / temporal dead zone).
+const useAuthStoreBase = create<AuthState>()(
   persist(
     (set) => ({
       user: null,
@@ -40,17 +42,22 @@ export const useAuthStore = create<AuthState>()(
         accessToken: state.accessToken,
         isAuthenticated: state.isAuthenticated,
       }),
-      onRehydrateStorage: () => {
-        // Callback executado quando o estado persistido é carregado.
-        // O callback retornado roda APÓS a store ser criada, então
-        // useAuthStore já está acessível. Usamos setState() em vez de
-        // mutação direta para garantir que subscribers (React) sejam
-        // notificados corretamente.
-        return () => {
-          // eslint-disable-next-line @typescript-eslint/no-use-before-define
-          useAuthStore.setState({ isHydrated: true });
-        };
-      },
     },
   ),
 );
+
+// ── Subscrição de hidratação (APÓS a store existir) ──
+// Isso evita a referência circular onde onRehydrateStorage tentava
+// usar useAuthStore dentro do próprio create().
+// Para localStorage, a hidratação é síncrona — pode já ter ocorrido.
+
+if (useAuthStoreBase.persist.hasHydrated()) {
+  useAuthStoreBase.setState({ isHydrated: true });
+} else {
+  // Se ainda não hidratou, escuta o evento de conclusão
+  useAuthStoreBase.persist.onFinishHydration(() => {
+    useAuthStoreBase.setState({ isHydrated: true });
+  });
+}
+
+export const useAuthStore = useAuthStoreBase;

@@ -17,18 +17,30 @@ export class NotebooksService {
       }),
     );
 
-    const enriched = await Promise.all(
-      notebooks.map(async (nb) => {
-        const leavesCount = await this.prisma.withConnection(() =>
-          this.prisma.leaf.count({
-            where: { notebookId: nb.id, deletedAt: null },
-          }),
-        );
-        return { ...nb, leavesCount };
+    if (notebooks.length === 0) return [];
+
+    // ── Elimina o N+1 clássico ──
+    // Antes: 1 query (notebooks) + N queries (leaf.count p/ cada notebook)
+    // Agora: 1 query (notebooks) + 1 query (leaf.groupBy com _count)
+    const counts = await this.prisma.withConnection(() =>
+      this.prisma.leaf.groupBy({
+        by: ['notebookId'],
+        where: {
+          notebookId: { in: notebooks.map((nb) => nb.id) },
+          deletedAt: null,
+        },
+        _count: { id: true },
       }),
     );
 
-    return enriched;
+    const countMap = new Map(
+      counts.map((c) => [c.notebookId, c._count.id]),
+    );
+
+    return notebooks.map((nb) => ({
+      ...nb,
+      leavesCount: countMap.get(nb.id) ?? 0,
+    }));
   }
 
   async findOne(id: string, userId: string) {

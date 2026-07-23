@@ -1,6 +1,7 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, UseGuards } from '@nestjs/common';
 import { PrismaService } from './prisma/prisma.service';
 import { EmailService } from './common/email/email.service';
+import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 
 @Controller()
 export class AppController {
@@ -70,9 +71,11 @@ export class AppController {
    * - SMTP (e-mail)
    * - Informações do servidor (uptime, memória, Node)
    *
+   * ⚠️ Protegido por JWT — apenas usuários autenticados podem acessar.
    * Útil para debugging em produção, especialmente após cold starts.
    */
   @Get('debug/connections')
+  @UseGuards(JwtAuthGuard)
   async getConnectionsStatus() {
     const startTime = Date.now();
 
