@@ -46,18 +46,50 @@ const useAuthStoreBase = create<AuthState>()(
   ),
 );
 
-// ── Subscrição de hidratação (APÓS a store existir) ──
-// Isso evita a referência circular onde onRehydrateStorage tentava
-// usar useAuthStore dentro do próprio create().
-// Para localStorage, a hidratação é síncrona — pode já ter ocorrido.
+// ── Inicialização robusta da hidratação ──
+// O bloco try/catch + setTimeout garante que o loading SEMPRE
+// seja encerrado, mesmo em cenários de falha (token inválido,
+// erro de rede, API fora do ar, etc.).
+(function initializeHydration() {
+  try {
+    if (useAuthStoreBase.persist.hasHydrated()) {
+      useAuthStoreBase.setState({ isHydrated: true });
+      return;
+    }
 
-if (useAuthStoreBase.persist.hasHydrated()) {
-  useAuthStoreBase.setState({ isHydrated: true });
-} else {
-  // Se ainda não hidratou, escuta o evento de conclusão
-  useAuthStoreBase.persist.onFinishHydration(() => {
+    // Se ainda não hidratou, escuta o evento de conclusão
+    useAuthStoreBase.persist.onFinishHydration(() => {
+      try {
+        useAuthStoreBase.setState({ isHydrated: true });
+      } catch (error) {
+        console.error('[AuthStore] Erro ao finalizar hidratação:', error);
+      }
+    });
+  } catch {
+    // Se a API do persist não estiver disponível ou falhar,
+    // marca como hidratado mesmo assim para não travar o app.
     useAuthStoreBase.setState({ isHydrated: true });
-  });
-}
+  } finally {
+    // 🛡️ Fallback de segurança: após 2 segundos, força o fim do loading.
+    // Isso protege contra:
+    //   - onFinishHydration que nunca dispara
+    //   - hasHydrated() que nunca retorna true
+    //   - Erros silenciosos na API do persist
+    setTimeout(() => {
+      try {
+        if (!useAuthStoreBase.getState().isHydrated) {
+          console.warn(
+            '[AuthStore] Hydration timeout — forçando isHydrated=true '
+            + 'para evitar loading infinito.',
+          );
+          useAuthStoreBase.setState({ isHydrated: true });
+        }
+      } catch {
+        // Não é possível recuperar — o usuário verá loading infinito
+        // (caso extremamente raro)
+      }
+    }, 2000);
+  }
+})();
 
 export const useAuthStore = useAuthStoreBase;
