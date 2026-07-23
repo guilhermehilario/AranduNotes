@@ -22,6 +22,13 @@ primary_region = 'gru'
   min_machines_running = 0
   processes = ['app']
 
+  [http_service.health_check]
+    grace_period = '60s'
+    interval = '15s'
+    timeout = '10s'
+    method = 'GET'
+    path = '/api'
+
 [[vm]]
   memory = '512mb'
   cpus = 1
