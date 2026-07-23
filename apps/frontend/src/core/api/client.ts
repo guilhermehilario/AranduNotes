@@ -1,13 +1,44 @@
 import axios from "axios";
 import { useAuthStore } from "../../modules/auth/store";
 
+// ── Constantes de Timeout ──
+// Aumenta o timeout para lidar com cold starts do Render (pode levar 10-30s)
+const NORMAL_TIMEOUT = 30_000;        // 30s para requisições normais
+const COLD_START_TIMEOUT = 60_000;    // 60s para primeira requisição (cold start)
+
+// Detecta se é a primeira requisição (para aplicar timeout maior)
+let isFirstRequest = true;
+
 export const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || "http://localhost:3000/api",
   headers: {
     "Content-Type": "application/json",
   },
   withCredentials: true, // Para cookies seguros contendo Refresh Tokens
+  timeout: COLD_START_TIMEOUT, // Timeout generoso para cold start
 });
+
+// ── Interceptor para ajustar timeout por requisição ──
+api.interceptors.request.use(
+  (config) => {
+    // Na primeira requisição (após um período), usa timeout maior
+    // para lidar com cold start do Render
+    if (isFirstRequest) {
+      config.timeout = COLD_START_TIMEOUT;
+      isFirstRequest = false;
+
+      // Reseta o flag após 20 minutos sem requisições (estimativa de idle do Render)
+      setTimeout(() => {
+        isFirstRequest = true;
+      }, 20 * 60 * 1000);
+    } else {
+      config.timeout = NORMAL_TIMEOUT;
+    }
+
+    return config;
+  },
+  (error) => Promise.reject(error),
+);
 
 // ── Helpers ──
 

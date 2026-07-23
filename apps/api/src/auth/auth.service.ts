@@ -99,9 +99,11 @@ export class AuthService {
       throw new BadRequestException('Você deve aceitar os Termos de Uso e Responsabilidade para criar uma conta.');
     }
 
-    const existing = await this.prisma.user.findUnique({
-      where: { email: email.toLowerCase() },
-    });
+    const existing = await this.prisma.withConnection(() =>
+      this.prisma.user.findUnique({
+        where: { email: email.toLowerCase() },
+      }),
+    );
     if (existing) {
       throw new ConflictException('E-mail já cadastrado');
     }
@@ -116,19 +118,21 @@ export class AuthService {
     const verificationToken = smtpConfigured ? uuidv4() : null;
     const verificationTokenExpires = smtpConfigured ? new Date(Date.now() + 24 * 60 * 60 * 1000) : null;
 
-    await this.prisma.user.create({
-      data: {
-        name,
-        email: email.toLowerCase(),
-        password: hashedPassword,
-        avatarUrl,
-        emailVerified,
-        verificationToken,
-        verificationTokenExpires,
-        acceptedTerms: true,
-        acceptedTermsAt: new Date(),
-      },
-    });
+    await this.prisma.withConnection(() =>
+      this.prisma.user.create({
+        data: {
+          name,
+          email: email.toLowerCase(),
+          password: hashedPassword,
+          avatarUrl,
+          emailVerified,
+          verificationToken,
+          verificationTokenExpires,
+          acceptedTerms: true,
+          acceptedTermsAt: new Date(),
+        },
+      }),
+    );
 
     if (smtpConfigured) {
       try {
@@ -155,15 +159,16 @@ export class AuthService {
         if (isDev) {
           this.logger.warn(
             `DEV: Auto-verificando ${email} porque o e-mail falhou ao ser enviado.`,
-          );
-          await this.prisma.user.update({
-            where: { email: email.toLowerCase() },
-            data: {
-              emailVerified: true,
-              verificationToken: null,
-              verificationTokenExpires: null,
-            },
-          });
+          );    await this.prisma.withConnection(() =>
+      this.prisma.user.update({
+        where: { email: email.toLowerCase() },
+        data: {
+          emailVerified: true,
+          verificationToken: null,
+          verificationTokenExpires: null,
+        },
+      }),
+    );
           return {
             message:
               'Conta criada com sucesso! (Modo desenvolvimento: e-mail auto-verificado)',
@@ -203,62 +208,90 @@ export class AuthService {
     email: string,
     password: string,
   ): Promise<{ user: UserPublic; accessToken: string; refreshToken: string }> {
-    const user = await this.prisma.user.findUnique({
-      where: { email: email.toLowerCase() },
-    });
+    try {
+      const user = await this.prisma.withConnection(() =>
+        this.prisma.user.findUnique({
+          where: { email: email.toLowerCase() },
+        }),
+      );
 
-    let isPasswordValid = false;
+      let isPasswordValid = false;
 
-    if (user) {
-      // Tenta comparacao com bcrypt (senhas ja hashadas — usuarios novos)
-      isPasswordValid = await bcrypt.compare(password, user.password);
+      if (user) {
+        // Tenta comparacao com bcrypt (senhas ja hashadas — usuarios novos)
+        isPasswordValid = await bcrypt.compare(password, user.password);
 
-      // Fallback para senhas em texto puro migradas do db.json antigo
-      // O sistema antigo (Express) armazenava senhas sem hash.
-      // Quando detectamos texto puro, comparamos diretamente e, se bater,
-      // fazemos o re-hash imediato para bcrypt.
-      if (!isPasswordValid && !user.password.startsWith('$2')) {
-        if (password === user.password) {
-          const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
-          await this.prisma.user.update({
-            where: { id: user.id },
-            data: { password: hashedPassword },
-          });
-          isPasswordValid = true;
-          this.logger.log(
-            `Senha do usuário ${user.email} migrada de texto puro para bcrypt.`,
-          );
+        // Fallback para senhas em texto puro migradas do db.json antigo
+        // O sistema antigo (Express) armazenava senhas sem hash.
+        // Quando detectamos texto puro, comparamos diretamente e, se bater,
+        // fazemos o re-hash imediato para bcrypt.
+        if (!isPasswordValid && !user.password.startsWith('$2')) {
+          if (password === user.password) {
+            const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
+            await this.prisma.withConnection(() =>
+              this.prisma.user.update({
+                where: { id: user.id },
+                data: { password: hashedPassword },
+              }),
+            );
+            isPasswordValid = true;
+            this.logger.log(
+              `Senha do usuário ${user.email} migrada de texto puro para bcrypt.`,
+            );
+          }
         }
       }
-    }
 
-    if (!user || !isPasswordValid) {
-      throw new UnauthorizedException('E-mail ou senha incorretos');
-    }
+      if (!user || !isPasswordValid) {
+        throw new UnauthorizedException('E-mail ou senha incorretos');
+      }
 
-    if (user.deletedAt) {
-      throw new UnauthorizedException(
-        'Esta conta foi excluída. Não é possível fazer login.',
-      );
-    }
+      if (user.deletedAt) {
+        throw new UnauthorizedException(
+          'Esta conta foi excluída. Não é possível fazer login.',
+        );
+      }
 
-    // Se SMTP não estiver configurado, pula a verificação de email
-    // (o email foi auto-verificado no registro ou é um usuário migrado).
-    const smtpConfigured = this.emailService.isSmtpConfigured;
-    if (smtpConfigured && !user.emailVerified) {
-      throw new UnauthorizedException(
-        'E-mail não verificado. Por favor, confira sua caixa de entrada.',
-      );
-    }
+      // Se SMTP não estiver configurado, pula a verificação de email
+      // (o email foi auto-verificado no registro ou é um usuário migrado).
+      const smtpConfigured = this.emailService.isSmtpConfigured;
+      if (smtpConfigured && !user.emailVerified) {
+        throw new UnauthorizedException(
+          'E-mail não verificado. Por favor, confira sua caixa de entrada.',
+        );
+      }
 
-    const tokens = this.generateTokens(user.id);
-    return { user: this.stripPassword(user), ...tokens };
+      const tokens = this.generateTokens(user.id);
+      return { user: this.stripPassword(user), ...tokens };
+    } catch (error) {
+      // Se for erro de conexão, loga e retorna mensagem amigável
+      const errMsg = (error as Error).message?.toLowerCase() || '';
+      const isConnectionError =
+        errMsg.includes('connection') ||
+        errMsg.includes('timeout') ||
+        errMsg.includes('database') ||
+        errMsg.includes('pool');
+
+      if (isConnectionError) {
+        this.logger.error(
+          `[LOGIN] Erro de conexão ao banco: ${(error as Error).message}`,
+        );
+        throw new UnauthorizedException(
+          'O serviço de autenticação está temporariamente indisponível. ' +
+          'O servidor pode estar inicializando. Tente novamente em alguns instantes.',
+        );
+      }
+
+      throw error;
+    }
   }
 
   async verifyEmail(token: string): Promise<{ message: string }> {
-    const user = await this.prisma.user.findFirst({
-      where: { verificationToken: token },
-    });
+    const user = await this.prisma.withConnection(() =>
+      this.prisma.user.findFirst({
+        where: { verificationToken: token },
+      }),
+    );
 
     if (!user) {
       throw new BadRequestException(
@@ -285,22 +318,26 @@ export class AuthService {
       );
     }
 
-    await this.prisma.user.update({
-      where: { id: user.id },
-      data: {
-        emailVerified: true,
-        verificationToken: null,
-        verificationTokenExpires: null,
-      },
-    });
+    await this.prisma.withConnection(() =>
+      this.prisma.user.update({
+        where: { id: user.id },
+        data: {
+          emailVerified: true,
+          verificationToken: null,
+          verificationTokenExpires: null,
+        },
+      }),
+    );
 
     return { message: 'E-mail verificado com sucesso! Faça login para continuar.' };
   }
 
   async resendVerification(email: string): Promise<{ message: string }> {
-    const user = await this.prisma.user.findUnique({
-      where: { email: email.toLowerCase() },
-    });
+    const user = await this.prisma.withConnection(() =>
+      this.prisma.user.findUnique({
+        where: { email: email.toLowerCase() },
+      }),
+    );
 
     if (!user) {
       return {
@@ -324,13 +361,15 @@ export class AuthService {
     const verificationToken = uuidv4();
     const verificationTokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
-    await this.prisma.user.update({
-      where: { id: user.id },
-      data: {
-        verificationToken,
-        verificationTokenExpires,
-      },
-    });
+    await this.prisma.withConnection(() =>
+      this.prisma.user.update({
+        where: { id: user.id },
+        data: {
+          verificationToken,
+          verificationTokenExpires,
+        },
+      }),
+    );
 
     try {
       await this.emailService.sendVerificationEmail(
@@ -356,9 +395,11 @@ export class AuthService {
         secret: this.refreshSecret,
       }) as { userId: string };
 
-      const user = await this.prisma.user.findUnique({
+    const user = await this.prisma.withConnection(() =>
+      this.prisma.user.findUnique({
         where: { id: decoded.userId },
-      });
+      }),
+    );
 
       if (!user) {
         throw new UnauthorizedException('Usuário não encontrado');
@@ -389,9 +430,11 @@ export class AuthService {
   }
 
   async getProfile(userId: string): Promise<UserPublic> {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-    });
+    const user = await this.prisma.withConnection(() =>
+      this.prisma.user.findUnique({
+        where: { id: userId },
+      }),
+    );
 
     if (!user) {
       throw new UnauthorizedException('Usuário não encontrado');
@@ -413,9 +456,11 @@ export class AuthService {
   }
 
   async validateUser(userId: string): Promise<UserPublic | null> {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-    });
+    const user = await this.prisma.withConnection(() =>
+      this.prisma.user.findUnique({
+        where: { id: userId },
+      }),
+    );
     if (!user) return null;
     if (user.deletedAt) return null;
     return this.stripPassword(user);
@@ -461,18 +506,22 @@ export class AuthService {
     }
 
     const hashedPassword = await bcrypt.hash(newPassword, SALT_ROUNDS);
-    await this.prisma.user.update({
-      where: { id: userId },
-      data: { password: hashedPassword },
-    });
+    await this.prisma.withConnection(() =>
+      this.prisma.user.update({
+        where: { id: userId },
+        data: { password: hashedPassword },
+      }),
+    );
 
     return { message: 'Senha alterada com sucesso' };
   }
 
   async forgotPassword(email: string): Promise<{ message: string }> {
-    const user = await this.prisma.user.findUnique({
-      where: { email: email.toLowerCase() },
-    });
+    const user = await this.prisma.withConnection(() =>
+      this.prisma.user.findUnique({
+        where: { email: email.toLowerCase() },
+      }),
+    );
 
     if (!user) {
       return {
@@ -533,9 +582,11 @@ export class AuthService {
     token: string,
     newPassword: string,
   ): Promise<{ message: string }> {
-    const user = await this.prisma.user.findFirst({
-      where: { resetPasswordToken: token },
-    });
+    const user = await this.prisma.withConnection(() =>
+      this.prisma.user.findFirst({
+        where: { resetPasswordToken: token },
+      }),
+    );
 
     if (!user) {
       throw new BadRequestException(
