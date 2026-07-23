@@ -29,8 +29,14 @@ Antes do primeiro deploy, prepare os valores das variáveis de ambiente.
 | `PORT` | Porta que o servidor irá escutar | ❌ Opcional | Padrão: `10000` (definida automaticamente pelo Render) |
 
 **SMTP (opcional):** Para enviar e-mails reais (confirmação de cadastro, recuperação de senha), configure:
-`SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`. Se não configurado,
+`SMTP_HOST`, `SMTP_PORT`, `EMAIL_USER`, `EMAIL_PASSWORD`, `SMTP_FROM`. Se não configurado,
 e-mails são logados no console.
+
+> ⚠️ **Plano Free do Render:** O plano gratuito **bloqueia tráfego SMTP de saída** nas portas
+> padrão 25, 465 e 587. Se você estiver no plano free, use a **porta alternativa 2525**
+> (`SMTP_PORT=2525`), que é suportada pela maioria dos provedores SMTP (Brevo, SendGrid,
+> Mailgun, etc.) e utiliza STARTTLS como a porta 587. Configure esta variável no painel do
+> Render ou faça upgrade para um plano pago para liberar as portas 465/587.
 
 **Para o Turso (banco de dados remoto recomendado):**
 

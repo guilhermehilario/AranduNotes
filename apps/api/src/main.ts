@@ -183,5 +183,11 @@ async function bootstrap() {
 
 bootstrap().catch((err) => {
   console.error('❌ Falha ao iniciar o servidor:', err);
+  console.error('📋 Diagnóstico:');
+  console.error(`  NODE_ENV: ${process.env.NODE_ENV || 'development'}`);
+  console.error(`  DATABASE_URL: ${(process.env.DATABASE_URL || 'não definida').replace(/\?authToken=([^&]+)/i, '?authToken=***')}`);
+  console.error(`  PORT: ${process.env.PORT || '3000'}`);
+  console.error(`  Memory RSS: ${Math.round(process.memoryUsage().rss / 1024 / 1024)}MB`);
+  console.error(`  Heap Used: ${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB`);
   process.exit(1);
 });
