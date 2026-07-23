@@ -27,12 +27,14 @@ export class EmailService {
       this.configService.get<string>('SMTP_FROM') || 'noreply@arandu.app';
 
     // Timeouts configuráveis via env (em ms)
+    // Nota: Em ambientes cloud (Render, Fly.io), a latência para servidores SMTP
+    // pode ser maior. A porta 2525 é uma alternativa não bloqueada no Render free tier.
     const connectionTimeout =
-      parseInt(this.configService.get<string>('SMTP_CONNECTION_TIMEOUT') || '10000', 10);
+      parseInt(this.configService.get<string>('SMTP_CONNECTION_TIMEOUT') || '30000', 10);
     const greetingTimeout =
-      parseInt(this.configService.get<string>('SMTP_GREETING_TIMEOUT') || '10000', 10);
+      parseInt(this.configService.get<string>('SMTP_GREETING_TIMEOUT') || '30000', 10);
     const socketTimeout =
-      parseInt(this.configService.get<string>('SMTP_SOCKET_TIMEOUT') || '30000', 10);
+      parseInt(this.configService.get<string>('SMTP_SOCKET_TIMEOUT') || '60000', 10);
 
     // Extrai nome e email do campo from (ex: "Nome <email@dominio.com>")
     const fromMatch = rawFrom.match(/^(.+)\s*<(.+)>$/);
@@ -52,7 +54,8 @@ export class EmailService {
         greetingTimeout,
         socketTimeout,
         // Desabilita TLS se não for necessário (alguns relays exigem)
-        requireTLS: port === 465 || port === 587,
+        // Exige TLS nas portas padrão SMTP e na porta alternativa 2525 (STARTTLS)
+        requireTLS: port === 465 || port === 587 || port === 2525,
         // Pool de conexões — maxMessages: 1 força uma conexão nova por envio
         // para evitar reuso de conexões quebradas após timeout
         pool: true,
@@ -66,7 +69,7 @@ export class EmailService {
       );
     } else {
       this.logger.warn(
-        'SMTP não configurado. Defina SMTP_HOST, SMTP_USER e SMTP_PASS no .env. ' +
+        'SMTP não configurado. Defina SMTP_HOST, EMAIL_USER e EMAIL_PASSWORD no .env. ' +
         'E-mails serão simulados no console.',
       );
     }
@@ -158,10 +161,24 @@ export class EmailService {
 
       // Mensagens específicas por tipo de erro
       if (err.code === 'ETIMEDOUT' || err.code === 'ESOCKET') {
-        throw new Error(
-          'O servidor de e-mail não respondeu a tempo (timeout). ' +
-          'Verifique se o host SMTP está acessível e as configurações de firewall.',
-        );
+        // Em ambientes como Render free tier, portas SMTP (25, 465, 587) são bloqueadas.
+        // Soluções: (1) usar porta 2525 (suportada por Brevo/SendGrid/Mailgun),
+        // (2) fazer upgrade do plano Render, ou (3) migrar para API HTTP de e-mail.
+        const isRenderBlock =
+          err.code === 'ETIMEDOUT' &&
+          this.smtpPort !== null &&
+          (this.smtpPort === 25 || this.smtpPort === 465 || this.smtpPort === 587);
+
+        const message = isRenderBlock
+          ? 'Falha de conexão com o servidor SMTP (timeout). ' +
+            'Em ambientes cloud como o Render, as portas SMTP padrão (25, 465, 587) ' +
+            'podem ser bloqueadas no plano gratuito. ' +
+            'Tente usar a porta alternativa 2525 (STARTTLS) ou faça upgrade do plano. ' +
+            'Verifique as configurações de SMTP_HOST e SMTP_PORT no painel do Render.'
+          : 'O servidor de e-mail não respondeu a tempo (timeout). ' +
+            'Verifique se o host SMTP está acessível e as configurações de firewall.';
+
+        throw new Error(message);
       }
       if (err.code === 'ECONNREFUSED') {
         throw new Error(
@@ -171,7 +188,7 @@ export class EmailService {
       }
       if (err.code === 'EAUTH') {
         throw new Error(
-          'Autenticação SMTP falhou. Verifique SMTP_USER e SMTP_PASS.',
+          'Autenticação SMTP falhou. Verifique EMAIL_USER e EMAIL_PASSWORD.',
         );
       }
 

@@ -48,7 +48,16 @@ services:
         value: https://arandunotes.onrender.com
       # ── SMTP (Nodemailer) — opcional ──
       # Se não configurado, e-mails são logados no console (útil para testes).
-      # Para envio real, configure um serviço SMTP (ex: Gmail, SendGrid, Mailgun, etc.)
+      # Para envio real, configure um serviço SMTP (ex: Brevo, SendGrid, Mailgun, etc.)
+      #
+      # ⚠️ ATENÇÃO — Plano Free do Render:
+      #   O plano gratuito do Render BLOQUEIA tráfego de saída nas portas SMTP
+      #   padrão (25, 465, 587). Para usar SMTP no free tier:
+      #   1. Use a porta alternativa 2525 (STARTTLS) — suportada por Brevo,
+      #      SendGrid, Mailgun e outros provedores.
+      #      Ex: SMTP_PORT=2525
+      #   2. Ou faça upgrade para um plano pago do Render.
+      #   3. Ou migre para uma API de e-mail via HTTP (porta 443 nunca bloqueada).
       - key: SMTP_HOST
         sync: false
       - key: SMTP_PORT
