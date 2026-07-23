@@ -22,7 +22,7 @@ function log(level, msg) {
     log('log', 'Iniciando migrações do Prisma...');
 
     try {
-      await exec('npx prisma migrate deploy', { timeout: 60000 });
+      await exec('cd apps/api && npx prisma migrate deploy', { timeout: 60000 });
       log('log', '✅ Migrações aplicadas com sucesso');
     } catch (err) {
       // ⚠️ Falha na migração NÃO deve impedir o app de iniciar.
@@ -35,7 +35,7 @@ function log(level, msg) {
       setTimeout(async () => {
         try {
           log('log', '🔄 Tentando migração novamente em background...');
-          await exec('npx prisma migrate deploy', { timeout: 60000 });
+          await exec('cd apps/api && npx prisma migrate deploy', { timeout: 60000 });
           log('log', '✅ Migrações aplicadas com sucesso (2ª tentativa)');
         } catch (retryErr) {
           log('error', `❌ Migração falhou novamente em background: ${retryErr.message}`);
