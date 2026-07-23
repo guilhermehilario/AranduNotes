@@ -7,7 +7,6 @@
 # ──────────────────────────────────────────────────────────────────
 
 services:
-
   # ────────────────────────────────────────────────────────────────
   # 1. API — NestJS + Prisma (Web Service)
   # ────────────────────────────────────────────────────────────────
@@ -46,7 +45,7 @@ services:
       - key: REFRESH_SECRET
         generateValue: true
       - key: FRONTEND_URL
-        value: https://arandu-frontend.onrender.com
+        value: https://arandunotes.onrender.com
       # ── SMTP (Nodemailer) — opcional ──
       # Se não configurado, e-mails são logados no console (útil para testes).
       # Para envio real, configure um serviço SMTP (ex: Gmail, SendGrid, Mailgun, etc.)
@@ -60,7 +59,6 @@ services:
         sync: false
       - key: SMTP_FROM
         sync: false
-
 
   # ────────────────────────────────────────────────────────────────
   # 2. Frontend — React + Vite (Static Site)
@@ -86,4 +84,4 @@ services:
     # ── Variáveis de Ambiente ──
     envVars:
       - key: VITE_API_URL
-        value: https://arandu-api.onrender.com/api
+        value: https://arandunotes-api.onrender.com/api
