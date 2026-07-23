@@ -1,9 +1,9 @@
-# fly.toml app configuration file generated for arandu-server on 2026-07-14T21:08:51-03:00
+# fly.toml app configuration file generated for arandu-api on 2026-07-23T16:55:56-03:00
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
-app = 'arandu-server'
+app = 'arandu-api'
 primary_region = 'gru'
 
 [build]
