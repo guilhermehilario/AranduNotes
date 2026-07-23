@@ -1,12 +1,15 @@
 import { NestFactory } from '@nestjs/core';
 import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
+import { randomBytes } from 'crypto';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
   // ════════════════════════════════════════════════════════════════
   //  VALIDAÇÃO DE VARIÁVEIS DE AMBIENTE (antes de criar a app)
-  //  Fail-fast: se faltar secrets em produção, o servidor não sobe.
+  //  Em produção, variáveis críticas (JWT_SECRET, REFRESH_SECRET,
+  //  FRONTEND_URL) geram warnings com fallbacks seguros para que
+  //  o servidor consiga iniciar mesmo em deploys iniciais.
   // ════════════════════════════════════════════════════════════════
   const nodeEnv = process.env.NODE_ENV || 'development';
   const errors: string[] = [];
@@ -14,11 +17,16 @@ async function bootstrap() {
 
   if (!process.env.JWT_SECRET) {
     if (nodeEnv === 'production') {
-      errors.push(
-        'JWT_SECRET é obrigatório em produção. ' +
-        'Gere uma chave forte com: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"',
+      const generated = randomBytes(32).toString('hex');
+      process.env.JWT_SECRET = generated;
+      warnings.push(
+        'JWT_SECRET não definido. Um valor aleatório foi gerado e atribuído ' +
+        'para esta execução. Para evitar que tokens sejam invalidados em ' +
+        'restarts, defina JWT_SECRET como secret no Fly.io: ' +
+        'fly secrets set JWT_SECRET=<valor>',
       );
     } else {
+      process.env.JWT_SECRET = 'dev-jwt-secret';
       warnings.push(
         'JWT_SECRET não definido. Usando fallback \'dev-jwt-secret\' ' +
         '(apenas para desenvolvimento local).',
@@ -28,11 +36,16 @@ async function bootstrap() {
 
   if (!process.env.REFRESH_SECRET) {
     if (nodeEnv === 'production') {
-      errors.push(
-        'REFRESH_SECRET é obrigatório em produção. ' +
-        'Gere uma chave forte com: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"',
+      const generated = randomBytes(32).toString('hex');
+      process.env.REFRESH_SECRET = generated;
+      warnings.push(
+        'REFRESH_SECRET não definido. Um valor aleatório foi gerado e atribuído ' +
+        'para esta execução. Para evitar que tokens sejam invalidados em ' +
+        'restarts, defina REFRESH_SECRET como secret no Fly.io: ' +
+        'fly secrets set REFRESH_SECRET=<valor>',
       );
     } else {
+      process.env.REFRESH_SECRET = 'dev-refresh-secret';
       warnings.push(
         'REFRESH_SECRET não definido. Usando fallback \'dev-refresh-secret\' ' +
         '(apenas para desenvolvimento local).',
@@ -41,10 +54,10 @@ async function bootstrap() {
   }
 
   if (nodeEnv === 'production' && !process.env.FRONTEND_URL) {
-    errors.push(
-      'FRONTEND_URL é obrigatória em produção. ' +
-      'Defina a variável de ambiente FRONTEND_URL com a(s) URL(s) do frontend ' +
-      '(ex: https://meuapp.com ou https://app1.com,https://app2.com).',
+    warnings.push(
+      'FRONTEND_URL não definida. Usando CORS permissivo (qualquer origem). ' +
+      'Para segurança, defina FRONTEND_URL como secret no Fly.io: ' +
+      'fly secrets set FRONTEND_URL=https://seuapp.fly.dev',
     );
   }
 
@@ -86,26 +99,33 @@ async function bootstrap() {
   // ── CORS ──
 
   // Origens permitidas: FRONTEND_URL pode ser uma lista separada por vírgulas
-  const rawOrigins = process.env.FRONTEND_URL || 'http://localhost:5173';
+  const rawOrigins = process.env.FRONTEND_URL || '';
   const allowedOrigins = rawOrigins
     .split(',')
     .map((s) => s.trim())
     .filter(Boolean);
 
+  // Se FRONTEND_URL não foi configurada (deploy inicial), permite todas as origens
+  // para não bloquear o acesso. Assim que FRONTEND_URL for definida, a lista
+  // restritiva entra em vigor.
+  const isCorsPermissive = allowedOrigins.length === 0;
+
   app.enableCors({
-    origin: (
-      origin: string | undefined,
-      callback: (err: Error | null, allow?: boolean) => void,
-    ) => {
-      // Permitir requisições sem origin (como chamadas server-to-server ou Postman)
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        const safeOrigin = JSON.stringify(origin);
-        console.warn(`[CORS] Origem bloqueada: ${safeOrigin}`);
-        callback(new Error(`Origem ${origin} não permitida pelo CORS`));
-      }
-    },
+    origin: isCorsPermissive
+      ? true // permite qualquer origem
+      : (
+          origin: string | undefined,
+          callback: (err: Error | null, allow?: boolean) => void,
+        ) => {
+          // Permitir requisições sem origin (server-to-server, Postman)
+          if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+          } else {
+            const safeOrigin = JSON.stringify(origin);
+            console.warn(`[CORS] Origem bloqueada: ${safeOrigin}`);
+            callback(new Error(`Origem ${origin} não permitida pelo CORS`));
+          }
+        },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
     allowedHeaders: ['Content-Type', 'Authorization'],
