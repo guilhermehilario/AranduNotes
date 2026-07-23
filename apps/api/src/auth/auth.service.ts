@@ -422,6 +422,9 @@ export class AuthService {
 
   async resendVerification(email: string): Promise<{ message: string }> {
     const normalizedEmail = email.trim().toLowerCase();
+
+    this.logger.log(`Solicitação de reenvio de verificação para: ${normalizedEmail}`);
+
     const user = await this.prisma.withConnection(() =>
       this.prisma.user.findUnique({
         where: { email: normalizedEmail },
@@ -452,14 +455,21 @@ export class AuthService {
     const verificationToken = uuidv4();
     const verificationTokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
+    // Garante que o update persista atomicamente
     await this.prisma.withConnection(() =>
-      this.prisma.user.update({
-        where: { id: user.id },
-        data: {
-          verificationToken,
-          verificationTokenExpires,
-        },
+      this.prisma.$transaction(async (tx) => {
+        await tx.user.update({
+          where: { id: user.id },
+          data: {
+            verificationToken,
+            verificationTokenExpires,
+          },
+        });
       }),
+    );
+
+    this.logger.log(
+      `Novo token de verificação salvo para ${user.email} (ID: ${user.id})`,
     );
 
     try {
@@ -561,24 +571,35 @@ export class AuthService {
     userId: string,
     data: { name?: string; avatarUrl?: string },
   ): Promise<UserPublic> {
-    const user = await this.prisma.withConnection(() =>
-      this.prisma.user.findUnique({
-        where: { id: userId },
+    // Usa $transaction para atomicidade: verifica existência + atualiza
+    // na mesma transação, garantindo que a atualização persista.
+    const result = await this.prisma.withConnection(() =>
+      this.prisma.$transaction(async (tx) => {
+        const user = await tx.user.findUnique({
+          where: { id: userId },
+        });
+
+        if (!user) {
+          throw new UnauthorizedException("Usuário não encontrado");
+        }
+
+        const updated = await tx.user.update({
+          where: { id: userId },
+          data: {
+            ...(data.name !== undefined && { name: data.name }),
+            ...(data.avatarUrl !== undefined && { avatarUrl: data.avatarUrl }),
+          },
+        });
+
+        this.logger.log(
+          `Perfil atualizado: ${user.email} (ID: ${user.id}) - name: ${data.name !== undefined ? 'alterado' : 'mantido'}, avatarUrl: ${data.avatarUrl !== undefined ? 'alterado' : 'mantido'}`,
+        );
+
+        return this.stripPassword(updated);
       }),
     );
-    if (!user) throw new UnauthorizedException("Usuário não encontrado");
 
-    const updated = await this.prisma.withConnection(() =>
-      this.prisma.user.update({
-        where: { id: userId },
-        data: {
-          ...(data.name !== undefined && { name: data.name }),
-          ...(data.avatarUrl !== undefined && { avatarUrl: data.avatarUrl }),
-        },
-      }),
-    );
-
-    return this.stripPassword(updated);
+    return result;
   }
 
   async changePassword(
@@ -591,6 +612,8 @@ export class AuthService {
         `A nova senha deve ter no mínimo ${MIN_PASSWORD_LENGTH} caracteres`,
       );
     }
+
+    this.logger.log(`Solicitação de alteração de senha: ${userId}`);
 
     const user = await this.prisma.withConnection(() =>
       this.prisma.user.findUnique({
@@ -608,18 +631,27 @@ export class AuthService {
     }
 
     const hashedPassword = await bcrypt.hash(newPassword, SALT_ROUNDS);
+
+    // Garante que a nova senha persista atomicamente
     await this.prisma.withConnection(() =>
-      this.prisma.user.update({
-        where: { id: userId },
-        data: { password: hashedPassword },
+      this.prisma.$transaction(async (tx) => {
+        await tx.user.update({
+          where: { id: userId },
+          data: { password: hashedPassword },
+        });
       }),
     );
+
+    this.logger.log(`✅ Senha alterada com sucesso para usuário ${userId}`);
 
     return { message: "Senha alterada com sucesso" };
   }
 
   async forgotPassword(email: string): Promise<{ message: string }> {
     const normalizedEmail = email.trim().toLowerCase();
+
+    this.logger.log(`Solicitação de recuperação de senha para: ${normalizedEmail}`);
+
     const user = await this.prisma.withConnection(() =>
       this.prisma.user.findUnique({
         where: { email: normalizedEmail },
@@ -644,14 +676,21 @@ export class AuthService {
     const resetToken = uuidv4();
     const resetTokenExpires = new Date(Date.now() + 60 * 60 * 1000);
 
+    // Salva o token de reset atomicamente
     await this.prisma.withConnection(() =>
-      this.prisma.user.update({
-        where: { id: user.id },
-        data: {
-          resetPasswordToken: resetToken,
-          resetPasswordTokenExpires: resetTokenExpires,
-        },
+      this.prisma.$transaction(async (tx) => {
+        await tx.user.update({
+          where: { id: user.id },
+          data: {
+            resetPasswordToken: resetToken,
+            resetPasswordTokenExpires: resetTokenExpires,
+          },
+        });
       }),
+    );
+
+    this.logger.log(
+      `Token de reset salvo para ${user.email} (ID: ${user.id})`,
     );
 
     try {
@@ -668,13 +707,16 @@ export class AuthService {
       this.logger.error(
         `Falha ao enviar e-mail de recuperação para ${email}: ${err.message}`,
       );
+      // Rollback do token em uma transação separada
       await this.prisma.withConnection(() =>
-        this.prisma.user.update({
-          where: { id: user.id },
-          data: {
-            resetPasswordToken: null,
-            resetPasswordTokenExpires: null,
-          },
+        this.prisma.$transaction(async (tx) => {
+          await tx.user.update({
+            where: { id: user.id },
+            data: {
+              resetPasswordToken: null,
+              resetPasswordTokenExpires: null,
+            },
+          });
         }),
       );
     }
@@ -689,33 +731,7 @@ export class AuthService {
     token: string,
     newPassword: string,
   ): Promise<{ message: string }> {
-    const user = await this.prisma.withConnection(() =>
-      this.prisma.user.findFirst({
-        where: { resetPasswordToken: token },
-      }),
-    );
-
-    if (!user) {
-      throw new BadRequestException(
-        "Token de recuperação inválido. Solicite um novo link.",
-      );
-    }
-
-    // Contas excluídas não podem redefinir senha
-    if (user.deletedAt) {
-      throw new BadRequestException(
-        "Token de recuperação inválido. Solicite um novo link.",
-      );
-    }
-
-    if (
-      !user.resetPasswordTokenExpires ||
-      user.resetPasswordTokenExpires < new Date()
-    ) {
-      throw new BadRequestException(
-        "Token de recuperação expirado. Solicite um novo link.",
-      );
-    }
+    this.logger.log(`Iniciando redefinição de senha com token`);
 
     if (!this.validatePassword(newPassword)) {
       throw new BadRequestException(
@@ -723,22 +739,72 @@ export class AuthService {
       );
     }
 
+    // bcrypt.hash é CPU-intensivo (SALT_ROUNDS=12, ~200-500ms) — executa
+    // fora da transação para não prender uma conexão do banco durante o hash.
     const hashedPassword = await bcrypt.hash(newPassword, SALT_ROUNDS);
 
-    await this.prisma.withConnection(() =>
-      this.prisma.user.update({
-        where: { id: user.id },
-        data: {
-          password: hashedPassword,
-          resetPasswordToken: null,
-          resetPasswordTokenExpires: null,
-        },
+    // Usa $transaction para garantir atomicidade: findFirst + validação + update
+    // na mesma transação, evitando race conditions e garantindo que a senha
+    // seja salva e o token invalidado atomicamente.
+    const result = await this.prisma.withConnection(() =>
+      this.prisma.$transaction(async (tx) => {
+        const user = await tx.user.findFirst({
+          where: { resetPasswordToken: token },
+        });
+
+        if (!user) {
+          this.logger.warn(
+            `Token de recuperação inválido: nenhum usuário encontrado`,
+          );
+          throw new BadRequestException(
+            "Token de recuperação inválido. Solicite um novo link.",
+          );
+        }
+
+        // Contas excluídas não podem redefinir senha
+        if (user.deletedAt) {
+          this.logger.warn(
+            `Token de recuperação para conta excluída: ${user.email} (ID: ${user.id})`,
+          );
+          throw new BadRequestException(
+            "Token de recuperação inválido. Solicite um novo link.",
+          );
+        }
+
+        if (
+          !user.resetPasswordTokenExpires ||
+          user.resetPasswordTokenExpires < new Date()
+        ) {
+          this.logger.warn(
+            `Token de recuperação expirado para ${user.email} (ID: ${user.id}). Expirava em: ${user.resetPasswordTokenExpires}`,
+          );
+          throw new BadRequestException(
+            "Token de recuperação expirado. Solicite um novo link.",
+          );
+        }
+
+        // Atualiza senha e invalida token na mesma transação
+        await tx.user.update({
+          where: { id: user.id },
+          data: {
+            password: hashedPassword,
+            resetPasswordToken: null,
+            resetPasswordTokenExpires: null,
+          },
+        });
+
+        this.logger.log(
+          `✅ Senha redefinida com sucesso para ${user.email} (ID: ${user.id})`,
+        );
+
+        return {
+          message:
+            "Senha redefinida com sucesso! Faça login com sua nova senha.",
+        };
       }),
     );
 
-    return {
-      message: "Senha redefinida com sucesso! Faça login com sua nova senha.",
-    };
+    return result;
   }
 
   async sendDeleteConfirmation(
@@ -808,17 +874,27 @@ export class AuthService {
       throw new BadRequestException("Código de confirmação incorreto.");
     }
 
-    const user = await this.prisma.withConnection(() =>
-      this.prisma.user.findUnique({
-        where: { id: payload.userId },
-      }),
-    );
-    if (!user) throw new NotFoundException("Usuário não encontrado");
+    this.logger.log(`Confirmação de exclusão de conta: ${payload.userId}`);
 
+    // Usa $transaction para garantir que a exclusão persista atomicamente
     await this.prisma.withConnection(() =>
-      this.prisma.user.update({
-        where: { id: payload.userId },
-        data: { deletedAt: new Date() },
+      this.prisma.$transaction(async (tx) => {
+        const user = await tx.user.findUnique({
+          where: { id: payload.userId },
+        });
+
+        if (!user) {
+          throw new NotFoundException("Usuário não encontrado");
+        }
+
+        await tx.user.update({
+          where: { id: payload.userId },
+          data: { deletedAt: new Date() },
+        });
+
+        this.logger.log(
+          `✅ Conta excluída permanentemente: ${user.email} (ID: ${user.id})`,
+        );
       }),
     );
 
