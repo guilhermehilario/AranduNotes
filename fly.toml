@@ -7,6 +7,8 @@ app = 'arandu-api'
 primary_region = 'gru'
 
 [build]
+  dockerfile = "apps/api/Dockerfile"
+
 [[mounts]]
   source = 'data'
   destination = '/data'
