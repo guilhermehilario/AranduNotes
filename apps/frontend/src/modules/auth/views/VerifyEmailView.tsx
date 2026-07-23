@@ -214,6 +214,13 @@ export const VerifyEmailView: React.FC = () => {
                 <RefreshCw className="h-4 w-4 mr-2" />
                 Reenviar E-mail
               </Button>
+              <Link
+                to="/login"
+                className="text-sm text-brand-500 hover:text-brand-600 font-medium inline-flex items-center gap-1.5"
+              >
+                <ArrowLeft className="h-3.5 w-3.5" />
+                Voltar para o login
+              </Link>
             </div>
           </div>
         );
