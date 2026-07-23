@@ -344,51 +344,80 @@ export class AuthService {
   }
 
   async verifyEmail(token: string): Promise<{ message: string }> {
-    const user = await this.prisma.withConnection(() =>
-      this.prisma.user.findFirst({
-        where: { verificationToken: token },
+    this.logger.log(`Iniciando verificação de e-mail com token`);
+
+    // Usa $transaction + withConnection para garantir:
+    // 1. Atomicidade: findFirst e update na mesma conexão/transação
+    // 2. Resiliência: withConnection reconecta e retenta em caso de falha de conexão
+    // 3. Consistência: evita race conditions com replicação (Turso/LibSQL)
+    const result = await this.prisma.withConnection(() =>
+      this.prisma.$transaction(async (tx) => {
+        const user = await tx.user.findFirst({
+          where: { verificationToken: token },
+        });
+
+        if (!user) {
+          this.logger.warn(
+            `Token de verificação inválido: nenhum usuário encontrado`,
+          );
+          throw new BadRequestException(
+            "Token de verificação inválido. Solicite um novo link.",
+          );
+        }
+
+        if (user.deletedAt) {
+          this.logger.warn(
+            `Token de verificação inválido para conta excluída: ${user.email} (ID: ${user.id})`,
+          );
+          throw new BadRequestException(
+            "Token de verificação inválido. Solicite um novo link.",
+          );
+        }
+
+        if (user.emailVerified) {
+          this.logger.log(
+            `E-mail já verificado anteriormente: ${user.email} (ID: ${user.id})`,
+          );
+          return {
+            message: "E-mail já verificado. Faça login para continuar.",
+          };
+        }
+
+        if (
+          !user.verificationTokenExpires ||
+          user.verificationTokenExpires < new Date()
+        ) {
+          this.logger.warn(
+            `Token de verificação expirado para ${user.email} (ID: ${user.id}). Expirava em: ${user.verificationTokenExpires}`,
+          );
+          throw new BadRequestException(
+            "Token de verificação expirado. Solicite um novo link.",
+          );
+        }
+
+        // Atualiza o usuário dentro da MESMA transação — escreve e confirma
+        // atomicamente com a leitura, garantindo que a mudança persista.
+        const updatedUser = await tx.user.update({
+          where: { id: user.id },
+          data: {
+            emailVerified: true,
+            verificationToken: null,
+            verificationTokenExpires: null,
+          },
+        });
+
+        this.logger.log(
+          `✅ E-mail verificado com sucesso: ${updatedUser.email} (ID: ${updatedUser.id}) - emailVerified: ${updatedUser.emailVerified}`,
+        );
+
+        return {
+          message:
+            "E-mail verificado com sucesso! Faça login para continuar.",
+        };
       }),
     );
 
-    if (!user) {
-      throw new BadRequestException(
-        "Token de verificação inválido. Solicite um novo link.",
-      );
-    }
-
-    if (user.deletedAt) {
-      throw new BadRequestException(
-        "Token de verificação inválido. Solicite um novo link.",
-      );
-    }
-
-    if (user.emailVerified) {
-      return { message: "E-mail já verificado. Faça login para continuar." };
-    }
-
-    if (
-      !user.verificationTokenExpires ||
-      user.verificationTokenExpires < new Date()
-    ) {
-      throw new BadRequestException(
-        "Token de verificação expirado. Solicite um novo link.",
-      );
-    }
-
-    await this.prisma.withConnection(() =>
-      this.prisma.user.update({
-        where: { id: user.id },
-        data: {
-          emailVerified: true,
-          verificationToken: null,
-          verificationTokenExpires: null,
-        },
-      }),
-    );
-
-    return {
-      message: "E-mail verificado com sucesso! Faça login para continuar.",
-    };
+    return result;
   }
 
   async resendVerification(email: string): Promise<{ message: string }> {
