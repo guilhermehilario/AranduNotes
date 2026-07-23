@@ -60,10 +60,12 @@ COPY --from=build /app /app
 RUN mkdir -p /data
 VOLUME /data
 
-# Entrypoint prepares the database.
-ENTRYPOINT [ "/app/docker-entrypoint.js" ]
-
-# Start the server by default, this can be overwritten at runtime
 EXPOSE 3000
 ENV DATABASE_URL="file:///data/sqlite.db"
-CMD [ "node", "apps/api/dist/main.js" ]
+
+# Entrypoint prepares the database (runs Prisma migrations, then starts the app)
+COPY apps/api/docker-entrypoint.js /app/docker-entrypoint.js
+RUN chmod +x /app/docker-entrypoint.js
+
+ENTRYPOINT ["node", "/app/docker-entrypoint.js"]
+CMD ["node", "apps/api/dist/main.js"]
