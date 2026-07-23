@@ -5,12 +5,12 @@ import {
   NotFoundException,
   BadRequestException,
   Logger,
-} from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
-import * as bcrypt from 'bcryptjs';
-import { v4 as uuidv4 } from 'uuid';
-import { PrismaService } from '../prisma/prisma.service';
-import { EmailService } from '../common/email/email.service';
+} from "@nestjs/common";
+import { JwtService } from "@nestjs/jwt";
+import * as bcrypt from "bcryptjs";
+import { v4 as uuidv4 } from "uuid";
+import { PrismaService } from "../prisma/prisma.service";
+import { EmailService } from "../common/email/email.service";
 
 const SALT_ROUNDS = 12;
 const MIN_PASSWORD_LENGTH = 8;
@@ -40,10 +40,13 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly emailService: EmailService,
   ) {
-    this.refreshSecret = process.env.REFRESH_SECRET ||
-      (process.env.NODE_ENV === 'production'
-        ? (() => { throw new Error('REFRESH_SECRET é obrigatório em produção'); })()
-        : 'dev-refresh-secret');
+    this.refreshSecret =
+      process.env.REFRESH_SECRET ||
+      (process.env.NODE_ENV === "production"
+        ? (() => {
+            throw new Error("REFRESH_SECRET é obrigatório em produção");
+          })()
+        : "dev-refresh-secret");
   }
 
   private stripPassword(user: {
@@ -65,7 +68,7 @@ export class AuthService {
     const accessToken = this.jwtService.sign({ userId });
     const refreshToken = this.jwtService.sign(
       { userId },
-      { secret: this.refreshSecret, expiresIn: '7d' },
+      { secret: this.refreshSecret, expiresIn: "7d" },
     );
     return { accessToken, refreshToken };
   }
@@ -89,17 +92,21 @@ export class AuthService {
     const normalizedEmail = email.trim().toLowerCase();
 
     if (!this.validateEmail(normalizedEmail)) {
-      throw new UnauthorizedException('Formato de e-mail inválido');
+      throw new UnauthorizedException("Formato de e-mail inválido");
     }
 
     if (!this.validatePassword(password)) {
-      throw new UnauthorizedException(`A senha deve ter no mínimo ${MIN_PASSWORD_LENGTH} caracteres`);
+      throw new UnauthorizedException(
+        `A senha deve ter no mínimo ${MIN_PASSWORD_LENGTH} caracteres`,
+      );
     }
 
     // A validação do DTO com @Equals(true) já garante que acceptedTerms é true,
     // mas fazemos uma dupla verificação aqui por segurança.
     if (!acceptedTerms) {
-      throw new BadRequestException('Você deve aceitar os Termos de Uso e Responsabilidade para criar uma conta.');
+      throw new BadRequestException(
+        "Você deve aceitar os Termos de Uso e Responsabilidade para criar uma conta.",
+      );
     }
 
     const existing = await this.prisma.withConnection(() =>
@@ -108,7 +115,7 @@ export class AuthService {
       }),
     );
     if (existing) {
-      throw new ConflictException('E-mail já cadastrado');
+      throw new ConflictException("E-mail já cadastrado");
     }
 
     const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
@@ -119,7 +126,9 @@ export class AuthService {
     const smtpConfigured = this.emailService.isSmtpConfigured;
     const emailVerified = !smtpConfigured;
     const verificationToken = smtpConfigured ? uuidv4() : null;
-    const verificationTokenExpires = smtpConfigured ? new Date(Date.now() + 24 * 60 * 60 * 1000) : null;
+    const verificationTokenExpires = smtpConfigured
+      ? new Date(Date.now() + 24 * 60 * 60 * 1000)
+      : null;
 
     await this.prisma.withConnection(() =>
       this.prisma.user.create({
@@ -146,7 +155,7 @@ export class AuthService {
         );
         return {
           message:
-            'Conta criada com sucesso! Verifique seu e-mail para confirmar o cadastro.',
+            "Conta criada com sucesso! Verifique seu e-mail para confirmar o cadastro.",
           email: normalizedEmail,
         };
       } catch (error) {
@@ -158,29 +167,32 @@ export class AuthService {
         // Fallback para desenvolvimento: se o email não foi enviado,
         // auto-verificamos o usuário para evitar deadlock.
         // Em produção, o usuário deve usar "Reenviar verificação".
-        const isDev = process.env.NODE_ENV === 'development';
+        const isDev = process.env.NODE_ENV === "development";
         if (isDev) {
           this.logger.warn(
             `DEV: Auto-verificando ${normalizedEmail} porque o e-mail falhou ao ser enviado.`,
-          );    await this.prisma.withConnection(() =>
-      this.prisma.user.update({
-        where: { email: normalizedEmail },
-        data: {
-          emailVerified: true,
-          verificationToken: null,
-          verificationTokenExpires: null,
-        },
-      }),
-    );
+          );
+          await this.prisma.withConnection(() =>
+            this.prisma.user.update({
+              where: { email: normalizedEmail },
+              data: {
+                emailVerified: true,
+                verificationToken: null,
+                verificationTokenExpires: null,
+              },
+            }),
+          );
           return {
             message:
-              'Conta criada com sucesso! (Modo desenvolvimento: e-mail auto-verificado)',
+              "Conta criada com sucesso! (Modo desenvolvimento: e-mail auto-verificado)",
             email: normalizedEmail,
           };
         }
 
         // Se for timeout, inclui info no log
-        const isTimeout = err.message?.includes('timeout') || err.message?.includes('ETIMEDOUT');
+        const isTimeout =
+          err.message?.includes("timeout") ||
+          err.message?.includes("ETIMEDOUT");
         if (isTimeout && !isDev) {
           this.logger.warn(
             `TIMEOUT SMTP ao enviar e-mail para ${normalizedEmail}. A conta foi criada mas a verificação falhou.`,
@@ -190,8 +202,8 @@ export class AuthService {
 
       return {
         message:
-          'Conta criada, mas não foi possível enviar o e-mail de verificação. ' +
-          'O servidor SMTP não respondeu a tempo. Tente novamente mais tarde ou use a opção ' +
+          "Conta criada, mas não foi possível enviar o e-mail de verificação. " +
+          "O servidor SMTP não respondeu a tempo. Tente novamente mais tarde ou use a opção " +
           '"Reenviar verificação" na tela de login.',
         email: normalizedEmail,
       };
@@ -201,8 +213,7 @@ export class AuthService {
       `Usuário ${normalizedEmail} registrado com email auto-verificado (SMTP não configurado).`,
     );
     return {
-      message:
-        'Conta criada com sucesso! Você já pode fazer login.',
+      message: "Conta criada com sucesso! Você já pode fazer login.",
       email: normalizedEmail,
     };
   }
@@ -218,9 +229,11 @@ export class AuthService {
     // Isso impede login duplicado mesmo se o frontend deixar passar.
     if (existingRefreshToken) {
       try {
-        this.jwtService.verify(existingRefreshToken, { secret: this.refreshSecret });
+        this.jwtService.verify(existingRefreshToken, {
+          secret: this.refreshSecret,
+        });
         throw new ConflictException(
-          'Você já está logado. Faça logout primeiro se quiser acessar outra conta.',
+          "Você já está logado. Faça logout primeiro se quiser acessar outra conta.",
         );
       } catch (error) {
         // Se for o ConflictException que acabamos de lançar, propaga
@@ -241,12 +254,18 @@ export class AuthService {
       if (user) {
         // Tenta comparacao com bcrypt (senhas ja hashadas — usuarios novos)
         isPasswordValid = await bcrypt.compare(password, user.password);
-
+        console.log("debug: ", {
+          isPasswordValid,
+        });
         // Fallback para senhas em texto puro migradas do db.json antigo
         // O sistema antigo (Express) armazenava senhas sem hash.
         // Quando detectamos texto puro, comparamos diretamente e, se bater,
         // fazemos o re-hash imediato para bcrypt.
-        if (!isPasswordValid && !user.password.startsWith('$2')) {
+        if (!isPasswordValid && !user.password.startsWith("$2")) {
+          console.log("debug2", {
+            password,
+            user: user.password,
+          });
           if (password === user.password) {
             const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
             await this.prisma.withConnection(() =>
@@ -264,26 +283,29 @@ export class AuthService {
       }
 
       if (!user || !isPasswordValid) {
+        console.log("debug3", {
+          isPasswordValid,
+          user: user?.password,
+          password,
+        });
         // ── LOG DIAGNÓSTICO SEGURO ──
         // NÃO loga senha, hash, ou token.
         // Apenas identifica se o problema é usuário inexistente ou senha inválida.
         this.logger.warn(
           `[LOGIN] Falha para ${sanitizedEmail}: ${
             !user
-              ? 'usuário não encontrado no banco'
-              : 'senha inválida (bcrypt.compare retornou false)'
+              ? "usuário não encontrado no banco"
+              : "senha inválida (bcrypt.compare retornou false)"
           }` +
-          (user
-            ? ` | hash prefix: ${user.password.substring(0, 6)}...`
-            : ''),
+            (user ? ` | hash prefix: ${user.password.substring(0, 6)}...` : ""),
         );
 
-        throw new UnauthorizedException('E-mail ou senha incorretos');
+        throw new UnauthorizedException("E-mail ou senha incorretos");
       }
 
       if (user.deletedAt) {
         throw new UnauthorizedException(
-          'Esta conta foi excluída. Não é possível fazer login.',
+          "Esta conta foi excluída. Não é possível fazer login.",
         );
       }
 
@@ -292,7 +314,7 @@ export class AuthService {
       const smtpConfigured = this.emailService.isSmtpConfigured;
       if (smtpConfigured && !user.emailVerified) {
         throw new UnauthorizedException(
-          'E-mail não verificado. Por favor, confira sua caixa de entrada.',
+          "E-mail não verificado. Por favor, confira sua caixa de entrada.",
         );
       }
 
@@ -300,20 +322,20 @@ export class AuthService {
       return { user: this.stripPassword(user), ...tokens };
     } catch (error) {
       // Se for erro de conexão, loga e retorna mensagem amigável
-      const errMsg = (error as Error).message?.toLowerCase() || '';
+      const errMsg = (error as Error).message?.toLowerCase() || "";
       const isConnectionError =
-        errMsg.includes('connection') ||
-        errMsg.includes('timeout') ||
-        errMsg.includes('database') ||
-        errMsg.includes('pool');
+        errMsg.includes("connection") ||
+        errMsg.includes("timeout") ||
+        errMsg.includes("database") ||
+        errMsg.includes("pool");
 
       if (isConnectionError) {
         this.logger.error(
           `[LOGIN] Erro de conexão ao banco: ${(error as Error).message}`,
         );
         throw new UnauthorizedException(
-          'O serviço de autenticação está temporariamente indisponível. ' +
-          'O servidor pode estar inicializando. Tente novamente em alguns instantes.',
+          "O serviço de autenticação está temporariamente indisponível. " +
+            "O servidor pode estar inicializando. Tente novamente em alguns instantes.",
         );
       }
 
@@ -330,18 +352,18 @@ export class AuthService {
 
     if (!user) {
       throw new BadRequestException(
-        'Token de verificação inválido. Solicite um novo link.',
+        "Token de verificação inválido. Solicite um novo link.",
       );
     }
 
     if (user.deletedAt) {
       throw new BadRequestException(
-        'Token de verificação inválido. Solicite um novo link.',
+        "Token de verificação inválido. Solicite um novo link.",
       );
     }
 
     if (user.emailVerified) {
-      return { message: 'E-mail já verificado. Faça login para continuar.' };
+      return { message: "E-mail já verificado. Faça login para continuar." };
     }
 
     if (
@@ -349,7 +371,7 @@ export class AuthService {
       user.verificationTokenExpires < new Date()
     ) {
       throw new BadRequestException(
-        'Token de verificação expirado. Solicite um novo link.',
+        "Token de verificação expirado. Solicite um novo link.",
       );
     }
 
@@ -364,7 +386,9 @@ export class AuthService {
       }),
     );
 
-    return { message: 'E-mail verificado com sucesso! Faça login para continuar.' };
+    return {
+      message: "E-mail verificado com sucesso! Faça login para continuar.",
+    };
   }
 
   async resendVerification(email: string): Promise<{ message: string }> {
@@ -378,7 +402,7 @@ export class AuthService {
     if (!user) {
       return {
         message:
-          'Se o e-mail estiver cadastrado, um novo link de verificação será enviado.',
+          "Se o e-mail estiver cadastrado, um novo link de verificação será enviado.",
       };
     }
 
@@ -386,12 +410,14 @@ export class AuthService {
     if (user.deletedAt) {
       return {
         message:
-          'Se o e-mail estiver cadastrado, um novo link de verificação será enviado.',
+          "Se o e-mail estiver cadastrado, um novo link de verificação será enviado.",
       };
     }
 
     if (user.emailVerified) {
-      return { message: 'Este e-mail já foi verificado. Faça login para continuar.' };
+      return {
+        message: "Este e-mail já foi verificado. Faça login para continuar.",
+      };
     }
 
     const verificationToken = uuidv4();
@@ -414,12 +440,12 @@ export class AuthService {
         verificationToken,
       );
     } catch (error) {
-      this.logger.error('Falha ao reenviar e-mail de verificação');
-      throw new Error('Erro ao enviar e-mail. Tente novamente mais tarde.');
+      this.logger.error("Falha ao reenviar e-mail de verificação");
+      throw new Error("Erro ao enviar e-mail. Tente novamente mais tarde.");
     }
 
     return {
-      message: 'Novo link de verificação enviado para seu e-mail.',
+      message: "Novo link de verificação enviado para seu e-mail.",
     };
   }
 
@@ -431,37 +457,37 @@ export class AuthService {
         secret: this.refreshSecret,
       }) as { userId: string };
 
-    const user = await this.prisma.withConnection(() =>
-      this.prisma.user.findUnique({
-        where: { id: decoded.userId },
-      }),
-    );
+      const user = await this.prisma.withConnection(() =>
+        this.prisma.user.findUnique({
+          where: { id: decoded.userId },
+        }),
+      );
 
       if (!user) {
-        throw new UnauthorizedException('Usuário não encontrado');
+        throw new UnauthorizedException("Usuário não encontrado");
       }
 
       if (user.deletedAt) {
-        throw new UnauthorizedException('Usuário não encontrado');
+        throw new UnauthorizedException("Usuário não encontrado");
       }
 
       // Se SMTP não estiver configurado, pula a verificação de email
       const smtpConfigured = this.emailService.isSmtpConfigured;
       if (smtpConfigured && !user.emailVerified) {
         throw new UnauthorizedException(
-          'E-mail não verificado. Por favor, confira sua caixa de entrada.',
+          "E-mail não verificado. Por favor, confira sua caixa de entrada.",
         );
       }
 
       const accessToken = this.jwtService.sign({ userId: user.id });
       const newRefreshToken = this.jwtService.sign(
         { userId: user.id },
-        { secret: this.refreshSecret, expiresIn: '7d' },
+        { secret: this.refreshSecret, expiresIn: "7d" },
       );
 
       return { accessToken, refreshToken: newRefreshToken };
     } catch {
-      throw new UnauthorizedException('Refresh token inválido ou expirado');
+      throw new UnauthorizedException("Refresh token inválido ou expirado");
     }
   }
 
@@ -473,18 +499,18 @@ export class AuthService {
     );
 
     if (!user) {
-      throw new UnauthorizedException('Usuário não encontrado');
+      throw new UnauthorizedException("Usuário não encontrado");
     }
 
     if (user.deletedAt) {
-      throw new UnauthorizedException('Usuário não encontrado');
+      throw new UnauthorizedException("Usuário não encontrado");
     }
 
     // Se SMTP não estiver configurado, pula a verificação de email
     const smtpConfigured = this.emailService.isSmtpConfigured;
     if (smtpConfigured && !user.emailVerified) {
       throw new UnauthorizedException(
-        'E-mail não verificado. Por favor, confira sua caixa de entrada.',
+        "E-mail não verificado. Por favor, confira sua caixa de entrada.",
       );
     }
 
@@ -511,7 +537,7 @@ export class AuthService {
         where: { id: userId },
       }),
     );
-    if (!user) throw new UnauthorizedException('Usuário não encontrado');
+    if (!user) throw new UnauthorizedException("Usuário não encontrado");
 
     const updated = await this.prisma.withConnection(() =>
       this.prisma.user.update({
@@ -532,7 +558,9 @@ export class AuthService {
     newPassword: string,
   ): Promise<{ message: string }> {
     if (!this.validatePassword(newPassword)) {
-      throw new UnauthorizedException(`A nova senha deve ter no mínimo ${MIN_PASSWORD_LENGTH} caracteres`);
+      throw new UnauthorizedException(
+        `A nova senha deve ter no mínimo ${MIN_PASSWORD_LENGTH} caracteres`,
+      );
     }
 
     const user = await this.prisma.withConnection(() =>
@@ -540,11 +568,14 @@ export class AuthService {
         where: { id: userId },
       }),
     );
-    if (!user) throw new UnauthorizedException('Usuário não encontrado');
+    if (!user) throw new UnauthorizedException("Usuário não encontrado");
 
-    const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
+    const isPasswordValid = await bcrypt.compare(
+      currentPassword,
+      user.password,
+    );
     if (!isPasswordValid) {
-      throw new UnauthorizedException('Senha atual incorreta');
+      throw new UnauthorizedException("Senha atual incorreta");
     }
 
     const hashedPassword = await bcrypt.hash(newPassword, SALT_ROUNDS);
@@ -555,7 +586,7 @@ export class AuthService {
       }),
     );
 
-    return { message: 'Senha alterada com sucesso' };
+    return { message: "Senha alterada com sucesso" };
   }
 
   async forgotPassword(email: string): Promise<{ message: string }> {
@@ -569,7 +600,7 @@ export class AuthService {
     if (!user) {
       return {
         message:
-          'Se o e-mail estiver cadastrado, enviaremos um link de recuperação.',
+          "Se o e-mail estiver cadastrado, enviaremos um link de recuperação.",
       };
     }
 
@@ -577,7 +608,7 @@ export class AuthService {
     if (user.deletedAt) {
       return {
         message:
-          'Se o e-mail estiver cadastrado, enviaremos um link de recuperação.',
+          "Se o e-mail estiver cadastrado, enviaremos um link de recuperação.",
       };
     }
 
@@ -621,7 +652,7 @@ export class AuthService {
 
     return {
       message:
-        'Se o e-mail estiver cadastrado, enviaremos um link de recuperação.',
+        "Se o e-mail estiver cadastrado, enviaremos um link de recuperação.",
     };
   }
 
@@ -637,14 +668,14 @@ export class AuthService {
 
     if (!user) {
       throw new BadRequestException(
-        'Token de recuperação inválido. Solicite um novo link.',
+        "Token de recuperação inválido. Solicite um novo link.",
       );
     }
 
     // Contas excluídas não podem redefinir senha
     if (user.deletedAt) {
       throw new BadRequestException(
-        'Token de recuperação inválido. Solicite um novo link.',
+        "Token de recuperação inválido. Solicite um novo link.",
       );
     }
 
@@ -653,12 +684,14 @@ export class AuthService {
       user.resetPasswordTokenExpires < new Date()
     ) {
       throw new BadRequestException(
-        'Token de recuperação expirado. Solicite um novo link.',
+        "Token de recuperação expirado. Solicite um novo link.",
       );
     }
 
     if (!this.validatePassword(newPassword)) {
-      throw new BadRequestException(`A nova senha deve ter no mínimo ${MIN_PASSWORD_LENGTH} caracteres`);
+      throw new BadRequestException(
+        `A nova senha deve ter no mínimo ${MIN_PASSWORD_LENGTH} caracteres`,
+      );
     }
 
     const hashedPassword = await bcrypt.hash(newPassword, SALT_ROUNDS);
@@ -674,23 +707,27 @@ export class AuthService {
       }),
     );
 
-    return { message: 'Senha redefinida com sucesso! Faça login com sua nova senha.' };
+    return {
+      message: "Senha redefinida com sucesso! Faça login com sua nova senha.",
+    };
   }
 
-  async sendDeleteConfirmation(userId: string): Promise<{ message: string; token: string; code?: string }> {
+  async sendDeleteConfirmation(
+    userId: string,
+  ): Promise<{ message: string; token: string; code?: string }> {
     const user = await this.prisma.withConnection(() =>
       this.prisma.user.findUnique({
         where: { id: userId },
       }),
     );
-    if (!user) throw new NotFoundException('Usuário não encontrado');
+    if (!user) throw new NotFoundException("Usuário não encontrado");
 
-    if (user.deletedAt) throw new NotFoundException('Usuário não encontrado');
+    if (user.deletedAt) throw new NotFoundException("Usuário não encontrado");
 
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     const token = this.jwtService.sign(
-      { userId, code, purpose: 'delete-account' },
-      { expiresIn: '15m' },
+      { userId, code, purpose: "delete-account" },
+      { expiresIn: "15m" },
     );
 
     const smtpConfigured = this.emailService.isSmtpConfigured;
@@ -702,17 +739,16 @@ export class AuthService {
         code,
       );
       return {
-        message: 'E-mail de confirmação enviado. Verifique sua caixa de entrada.',
+        message:
+          "E-mail de confirmação enviado. Verifique sua caixa de entrada.",
         token,
       };
     }
 
     // SMTP não configurado — retorna o código diretamente para exibição na tela
-    this.logger.log(
-      `[DEV] Código de exclusão para ${user.email}: ${code}`,
-    );
+    this.logger.log(`[DEV] Código de exclusão para ${user.email}: ${code}`);
     return {
-      message: 'Código de confirmação gerado (modo desenvolvimento).',
+      message: "Código de confirmação gerado (modo desenvolvimento).",
       token,
       code,
     };
@@ -731,16 +767,16 @@ export class AuthService {
       };
     } catch {
       throw new BadRequestException(
-        'Token inválido ou expirado. Solicite um novo código.',
+        "Token inválido ou expirado. Solicite um novo código.",
       );
     }
 
-    if (payload.purpose !== 'delete-account') {
-      throw new BadRequestException('Token inválido para esta operação.');
+    if (payload.purpose !== "delete-account") {
+      throw new BadRequestException("Token inválido para esta operação.");
     }
 
     if (payload.code !== code) {
-      throw new BadRequestException('Código de confirmação incorreto.');
+      throw new BadRequestException("Código de confirmação incorreto.");
     }
 
     const user = await this.prisma.withConnection(() =>
@@ -748,7 +784,7 @@ export class AuthService {
         where: { id: payload.userId },
       }),
     );
-    if (!user) throw new NotFoundException('Usuário não encontrado');
+    if (!user) throw new NotFoundException("Usuário não encontrado");
 
     await this.prisma.withConnection(() =>
       this.prisma.user.update({
@@ -757,6 +793,6 @@ export class AuthService {
       }),
     );
 
-    return { message: 'Conta excluída permanentemente' };
+    return { message: "Conta excluída permanentemente" };
   }
 }
