@@ -6,6 +6,11 @@ interface AuthState {
   user: User | null;
   accessToken: string | null;
   isAuthenticated: boolean;
+  /** Flag que indica se o estado já foi hidratado do localStorage.
+   *  Durante o carregamento inicial (F5/refresh), os guards de rota
+   *  devem aguardar isHydrated=true antes de decidir o redirecionamento,
+   *  evitando o flicker para /login. */
+  isHydrated: boolean;
   login: (user: User, accessToken: string) => void;
   logout: () => void;
   setAccessToken: (token: string) => void;
@@ -18,6 +23,7 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       accessToken: null,
       isAuthenticated: false,
+      isHydrated: false,
       login: (user, accessToken) =>
         set({ user, accessToken, isAuthenticated: true }),
       logout: () =>
@@ -34,6 +40,17 @@ export const useAuthStore = create<AuthState>()(
         accessToken: state.accessToken,
         isAuthenticated: state.isAuthenticated,
       }),
-    }
-  )
+      onRehydrateStorage: () => {
+        // Callback executado quando o estado persistido é carregado.
+        // O callback retornado roda APÓS a store ser criada, então
+        // useAuthStore já está acessível. Usamos setState() em vez de
+        // mutação direta para garantir que subscribers (React) sejam
+        // notificados corretamente.
+        return () => {
+          // eslint-disable-next-line @typescript-eslint/no-use-before-define
+          useAuthStore.setState({ isHydrated: true });
+        };
+      },
+    },
+  ),
 );

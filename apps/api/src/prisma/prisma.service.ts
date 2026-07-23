@@ -168,6 +168,57 @@ export class PrismaService
     }
   }
 
+  /**
+   * Retorna informações detalhadas da conexão com o banco.
+   * Usado pelo endpoint de diagnóstico /api/debug/connections.
+   */
+  async getConnectionInfo(): Promise<{
+    connected: boolean;
+    latencyMs?: number;
+    driver: string;
+    databaseUrl: string;
+    poolStatus?: string;
+    error?: string;
+  }> {
+    const databaseUrl = process.env.DATABASE_URL || 'file:./dev.db';
+    // Ofusca credenciais na URL para não expor senhas
+    const sanitizedUrl = databaseUrl.replace(
+      /\?authToken=([^&]+)/i,
+      '?authToken=***',
+    );
+
+    const driver = databaseUrl.startsWith('libsql')
+      ? 'Turso/LibSQL'
+      : databaseUrl.startsWith('file')
+        ? 'SQLite (local)'
+        : databaseUrl.startsWith('postgresql')
+          ? 'PostgreSQL'
+          : 'Desconhecido';
+
+    const start = Date.now();
+    try {
+      await this.$queryRaw`SELECT 1 as ping`;
+      const latencyMs = Date.now() - start;
+
+      return {
+        connected: this.isConnected,
+        latencyMs,
+        driver,
+        databaseUrl: sanitizedUrl,
+        poolStatus: this.isConnected ? 'ativo' : 'reconectando',
+      };
+    } catch (error) {
+      return {
+        connected: false,
+        latencyMs: Date.now() - start,
+        driver,
+        databaseUrl: sanitizedUrl,
+        poolStatus: 'desconectado',
+        error: (error as Error).message,
+      };
+    }
+  }
+
   async onModuleInit() {
     await this.connectWithRetry();
   }

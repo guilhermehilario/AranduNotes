@@ -11,6 +11,8 @@ export class EmailService {
   private readonly frontendUrl: string;
   private readonly fromName: string;
   private readonly fromEmail: string;
+  private readonly smtpHost: string | null = null;
+  private readonly smtpPort: number | null = null;
 
   constructor(private readonly configService: ConfigService) {
     this.frontendUrl =
@@ -39,6 +41,8 @@ export class EmailService {
 
     // ── Configura Nodemailer com SMTP ──
     if (host && user && pass) {
+      this.smtpHost = host;
+      this.smtpPort = port;
       this.transporter = nodemailer.createTransport({
         host,
         port,
@@ -71,6 +75,54 @@ export class EmailService {
   /** Retorna se o SMTP está configurado para envio real */
   get isSmtpConfigured(): boolean {
     return this.isConfigured;
+  }
+
+  /**
+   * Verifica ativamente se o servidor SMTP está acessível.
+   * Tenta estabelecer uma conexão e, se bem-sucedida, a encerra.
+   * Não envia nenhum e-mail.
+   */
+  async checkConnection(): Promise<{ connected: boolean; latencyMs?: number; error?: string }> {
+    if (!this.isConfigured || !this.transporter) {
+      return { connected: false, error: 'SMTP não configurado' };
+    }
+
+    const start = Date.now();
+    try {
+      // Verifica se o transporter consegue estabelecer conexão
+      // O Nodemailer verify() tenta um handshake SMTP real
+      await this.transporter.verify();
+      const latencyMs = Date.now() - start;
+      return { connected: true, latencyMs };
+    } catch (error) {
+      const err = error as Error;
+      return {
+        connected: false,
+        latencyMs: Date.now() - start,
+        error: err.message,
+      };
+    }
+  }
+
+  /** Retorna informações da configuração SMTP (sem senhas) */
+  getConfigInfo() {
+    if (!this.isConfigured) {
+      return {
+        configured: false,
+        host: null,
+        port: null,
+        fromName: this.fromName,
+        fromEmail: this.fromEmail,
+      };
+    }
+
+    return {
+      configured: true,
+      host: this.smtpHost,
+      port: this.smtpPort,
+      fromName: this.fromName,
+      fromEmail: this.fromEmail,
+    };
   }
 
   async sendEmail(options: {
