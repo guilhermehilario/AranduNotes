@@ -1,0 +1,36 @@
+# ──────────────────────────────────────────────────────────────────
+# Litestream — Replicação do SQLite para S3/R2
+# ──────────────────────────────────────────────────────────────────
+# Este arquivo é usado pelo entrypoint do Docker (docker-entrypoint.js)
+# quando a variável de ambiente BUCKET_NAME está configurada.
+#
+# Requer as seguintes variáveis de ambiente:
+#   BUCKET_NAME      — Nome do bucket (ex: arandu-backups)
+#   AWS_ACCESS_KEY_ID     — Access key da S3/R2
+#   AWS_SECRET_ACCESS_KEY — Secret key da S3/R2
+#   AWS_ENDPOINT_URL_S3   — URL do endpoint (ex: https://<account>.r2.cloudflarestorage.com)
+#   AWS_REGION            — Região (ex: auto, us-east-1)
+#
+# Exemplo de uso com Cloudflare R2:
+#   AWS_ENDPOINT_URL_S3=https://<account>.r2.cloudflarestorage.com
+#   AWS_REGION=auto
+#   BUCKET_NAME=arandu-backups
+#
+# Exemplo de uso com AWS S3:
+#   AWS_REGION=us-east-1
+#   BUCKET_NAME=arandu-backups
+
+dbs:
+  - path: /data/sqlite.db
+    replicas:
+      - type: s3
+        bucket: ${BUCKET_NAME}
+        path: sqlite-backups/
+        access-key-id: ${AWS_ACCESS_KEY_ID}
+        secret-access-key: ${AWS_SECRET_ACCESS_KEY}
+        region: ${AWS_REGION}
+        endpoint: ${AWS_ENDPOINT_URL_S3}
+        # Validação de integridade: força sync síncrono para cada write
+        sync-interval: 5m
+        # Número máximo de snapshots para reter (-1 = reter todos)
+        retention: 72h

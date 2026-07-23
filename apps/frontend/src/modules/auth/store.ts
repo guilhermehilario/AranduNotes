@@ -57,6 +57,9 @@ const useAuthStoreBase = create<AuthState>()(
 // O finally SEMPRE marca isHydrated=true para encerrar o loading.
 async function validateTokenAndHydrate(): Promise<void> {
   const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+  if (!import.meta.env.VITE_API_URL && import.meta.env.PROD) {
+    console.error('[AuthStore] VITE_API_URL não configurada em produção!');
+  }
   const controller = new AbortController();
 
   // Timeout de 20s para refresh + profile (generoso para cold start)

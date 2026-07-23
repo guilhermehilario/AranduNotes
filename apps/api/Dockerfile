@@ -20,20 +20,24 @@ FROM base AS build
 RUN apt-get update -qq && \
     apt-get install --no-install-recommends -y build-essential node-gyp openssl pkg-config python-is-python3
 
-# 1. Copia as definições de pacotes primeiro
-COPY package-lock.json package.json ./
+# 1. Copia os arquivos do monorepo necessários para instalar dependências
+COPY package.json yarn.lock ./
 
-# 2. Copia a pasta do prisma antes de instalar as dependências
-COPY prisma ./prisma/
+# 2. Copia os manifests de cada workspace (necessário para yarn workspaces resolver as deps)
+COPY apps/api/package.json apps/api/
+COPY apps/frontend/package.json apps/frontend/
 
-# 3. Instala as dependências (o postinstall vai rodar o "prisma generate" automaticamente aqui)
-RUN npm ci --include=dev
+# 3. Copia o schema do Prisma antes de instalar (o postinstall roda prisma generate)
+COPY apps/api/prisma ./apps/api/prisma/
 
-# 4. Copia o restante do código da aplicação
+# 4. Instala as dependências com yarn (respeita o lockfile do monorepo)
+RUN yarn install --frozen-lockfile --production=false
+
+# 5. Copia o restante do código da aplicação
 COPY . .
 
-# Build application
-RUN npm run build
+# 6. Build da aplicação
+RUN yarn workspace api build
 
 
 # Final stage for app image
@@ -62,4 +66,4 @@ ENTRYPOINT [ "/app/docker-entrypoint.js" ]
 # Start the server by default, this can be overwritten at runtime
 EXPOSE 3000
 ENV DATABASE_URL="file:///data/sqlite.db"
-CMD [ "npm", "run", "start" ]
+CMD [ "node", "apps/api/dist/main.js" ]

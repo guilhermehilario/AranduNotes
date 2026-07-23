@@ -254,18 +254,13 @@ export class AuthService {
       if (user) {
         // Tenta comparacao com bcrypt (senhas ja hashadas — usuarios novos)
         isPasswordValid = await bcrypt.compare(password, user.password);
-        console.log("debug: ", {
-          isPasswordValid,
-        });
+        this.logger.debug(`Login attempt for ${sanitizedEmail}: password valid = ${isPasswordValid}`);
         // Fallback para senhas em texto puro migradas do db.json antigo
         // O sistema antigo (Express) armazenava senhas sem hash.
         // Quando detectamos texto puro, comparamos diretamente e, se bater,
         // fazemos o re-hash imediato para bcrypt.
         if (!isPasswordValid && !user.password.startsWith("$2")) {
-          console.log("debug2", {
-            password,
-            user: user.password,
-          });
+          this.logger.debug(`Plain-text password migration check for ${user.email}`);
           if (password === user.password) {
             const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
             await this.prisma.withConnection(() =>
@@ -283,11 +278,7 @@ export class AuthService {
       }
 
       if (!user || !isPasswordValid) {
-        console.log("debug3", {
-          isPasswordValid,
-          user: user?.password,
-          password,
-        });
+        this.logger.debug(`Login failed for ${sanitizedEmail}: valid=${isPasswordValid}`);
         // ── LOG DIAGNÓSTICO SEGURO ──
         // NÃO loga senha, hash, ou token.
         // Apenas identifica se o problema é usuário inexistente ou senha inválida.

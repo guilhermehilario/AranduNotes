@@ -9,8 +9,18 @@ const COLD_START_TIMEOUT = 60_000;    // 60s para primeira requisição (cold st
 // Detecta se é a primeira requisição (para aplicar timeout maior)
 let isFirstRequest = true;
 
+const BASE_URL = import.meta.env.VITE_API_URL;
+
+// Em produção, VITE_API_URL é obrigatória
+if (!BASE_URL && import.meta.env.PROD) {
+  console.error(
+    '[API] VITE_API_URL não configurada. ' +
+    'Defina a variável de ambiente VITE_API_URL no seu servidor/hospedagem.',
+  );
+}
+
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "http://localhost:3000/api",
+  baseURL: BASE_URL || "http://localhost:3000/api",
   headers: {
     "Content-Type": "application/json",
   },

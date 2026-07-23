@@ -269,7 +269,10 @@ export function useEditorContent({
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       window.removeEventListener("beforeunload", handleBeforeUnload);
       // Salva imediatamente ao desmontar o componente (navegação interna)
-      flushSaveRef.current?.();
+      // Usa sendKeepaliveSave que já possui keepalive: true no fetch,
+      // garantindo que a requisição não seja abortada mesmo se o
+      // componente desmontar antes da resposta.
+      sendKeepaliveSaveRef.current?.();
     };
   }, []); // 🔴 Dependências vazias — usa refs para evitar loop de cleanup
 

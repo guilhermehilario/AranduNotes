@@ -27,7 +27,7 @@ primary_region = 'gru'
     interval = '15s'
     timeout = '10s'
     method = 'GET'
-    path = '/api'
+    path = '/health'
 
 [[vm]]
   memory = '512mb'

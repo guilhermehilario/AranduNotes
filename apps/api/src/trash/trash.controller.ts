@@ -80,7 +80,8 @@ export class TrashController {
 
   // ── Clean old trash (15+ days) ──
 
-  @Post('trash/clean')
+  @Delete('trash/clean')
+  @HttpCode(HttpStatus.NO_CONTENT)
   cleanOldTrash(@CurrentUser('id') userId: string) {
     return this.trashService.cleanOldTrash(userId);
   }

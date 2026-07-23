@@ -101,7 +101,8 @@ async function bootstrap() {
       if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
-        console.warn(`[CORS] Origem bloqueada: ${origin}`);
+        const safeOrigin = JSON.stringify(origin);
+        console.warn(`[CORS] Origem bloqueada: ${safeOrigin}`);
         callback(new Error(`Origem ${origin} não permitida pelo CORS`));
       }
     },
