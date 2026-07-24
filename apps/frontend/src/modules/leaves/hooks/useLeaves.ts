@@ -1,6 +1,8 @@
 import { useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import leafService from "../services/leafService";
+import { useToastStore } from "../../../store/toastStore";
+import { extractApiError } from "../../../utils/api-errors";
 import type { CreateLeafInput, UpdateLeafInput, Leaf } from "../types";
 import type { Flashcard } from "../../study/types";
 
@@ -200,6 +202,13 @@ export function useLeaf(leafId: string) {
         queryClient.removeQueries({ queryKey: ["leaves", leafId] });
         queryClient.invalidateQueries({ queryKey: ["archived-leaves"] });
       }
+      useToastStore.getState().addToast("Folha arquivada.", "success");
+    },
+    onError: (err) => {
+      useToastStore.getState().addToast(
+        extractApiError(err, "Erro ao arquivar folha."),
+        "error",
+      );
     },
   });
 
@@ -207,6 +216,13 @@ export function useLeaf(leafId: string) {
     mutationFn: () => leafService.unarchiveLeaf(leafId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["archived-leaves"] });
+      useToastStore.getState().addToast("Folha desarquivada.", "success");
+    },
+    onError: (err) => {
+      useToastStore.getState().addToast(
+        extractApiError(err, "Erro ao desarquivar folha."),
+        "error",
+      );
     },
   });
 

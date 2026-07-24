@@ -134,11 +134,11 @@ export const TrashView: React.FC = () => {
                   {item.type === 'notebook' ? <BookOpen className="h-5 w-5" /> : item.type === 'leaf' ? <FileText className="h-5 w-5" /> : <HelpCircle className="h-5 w-5" />}
                 </div>
                 <div className="flex-grow min-w-0">
-                  <div className="flex items-center gap-2">
-                    <h4 className="font-heading font-bold truncate text-slate-800 dark:text-dark-50">
+                  <div className="flex items-center gap-2 w-full">
+                    <h4 className="font-heading font-bold truncate min-w-0 text-slate-800 dark:text-dark-50">
                       {item.title}
                     </h4>
-                    <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${
+                    <span className={`shrink-0 whitespace-nowrap text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${
                       daysLeft <= 0
                         ? 'bg-rose-100 text-rose-600 dark:bg-rose-950/30 dark:text-rose-400'
                         : daysLeft <= 3
