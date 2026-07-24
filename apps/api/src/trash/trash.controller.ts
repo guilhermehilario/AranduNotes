@@ -24,6 +24,14 @@ export class TrashController {
 
   // ── Soft-delete (mover para lixeira) ──
 
+  @Post('trash/flashcards/:cardId')
+  softDeleteFlashcard(
+    @Param('cardId') cardId: string,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.trashService.softDeleteFlashcard(cardId, userId);
+  }
+
   @Post('trash/notebooks/:notebookId')
   softDeleteNotebook(
     @Param('notebookId') notebookId: string,

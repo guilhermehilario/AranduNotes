@@ -1,8 +1,10 @@
 
+import { useState } from "react";
 import { useParams, useNavigate, Link as RouterLink } from "react-router-dom";
 import { EditorContent } from "@tiptap/react";
 import { useLeaf } from "../hooks/useLeaves";
-import { useLeafFlashcards } from "../../study/hooks/useFlashcards";
+import { useLeafFlashcards, useUpdateFlashcard, useDeleteFlashcard } from "../../study/hooks/useFlashcards";
+import type { Flashcard } from "../../study/types";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToggleBookmark } from "../../bookmarks/hooks/useToggleBookmark";
 import { useSoftDeleteLeaf } from "../../trash/hooks/useTrash";
@@ -16,6 +18,7 @@ import { EditorSkeleton } from "../components/EditorSkeleton";
 import { EditorHeader } from "../components/EditorHeader";
 import { SubLeavesSection } from "../components/SubLeavesSection";
 import { ManualFlashcardModal } from "../components/ManualFlashcardModal";
+import { EditFlashcardModal } from "../../notebooks/components/EditFlashcardModal"
 import { ConfirmDialog } from "../../../components/ui/ConfirmDialog.tsx";
 
 export const EditorView: React.FC = () => {
@@ -38,6 +41,12 @@ export const EditorView: React.FC = () => {
   } = useLeaf(leafId || "");
 
   const { data: flashcards = [] } = useLeafFlashcards(leafId || "");
+
+  // ── Flashcard Edit/Delete ──
+  const [editingFlashcard, setEditingFlashcard] = useState<Flashcard | null>(null);
+  const [isEditFlashcardModalOpen, setIsEditFlashcardModalOpen] = useState(false);
+  const updateFlashcardMutation = useUpdateFlashcard(notebookId, leafId);
+  const deleteFlashcardMutation = useDeleteFlashcard(notebookId, leafId);
   const { isBookmarked, toggleBookmark } = useToggleBookmark({
     type: "leaf",
     id: leafId || "",
@@ -181,6 +190,12 @@ export const EditorView: React.FC = () => {
             onCreateManualFlashcard={() => setIsFlashcardModalOpen(true)}
             onGenerateSummary={handleGenerateSummary}
             onGenerateFlashcards={handleGenerateFlashcards}
+            onEditFlashcard={(card) => {
+              setEditingFlashcard(card);
+              setIsEditFlashcardModalOpen(true);
+            }}
+            onDeleteFlashcard={(cardId) => deleteFlashcardMutation.mutateAsync(cardId)}
+            isDeletingFlashcard={deleteFlashcardMutation.isPending}
           />
         )}
       </div>
@@ -193,6 +208,28 @@ export const EditorView: React.FC = () => {
           leafId={leafId || ""}
         />
       )}
+
+      {/* Modal: Editar Flashcard */}
+      <EditFlashcardModal
+        isOpen={isEditFlashcardModalOpen}
+        onClose={() => {
+          setIsEditFlashcardModalOpen(false);
+          setEditingFlashcard(null);
+        }}
+        flashcard={editingFlashcard}
+        onSave={async (cardId, data) => {
+          await updateFlashcardMutation.mutateAsync({ cardId, data });
+          setIsEditFlashcardModalOpen(false);
+          setEditingFlashcard(null);
+        }}
+        onDelete={async (cardId) => {
+          await deleteFlashcardMutation.mutateAsync(cardId);
+          setIsEditFlashcardModalOpen(false);
+          setEditingFlashcard(null);
+        }}
+        isSaving={updateFlashcardMutation.isPending}
+        isDeleting={deleteFlashcardMutation.isPending}
+      />
 
       {/* Modal: Criar Flashcard Manual */}
       <ManualFlashcardModal

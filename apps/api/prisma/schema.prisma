@@ -191,17 +191,18 @@ model MockExamQuestion {
 
 /// Flashcards gerados por IA com parâmetros do algoritmo SM-2
 model Flashcard {
-  id             String   @id @default(uuid())
+  id             String    @id @default(uuid())
   leafId         String
   notebookId     String
   front          String
   back           String
-  repetitions    Int      @default(0)
-  interval       Int      @default(0)
-  easeFactor     Float    @default(2.5)
+  repetitions    Int       @default(0)
+  interval       Int       @default(0)
+  easeFactor     Float     @default(2.5)
   nextReviewDate DateTime
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime? // Soft-delete: nulo = ativo, preenchido = na lixeira
 
   leaf     Leaf     @relation(fields: [leafId], references: [id], onDelete: Cascade)
   notebook Notebook @relation(fields: [notebookId], references: [id], onDelete: Cascade)

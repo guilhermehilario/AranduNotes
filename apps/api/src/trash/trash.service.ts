@@ -55,6 +55,28 @@ export class TrashService {
     };
   }
 
+  // ── Mover flashcard para lixeira (soft-delete) ──
+  async softDeleteFlashcard(cardId: string, userId: string) {
+    const card = await this.prisma.withConnection(() =>
+      this.prisma.flashcard.findUnique({
+        where: { id: cardId },
+        include: { notebook: true },
+      }),
+    );
+    if (!card) throw new NotFoundException('Flashcard não encontrado');
+    if (card.notebook.userId !== userId) throw new NotFoundException('Acesso negado');
+
+    const now = new Date();
+    await this.prisma.withConnection(() =>
+      this.prisma.flashcard.update({
+        where: { id: cardId },
+        data: { deletedAt: now },
+      }),
+    );
+
+    return { message: 'Flashcard movido para lixeira', deletedAt: now };
+  }
+
   // ── Mover notebook para lixeira (soft-delete) ──
   async softDeleteNotebook(notebookId: string, userId: string) {
     const notebook = await this.prisma.withConnection(() =>

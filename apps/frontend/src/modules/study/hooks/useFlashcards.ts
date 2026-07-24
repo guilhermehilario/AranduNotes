@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import studyService from "../services/studyService";
+import trashService from "../../trash/services/trashService";
 import { useToastStore } from "../../../store/toastStore";
 import { extractApiError } from "../../../utils/api-errors";
 import type { Flashcard, StudyScore } from "../types";
@@ -25,6 +26,84 @@ export function useNotebookFlashcards(notebookId: string) {
     refetchOnMount: false,
     refetchOnReconnect: false,
     refetchOnWindowFocus: false,
+  });
+}
+
+export function useUpdateFlashcard(notebookId?: string, leafId?: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      cardId,
+      data,
+    }: {
+      cardId: string;
+      data: { front?: string; back?: string };
+    }) => studyService.updateFlashcard(cardId, data),
+    onSuccess: (updatedCard) => {
+      // ⚡ Atualiza o cache imediatamente
+      if (leafId) {
+        queryClient.setQueryData<Flashcard[]>(
+          ["leaves", leafId, "flashcards"],
+          (old) =>
+            old?.map((card) =>
+              card.id === updatedCard.id ? updatedCard : card,
+            ) ?? old,
+        );
+      }
+      if (notebookId) {
+        queryClient.setQueryData<Flashcard[]>(
+          ["notebook-flashcards", notebookId],
+          (old) =>
+            old?.map((card) =>
+              card.id === updatedCard.id ? updatedCard : card,
+            ) ?? old,
+        );
+      }
+      useToastStore
+        .getState()
+        .addToast("Flashcard atualizado com sucesso.", "success");
+    },
+    onError: (err) => {
+      useToastStore.getState().addToast(
+        extractApiError(err, "Erro ao atualizar flashcard."),
+        "error",
+      );
+    },
+  });
+}
+
+export function useDeleteFlashcard(notebookId?: string, leafId?: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (cardId: string) => trashService.softDeleteFlashcard(cardId),
+    onSuccess: (_, cardId) => {
+      // ⚡ Remove o flashcard do cache imediatamente
+      if (notebookId) {
+        queryClient.setQueryData<Flashcard[]>(
+          ["notebook-flashcards", notebookId],
+          (old) => old?.filter((fc) => fc.id !== cardId) ?? old,
+        );
+      }
+      if (leafId) {
+        queryClient.setQueryData<Flashcard[]>(
+          ["leaves", leafId, "flashcards"],
+          (old) => old?.filter((fc) => fc.id !== cardId) ?? old,
+        );
+      }
+      // ✅ Invalida as estatísticas do Dashboard
+      queryClient.invalidateQueries({ queryKey: ["study-stats"] });
+      useToastStore
+        .getState()
+        .addToast("Flashcard movido para lixeira.", "success");
+    },
+    onError: (err) => {
+      useToastStore.getState().addToast(
+        extractApiError(err, "Erro ao excluir flashcard."),
+        "error",
+      );
+    },
   });
 }
 

@@ -11,6 +11,7 @@ import { NotebookHeader } from "../components/NotebookHeader";
 import { FlashcardsSection } from "../components/FlashcardsSection";
 import { CreateLeafModal } from "../components/CreateLeafModal";
 import { CreateFlashcardModal } from "../components/CreateFlashcardModal";
+import { EditFlashcardModal } from "../components/EditFlashcardModal";
 import { EditNotebookModal } from "../components/EditNotebookModal";
 import { ConfirmDialog } from "../../../components/ui/ConfirmDialog.tsx";
 
@@ -53,6 +54,15 @@ export const NotebookView: React.FC = () => {
     fcErrors,
     resetFc,
     createFlashcardMutation,
+    editFlashcardMutation,
+    deleteFlashcardMutation,
+    isEditFlashcardModalOpen,
+    setIsEditFlashcardModalOpen,
+    editingFlashcard,
+    setEditingFlashcard,
+    onEditFlashcard,
+    onDeleteFlashcard,
+    onEditFlashcardSave,
     handleOpenEditModal,
     onEditSubmit,
     handleDeleteNotebookConfirm,
@@ -176,10 +186,13 @@ export const NotebookView: React.FC = () => {
       <FlashcardsSection
         flashcards={flashcards}
         isLoading={isLoadingFlashcards}
+        isDeletingFlashcard={deleteFlashcardMutation.isPending}
         onOpenCreateModal={() => {
           if (leaves.length > 0) setSelectedLeafId(leaves[0].id);
           setIsFlashcardModalOpen(true);
         }}
+        onEditFlashcard={onEditFlashcard}
+        onDeleteFlashcard={onDeleteFlashcard}
       />
 
       {/* Modal: Criar Folha */}
@@ -192,6 +205,20 @@ export const NotebookView: React.FC = () => {
         parentLeafId={parentLeafId}
         setParentLeafId={setParentLeafId}
         leaves={leaves}
+      />
+
+      {/* Modal: Editar Flashcard */}
+      <EditFlashcardModal
+        isOpen={isEditFlashcardModalOpen}
+        onClose={() => {
+          setIsEditFlashcardModalOpen(false);
+          setEditingFlashcard(null);
+        }}
+        flashcard={editingFlashcard}
+        onSave={onEditFlashcardSave}
+        onDelete={onDeleteFlashcard}
+        isSaving={editFlashcardMutation.isPending}
+        isDeleting={deleteFlashcardMutation.isPending}
       />
 
       {/* Modal: Criar Flashcard */}

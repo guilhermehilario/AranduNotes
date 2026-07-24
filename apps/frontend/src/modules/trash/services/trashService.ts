@@ -32,6 +32,10 @@ export const trashService = {
     await api.post(`/trash/leaves/${leafId}`);
   },
 
+  async softDeleteFlashcard(cardId: string): Promise<void> {
+    await api.post(`/trash/flashcards/${cardId}`);
+  },
+
   async restoreNotebook(notebookId: string): Promise<void> {
     await api.post(`/trash/notebooks/${notebookId}/restore`);
   },
