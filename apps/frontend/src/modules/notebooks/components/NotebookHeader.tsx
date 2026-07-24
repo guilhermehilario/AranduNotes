@@ -22,7 +22,7 @@ export const NotebookHeader: React.FC<NotebookHeaderProps> = ({
   const navigate = useNavigate();
 
   return (
-    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 p-6 rounded-3xl bg-white dark:bg-dark-900 border border-slate-100 dark:border-dark-800 relative overflow-hidden">
+    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 p-6 rounded-3xl relative overflow-hidden" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)' }}>
       {/* Faixa lateral colorida */}
       <div
         className="absolute left-0 top-0 bottom-0 w-3.5"
@@ -30,10 +30,10 @@ export const NotebookHeader: React.FC<NotebookHeaderProps> = ({
       />
 
       <div className="flex flex-col gap-2 pl-4">
-        <h1 className="text-3xl font-heading font-extrabold text-slate-900 dark:text-dark-50 m-0">
+        <h1 className="text-3xl font-heading font-extrabold m-0" style={{ color: 'var(--text-primary)' }}>
           {notebook.title}
         </h1>
-        <p className="text-slate-550 dark:text-dark-300 text-sm max-w-xl">
+        <p className="text-sm max-w-xl" style={{ color: 'var(--text-secondary)' }}>
           {notebook.description || 'Nenhuma descrição adicionada.'}
         </p>
       </div>
@@ -44,10 +44,12 @@ export const NotebookHeader: React.FC<NotebookHeaderProps> = ({
           type="button"
           onClick={onToggleBookmark}
           className={`p-2 rounded-lg transition-colors cursor-pointer ${
-            isBookmarked
-              ? 'text-amber-500 bg-amber-50 dark:bg-amber-950/20'
-              : 'text-slate-400 hover:text-amber-500 hover:bg-slate-100 dark:hover:bg-dark-800'
+            !isBookmarked ? 'hover:text-amber-500 hover:bg-[var(--bg-surface-hover)]' : ''
           }`}
+          style={{
+            color: isBookmarked ? '#F59E0B' : 'var(--text-secondary)',
+            background: isBookmarked ? 'var(--bg-surface-hover)' : 'transparent',
+          }}
           title={isBookmarked ? 'Remover marcador' : 'Adicionar marcador'}
         >
           <BookmarkIcon className={`h-5 w-5 ${isBookmarked ? 'fill-amber-500' : ''}`} />

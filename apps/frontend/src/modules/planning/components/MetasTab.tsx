@@ -93,14 +93,21 @@ export const MetasTab: React.FC = () => {
 
       {/* Add Form */}
       {showForm && (
-        <div className="flex flex-col gap-3 p-4 bg-white dark:bg-dark-900 border border-slate-200 dark:border-dark-800 rounded-2xl">
+        <div className="flex flex-col gap-3 p-4 rounded-2xl" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)' }}>
           <input
             type="text"
             value={newTitle}
             onChange={(e) => setNewTitle(e.target.value)}
             placeholder="Título da meta..."
-            className="w-full px-4 py-3 bg-slate-50 dark:bg-dark-950 border border-slate-200 dark:border-dark-800 rounded-xl text-sm text-slate-800 dark:text-dark-100 placeholder-slate-400 dark:placeholder-dark-400 focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500 transition-all"
+            className="w-full px-4 py-3 rounded-xl text-sm focus:outline-none transition-all"
+            style={{
+              background: 'var(--bg-surface-hover)',
+              border: '1px solid var(--border-color)',
+              color: 'var(--text-primary)',
+            }}
             autoFocus
+            onFocus={(e) => { e.currentTarget.style.borderColor = '#A78BFA'; }}
+            onBlur={(e) => { e.currentTarget.style.borderColor = 'var(--border-color)'; }}
             onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
           />
           <input
@@ -108,15 +115,27 @@ export const MetasTab: React.FC = () => {
             value={newDescription}
             onChange={(e) => setNewDescription(e.target.value)}
             placeholder="Descrição (opcional)..."
-            className="w-full px-4 py-3 bg-slate-50 dark:bg-dark-950 border border-slate-200 dark:border-dark-800 rounded-xl text-sm text-slate-800 dark:text-dark-100 placeholder-slate-400 dark:placeholder-dark-400 focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500 transition-all"
+            className="w-full px-4 py-3 rounded-xl text-sm focus:outline-none transition-all"
+            style={{
+              background: 'var(--bg-surface-hover)',
+              border: '1px solid var(--border-color)',
+              color: 'var(--text-primary)',
+            }}
+            onFocus={(e) => { e.currentTarget.style.borderColor = '#A78BFA'; }}
+            onBlur={(e) => { e.currentTarget.style.borderColor = 'var(--border-color)'; }}
           />
           <div className="flex items-center gap-2">
-            <CalendarIcon className="h-4 w-4 text-slate-400" />
+            <CalendarIcon className="h-4 w-4" style={{ color: 'var(--text-secondary)' }} />
             <input
               type="date"
               value={newTargetDate}
               onChange={(e) => setNewTargetDate(e.target.value)}
-              className="flex-1 px-3 py-2 bg-slate-50 dark:bg-dark-950 border border-slate-200 dark:border-dark-800 rounded-lg text-sm text-slate-700 dark:text-dark-200 focus:outline-none focus:ring-2 focus:ring-violet-500/30"
+              className="flex-1 px-3 py-2 rounded-lg text-sm focus:outline-none"
+              style={{
+                background: 'var(--bg-surface-hover)',
+                border: '1px solid var(--border-color)',
+                color: 'var(--text-primary)',
+              }}
             />
           </div>
           <div className="flex items-center gap-2 justify-end">
@@ -128,7 +147,8 @@ export const MetasTab: React.FC = () => {
                 setNewTargetDate('');
                 setNewDescription('');
               }}
-              className="px-4 py-2 text-sm font-semibold text-slate-500 hover:text-slate-700 dark:text-dark-400 dark:hover:text-dark-200 transition-colors cursor-pointer"
+              className="px-4 py-2 text-sm font-semibold transition-colors cursor-pointer"
+              style={{ color: 'var(--text-secondary)' }}
             >
               Cancelar
             </button>
@@ -136,7 +156,11 @@ export const MetasTab: React.FC = () => {
               type="button"
               onClick={handleAdd}
               disabled={!newTitle.trim() || createGoal.isPending}
-              className="flex items-center gap-2 px-4 py-2 bg-violet-500 hover:bg-violet-600 disabled:bg-slate-300 dark:disabled:bg-dark-800 text-white disabled:text-slate-500 rounded-xl text-sm font-semibold transition-all cursor-pointer disabled:cursor-not-allowed"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all cursor-pointer disabled:cursor-not-allowed"
+              style={{
+                background: (!newTitle.trim() || createGoal.isPending) ? 'var(--bg-surface-hover)' : '#8B5CF6',
+                color: (!newTitle.trim() || createGoal.isPending) ? 'var(--text-secondary)' : '#FFFFFF',
+              }}
             >
               {createGoal.isPending ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -163,15 +187,16 @@ export const MetasTab: React.FC = () => {
           {inProgressGoals.map((goal) => (
             <div
               key={goal.id}
-              className="bg-white dark:bg-dark-900 border border-slate-200 dark:border-dark-800 rounded-2xl p-5 hover:shadow-sm transition-shadow"
+              className="rounded-2xl p-5 transition-shadow hover:shadow-md"
+              style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)' }}
             >
               <div className="flex items-start justify-between gap-2 mb-3">
                 <div className="flex-grow min-w-0">
-                  <h4 className="text-sm font-bold text-slate-800 dark:text-dark-100">
+                  <h4 className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>
                     {goal.title}
                   </h4>
                   {goal.description && (
-                    <p className="text-xs text-slate-500 dark:text-dark-350 mt-1">
+                    <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>
                       {goal.description}
                     </p>
                   )}
@@ -179,7 +204,8 @@ export const MetasTab: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setDeleteConfirmId(goal.id)}
-                  className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-lg transition-colors cursor-pointer flex-shrink-0"
+                  className="p-1.5 rounded-lg transition-colors cursor-pointer flex-shrink-0 hover:text-red-500 hover:bg-[var(--bg-surface-hover)]"
+                  style={{ color: 'var(--text-secondary)' }}
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
@@ -187,7 +213,7 @@ export const MetasTab: React.FC = () => {
 
               <div className="mb-2">
                 <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-xs font-semibold text-slate-500 dark:text-dark-400">
+                  <span className="text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>
                     Progresso
                   </span>
                   <span className="text-xs font-bold text-violet-500">
@@ -198,14 +224,14 @@ export const MetasTab: React.FC = () => {
               </div>
 
               {goal.targetDate && (
-                <p className="text-xs text-slate-400 dark:text-dark-400 flex items-center gap-1">
+                <p className="text-xs flex items-center gap-1" style={{ color: 'var(--text-secondary)' }}>
                   <CalendarIcon className="h-3 w-3" />
                   Meta até {formatDate(goal.targetDate)}
                 </p>
               )}
 
               {/* Quick progress buttons */}
-              <div className="flex items-center gap-1.5 mt-3 pt-3 border-t border-slate-100 dark:border-dark-800">
+              <div className="flex items-center gap-1.5 mt-3 pt-3" style={{ borderTop: '1px solid var(--border-color)' }}>
                 {[25, 50, 75, 100].map((pct) => (
                   <button
                     key={pct}
@@ -233,11 +259,15 @@ export const MetasTab: React.FC = () => {
             Concluídas ({completedGoals.length})
           </h3>
           <div className="flex flex-col gap-1.5">
-            {completedGoals.map((goal) => (
-              <div
-                key={goal.id}
-                className="flex items-center gap-3 px-4 py-3 bg-white dark:bg-dark-900 rounded-2xl border border-slate-100 dark:border-dark-800/60 opacity-60"
-              >
+            {completedGoals.map((goal) => (                <div
+                  key={goal.id}
+                  className="flex items-center gap-3 px-4 py-3 rounded-2xl"
+                  style={{
+                    background: 'var(--bg-surface)',
+                    border: '1px solid var(--border-color)',
+                    opacity: 0.6,
+                  }}
+                >
                 <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-950/30 flex items-center justify-center flex-shrink-0">
                   <Target className="h-4 w-4 text-emerald-500" />
                 </div>

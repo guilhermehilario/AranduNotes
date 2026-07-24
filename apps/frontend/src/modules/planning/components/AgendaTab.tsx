@@ -87,7 +87,20 @@ export const AgendaTab: React.FC = () => {
         <button
           type="button"
           onClick={() => setShowForm(true)}
-          className="flex items-center gap-3 px-4 py-3 bg-white dark:bg-dark-900 border border-dashed border-slate-300 dark:border-dark-700 rounded-2xl text-slate-500 dark:text-dark-400 hover:border-violet-400 hover:text-violet-500 transition-all cursor-pointer"
+          className="flex items-center gap-3 px-4 py-3 rounded-2xl transition-all cursor-pointer"
+          style={{
+            background: 'var(--bg-surface)',
+            border: '1px dashed var(--border-color)',
+            color: 'var(--text-secondary)',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.borderColor = '#A78BFA';
+            e.currentTarget.style.color = '#A78BFA';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.borderColor = 'var(--border-color)';
+            e.currentTarget.style.color = 'var(--text-secondary)';
+          }}
         >
           <Plus className="h-5 w-5" />
           <span className="text-sm font-semibold">Adicionar evento na agenda</span>
@@ -96,33 +109,50 @@ export const AgendaTab: React.FC = () => {
 
       {/* Add Form */}
       {showForm && (
-        <div className="flex flex-col gap-3 p-4 bg-white dark:bg-dark-900 border border-slate-200 dark:border-dark-800 rounded-2xl">
+        <div className="flex flex-col gap-3 p-4 rounded-2xl" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)' }}>
           <input
             type="text"
             value={newTitle}
             onChange={(e) => setNewTitle(e.target.value)}
             placeholder="Título do evento..."
-            className="w-full px-4 py-3 bg-slate-50 dark:bg-dark-950 border border-slate-200 dark:border-dark-800 rounded-xl text-sm text-slate-800 dark:text-dark-100 placeholder-slate-400 dark:placeholder-dark-400 focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500 transition-all"
+            className="w-full px-4 py-3 rounded-xl text-sm focus:outline-none transition-all"
+            style={{
+              background: 'var(--bg-surface-hover)',
+              border: '1px solid var(--border-color)',
+              color: 'var(--text-primary)',
+            }}
+            onFocus={(e) => { e.currentTarget.style.borderColor = '#A78BFA'; }}
+            onBlur={(e) => { e.currentTarget.style.borderColor = 'var(--border-color)'; }}
             autoFocus
             onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
           />
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2 flex-1">
-              <CalendarIcon className="h-4 w-4 text-slate-400" />
+              <CalendarIcon className="h-4 w-4" style={{ color: 'var(--text-secondary)' }} />
               <input
                 type="date"
                 value={newDate}
                 onChange={(e) => setNewDate(e.target.value)}
-                className="flex-1 px-3 py-2 bg-slate-50 dark:bg-dark-950 border border-slate-200 dark:border-dark-800 rounded-lg text-sm text-slate-700 dark:text-dark-200 focus:outline-none focus:ring-2 focus:ring-violet-500/30"
+                className="flex-1 px-3 py-2 rounded-lg text-sm focus:outline-none"
+                style={{
+                  background: 'var(--bg-surface-hover)',
+                  border: '1px solid var(--border-color)',
+                  color: 'var(--text-primary)',
+                }}
               />
             </div>
             <div className="flex items-center gap-2 flex-1">
-              <Clock className="h-4 w-4 text-slate-400" />
+              <Clock className="h-4 w-4" style={{ color: 'var(--text-secondary)' }} />
               <input
                 type="time"
                 value={newTime}
                 onChange={(e) => setNewTime(e.target.value)}
-                className="flex-1 px-3 py-2 bg-slate-50 dark:bg-dark-950 border border-slate-200 dark:border-dark-800 rounded-lg text-sm text-slate-700 dark:text-dark-200 focus:outline-none focus:ring-2 focus:ring-violet-500/30"
+                className="flex-1 px-3 py-2 rounded-lg text-sm focus:outline-none"
+                style={{
+                  background: 'var(--bg-surface-hover)',
+                  border: '1px solid var(--border-color)',
+                  color: 'var(--text-primary)',
+                }}
               />
             </div>
           </div>
@@ -134,7 +164,8 @@ export const AgendaTab: React.FC = () => {
                 setNewTitle('');
                 setNewTime('');
               }}
-              className="px-4 py-2 text-sm font-semibold text-slate-500 hover:text-slate-700 dark:text-dark-400 dark:hover:text-dark-200 transition-colors cursor-pointer"
+              className="px-4 py-2 text-sm font-semibold transition-colors cursor-pointer"
+              style={{ color: 'var(--text-secondary)' }}
             >
               Cancelar
             </button>
@@ -142,7 +173,11 @@ export const AgendaTab: React.FC = () => {
               type="button"
               onClick={handleAdd}
               disabled={!newTitle.trim() || createEvent.isPending}
-              className="flex items-center gap-2 px-4 py-2 bg-violet-500 hover:bg-violet-600 disabled:bg-slate-300 dark:disabled:bg-dark-800 text-white disabled:text-slate-500 rounded-xl text-sm font-semibold transition-all cursor-pointer disabled:cursor-not-allowed"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all cursor-pointer disabled:cursor-not-allowed"
+              style={{
+                background: createEvent.isPending || !newTitle.trim() ? 'var(--bg-surface-hover)' : '#8B5CF6',
+                color: createEvent.isPending || !newTitle.trim() ? 'var(--text-secondary)' : '#FFFFFF',
+              }}
             >
               {createEvent.isPending ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -158,7 +193,7 @@ export const AgendaTab: React.FC = () => {
       {/* Today's Events */}
       {todayEvents.length > 0 && (
         <div className="flex flex-col gap-2">
-          <h3 className="text-xs font-bold text-slate-400 dark:text-dark-400 uppercase tracking-wide px-1">
+          <h3 className="text-xs font-bold uppercase tracking-wide px-1" style={{ color: 'var(--text-secondary)' }}>
             Hoje
           </h3>
           <div className="flex flex-col gap-1.5">
@@ -177,7 +212,7 @@ export const AgendaTab: React.FC = () => {
       {/* Upcoming Events */}
       {upcomingEvents.length > 0 && (
         <div className="flex flex-col gap-2">
-          <h3 className="text-xs font-bold text-slate-400 dark:text-dark-400 uppercase tracking-wide px-1">
+          <h3 className="text-xs font-bold uppercase tracking-wide px-1" style={{ color: 'var(--text-secondary)' }}>
             Próximos Eventos
           </h3>
           <div className="flex flex-col gap-1.5">
@@ -196,7 +231,7 @@ export const AgendaTab: React.FC = () => {
       {/* Past pending events */}
       {events.filter((e) => e.date < today && e.status === 'pending').length > 0 && (
         <div className="flex flex-col gap-2">
-          <h3 className="text-xs font-bold text-slate-400 dark:text-dark-400 uppercase tracking-wide px-1">
+          <h3 className="text-xs font-bold uppercase tracking-wide px-1" style={{ color: 'var(--text-secondary)' }}>
             Eventos Passados
           </h3>
           <div className="flex flex-col gap-1.5">
@@ -257,13 +292,12 @@ const EventItem: React.FC<EventItemProps> = ({ event, onToggleStatus, onDelete }
 
   return (
     <div
-      className={`group flex items-center gap-3 px-4 py-3 bg-white dark:bg-dark-900 rounded-2xl border transition-all duration-200 ${
-        event.status === 'completed'
-          ? 'border-slate-100 dark:border-dark-800/60 opacity-60'
-          : event.status === 'cancelled'
-          ? 'border-slate-100 dark:border-dark-800/60 opacity-40'
-          : 'border-slate-100 dark:border-dark-800 hover:shadow-sm hover:border-slate-200 dark:hover:border-dark-700'
-      }`}
+      className="group flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-200"
+      style={{
+        background: 'var(--bg-surface)',
+        border: '1px solid var(--border-color)',
+        opacity: event.status === 'completed' ? 0.6 : event.status === 'cancelled' ? 0.4 : 1,
+      }}
     >
       <button
         type="button"
@@ -276,22 +310,22 @@ const EventItem: React.FC<EventItemProps> = ({ event, onToggleStatus, onDelete }
 
       <div className="flex-grow min-w-0">
         <span
-          className={`text-sm font-medium block ${
-            event.status === 'completed'
-              ? 'text-slate-400 dark:text-dark-400 line-through'
-              : 'text-slate-800 dark:text-dark-100'
-          }`}
+          className="text-sm font-medium block"
+          style={{
+            color: event.status === 'completed' ? 'var(--text-secondary)' : 'var(--text-primary)',
+            textDecoration: event.status === 'completed' ? 'line-through' : 'none',
+          }}
         >
           {event.title}
         </span>
         <div className="flex items-center gap-2 mt-0.5">
-          <span className="text-xs text-slate-400 dark:text-dark-400">
+          <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
             {formatDate(event.date)}
           </span>
           {event.time && (
             <>
-              <span className="text-xs text-slate-300 dark:text-dark-500">•</span>
-              <span className="text-xs text-slate-400 dark:text-dark-400">{event.time}h</span>
+              <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>•</span>
+              <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>{event.time}h</span>
             </>
           )}
         </div>
@@ -301,7 +335,10 @@ const EventItem: React.FC<EventItemProps> = ({ event, onToggleStatus, onDelete }
         <button
           type="button"
           onClick={onDelete}
-          className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-lg transition-colors cursor-pointer"
+          className="p-1.5 rounded-lg transition-colors cursor-pointer"
+          style={{ color: 'var(--text-secondary)' }}
+          onMouseEnter={(e) => { e.currentTarget.style.color = '#EF4444'; e.currentTarget.style.background = 'var(--bg-surface-hover)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-secondary)'; e.currentTarget.style.background = 'transparent'; }}
           title="Excluir"
         >
           <Trash2 className="h-3.5 w-3.5" />

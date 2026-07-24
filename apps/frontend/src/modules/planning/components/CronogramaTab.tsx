@@ -97,29 +97,48 @@ export const CronogramaTab: React.FC = () => {
 
       {/* Add Form */}
       {showForm && (
-        <div className="flex flex-col gap-3 p-4 bg-white dark:bg-dark-900 border border-slate-200 dark:border-dark-800 rounded-2xl">
+        <div className="flex flex-col gap-3 p-4 rounded-2xl" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)' }}>
           <input
             type="text"
             value={newTitle}
             onChange={(e) => setNewTitle(e.target.value)}
             placeholder="Título do marco..."
-            className="w-full px-4 py-3 bg-slate-50 dark:bg-dark-950 border border-slate-200 dark:border-dark-800 rounded-xl text-sm text-slate-800 dark:text-dark-100 placeholder-slate-400 dark:placeholder-dark-400 focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500 transition-all"
+            className="w-full px-4 py-3 rounded-xl text-sm focus:outline-none transition-all"
+            style={{
+              background: 'var(--bg-surface-hover)',
+              border: '1px solid var(--border-color)',
+              color: 'var(--text-primary)',
+            }}
             autoFocus
+            onFocus={(e) => { e.currentTarget.style.borderColor = '#A78BFA'; }}
+            onBlur={(e) => { e.currentTarget.style.borderColor = 'var(--border-color)'; }}
           />
           <input
             type="text"
             value={newDescription}
             onChange={(e) => setNewDescription(e.target.value)}
             placeholder="Descrição (opcional)..."
-            className="w-full px-4 py-3 bg-slate-50 dark:bg-dark-950 border border-slate-200 dark:border-dark-800 rounded-xl text-sm text-slate-800 dark:text-dark-100 placeholder-slate-400 dark:placeholder-dark-400 focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500 transition-all"
+            className="w-full px-4 py-3 rounded-xl text-sm focus:outline-none transition-all"
+            style={{
+              background: 'var(--bg-surface-hover)',
+              border: '1px solid var(--border-color)',
+              color: 'var(--text-primary)',
+            }}
+            onFocus={(e) => { e.currentTarget.style.borderColor = '#A78BFA'; }}
+            onBlur={(e) => { e.currentTarget.style.borderColor = 'var(--border-color)'; }}
           />
           <div className="flex items-center gap-2">
-            <CalendarIcon className="h-4 w-4 text-slate-400" />
+            <CalendarIcon className="h-4 w-4" style={{ color: 'var(--text-secondary)' }} />
             <input
               type="date"
               value={newDate}
               onChange={(e) => setNewDate(e.target.value)}
-              className="flex-1 px-3 py-2 bg-slate-50 dark:bg-dark-950 border border-slate-200 dark:border-dark-800 rounded-lg text-sm text-slate-700 dark:text-dark-200 focus:outline-none focus:ring-2 focus:ring-violet-500/30"
+              className="flex-1 px-3 py-2 rounded-lg text-sm focus:outline-none"
+              style={{
+                background: 'var(--bg-surface-hover)',
+                border: '1px solid var(--border-color)',
+                color: 'var(--text-primary)',
+              }}
             />
           </div>
           <div className="flex items-center gap-2 justify-end">
@@ -131,7 +150,8 @@ export const CronogramaTab: React.FC = () => {
                 setNewDate('');
                 setNewDescription('');
               }}
-              className="px-4 py-2 text-sm font-semibold text-slate-500 hover:text-slate-700 dark:text-dark-400 dark:hover:text-dark-200 transition-colors cursor-pointer"
+              className="px-4 py-2 text-sm font-semibold transition-colors cursor-pointer"
+              style={{ color: 'var(--text-secondary)' }}
             >
               Cancelar
             </button>
@@ -139,7 +159,11 @@ export const CronogramaTab: React.FC = () => {
               type="button"
               onClick={handleAdd}
               disabled={!newTitle.trim() || !newDate || createEvent.isPending}
-              className="flex items-center gap-2 px-4 py-2 bg-violet-500 hover:bg-violet-600 disabled:bg-slate-300 dark:disabled:bg-dark-800 text-white disabled:text-slate-500 rounded-xl text-sm font-semibold transition-all cursor-pointer disabled:cursor-not-allowed"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all cursor-pointer disabled:cursor-not-allowed"
+              style={{
+                background: (!newTitle.trim() || !newDate || createEvent.isPending) ? 'var(--bg-surface-hover)' : '#8B5CF6',
+                color: (!newTitle.trim() || !newDate || createEvent.isPending) ? 'var(--text-secondary)' : '#FFFFFF',
+              }}
             >
               {createEvent.isPending ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -178,14 +202,16 @@ export const CronogramaTab: React.FC = () => {
 
                   {/* Content */}
                   <div className="flex-grow pb-2">
-                    <div className="bg-white dark:bg-dark-900 border border-slate-200 dark:border-dark-800 rounded-2xl p-4 hover:shadow-sm transition-shadow">
+                    <div className="rounded-2xl p-4 transition-shadow hover:shadow-md"
+                      style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)' }}
+                    >
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-grow min-w-0">
-                          <h4 className="text-sm font-bold text-slate-800 dark:text-dark-100">
+                          <h4 className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>
                             {event.title}
                           </h4>
                           {event.description && (
-                            <p className="text-xs text-slate-500 dark:text-dark-350 mt-1">
+                            <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>
                               {event.description}
                             </p>
                           )}
@@ -197,7 +223,8 @@ export const CronogramaTab: React.FC = () => {
                           <button
                             type="button"
                             onClick={() => handleToggleStatus(event.id, event.status)}
-                            className="p-1.5 text-slate-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 rounded-lg transition-colors cursor-pointer"
+                            className="p-1.5 rounded-lg transition-colors cursor-pointer hover:text-emerald-500 hover:bg-[var(--bg-surface-hover)]"
+                            style={{ color: 'var(--text-secondary)' }}
                             title="Concluir"
                           >
                             <CheckCircle2 className="h-4 w-4" />
@@ -205,7 +232,8 @@ export const CronogramaTab: React.FC = () => {
                           <button
                             type="button"
                             onClick={() => setDeleteConfirmId(event.id)}
-                            className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-lg transition-colors cursor-pointer"
+                            className="p-1.5 rounded-lg transition-colors cursor-pointer hover:text-red-500 hover:bg-[var(--bg-surface-hover)]"
+                            style={{ color: 'var(--text-secondary)' }}
                             title="Excluir"
                           >
                             <Trash2 className="h-3.5 w-3.5" />
@@ -228,11 +256,15 @@ export const CronogramaTab: React.FC = () => {
             Concluídos ({completedEvents.length})
           </h3>
           <div className="flex flex-col gap-1.5">
-            {completedEvents.map((event) => (
-              <div
-                key={event.id}
-                className="flex items-center gap-3 px-4 py-3 bg-white dark:bg-dark-900 rounded-2xl border border-slate-100 dark:border-dark-800/60 opacity-60"
-              >
+            {completedEvents.map((event) => (                <div
+                  key={event.id}
+                  className="flex items-center gap-3 px-4 py-3 rounded-2xl"
+                  style={{
+                    background: 'var(--bg-surface)',
+                    border: '1px solid var(--border-color)',
+                    opacity: 0.6,
+                  }}
+                >
                 <CheckCircle2 className="h-5 w-5 text-emerald-500 flex-shrink-0" />
                 <div className="flex-grow min-w-0">
                   <span className="text-sm font-medium text-slate-400 dark:text-dark-400 line-through block">

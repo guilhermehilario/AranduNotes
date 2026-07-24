@@ -92,23 +92,25 @@ export const CalendarTab: React.FC = () => {
     <div className="flex flex-col lg:flex-row gap-6">
       {/* Calendar Grid */}
       <div className="lg:w-2/3">
-        <div className="bg-white dark:bg-dark-900 border border-slate-200 dark:border-dark-800 rounded-2xl overflow-hidden">
+        <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)' }}>
           {/* Month Header */}
-          <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-dark-800">
+          <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid var(--border-color)' }}>
             <button
               type="button"
               onClick={handlePrevMonth}
-              className="p-2 text-slate-500 hover:text-violet-500 hover:bg-violet-50 dark:hover:bg-violet-950/20 rounded-xl transition-all cursor-pointer"
+              className="p-2 rounded-xl transition-all cursor-pointer hover:bg-[var(--bg-surface-hover)]"
+              style={{ color: 'var(--text-secondary)' }}
             >
               <ChevronLeft className="h-5 w-5" />
             </button>
-            <h3 className="text-lg font-heading font-bold text-slate-800 dark:text-dark-100">
+            <h3 className="text-lg font-heading font-bold" style={{ color: 'var(--text-primary)' }}>
               {MONTHS[month]} {year}
             </h3>
             <button
               type="button"
               onClick={handleNextMonth}
-              className="p-2 text-slate-500 hover:text-violet-500 hover:bg-violet-50 dark:hover:bg-violet-950/20 rounded-xl transition-all cursor-pointer"
+              className="p-2 rounded-xl transition-all cursor-pointer hover:bg-[var(--bg-surface-hover)]"
+              style={{ color: 'var(--text-secondary)' }}
             >
               <ChevronRight className="h-5 w-5" />
             </button>
@@ -119,7 +121,8 @@ export const CalendarTab: React.FC = () => {
             {WEEKDAYS.map((day) => (
               <div
                 key={day}
-                className="py-2 text-center text-xs font-bold text-slate-400 dark:text-dark-400 uppercase tracking-wide"
+                className="py-2 text-center text-xs font-bold uppercase tracking-wide"
+                style={{ color: 'var(--text-secondary)' }}
               >
                 {day}
               </div>
@@ -127,10 +130,10 @@ export const CalendarTab: React.FC = () => {
           </div>
 
           {/* Day Cells */}
-          <div className="grid grid-cols-7 border-t border-slate-100 dark:border-dark-800">
+          <div className="grid grid-cols-7" style={{ borderTop: '1px solid var(--border-color)' }}>
             {calendarDays.map((day, idx) => {
               if (day === null) {
-                return <div key={`empty-${idx}`} className="min-h-[80px] border-b border-r border-slate-50 dark:border-dark-800/40" />;
+                return <div key={`empty-${idx}`} className="min-h-[80px] border-r" style={{ borderBottom: '1px solid var(--border-color)', borderRight: '1px solid var(--border-color)' }} />;
               }
 
               const dateStr = `${year}-${pad(month + 1)}-${pad(day)}`;
@@ -143,16 +146,23 @@ export const CalendarTab: React.FC = () => {
                   key={dateStr}
                   type="button"
                   onClick={() => setSelectedDate(dateStr)}
-                  className={`min-h-[80px] p-1.5 border-b border-r border-slate-50 dark:border-dark-800/40 text-left transition-all cursor-pointer hover:bg-violet-50/50 dark:hover:bg-violet-950/10 ${
-                    isSelected ? 'bg-violet-50 dark:bg-violet-950/20 ring-2 ring-violet-500/30 z-10 relative' : ''
-                  }`}
+                  className="min-h-[80px] p-1.5 text-left transition-all cursor-pointer"
+                  style={{
+                    borderBottom: '1px solid var(--border-color)',
+                    borderRight: '1px solid var(--border-color)',
+                    background: isSelected ? 'var(--bg-surface-hover)' : 'transparent',
+                    boxShadow: isSelected ? '0 0 0 2px #8B5CF6 inset' : 'none',
+                    zIndex: isSelected ? 1 : 0,
+                    position: 'relative' as const,
+                  }}
                 >
                   <span
                     className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-semibold ${
                       isToday
                         ? 'bg-violet-500 text-white'
-                        : 'text-slate-700 dark:text-dark-200'
+                        : ''
                     }`}
+                    style={{ color: isToday ? '#FFFFFF' : 'var(--text-primary)' }}
                   >
                     {day}
                   </span>
@@ -171,7 +181,7 @@ export const CalendarTab: React.FC = () => {
                         />
                       ))}
                       {dayEvents.length > 3 && (
-                        <span className="text-[10px] text-slate-400 dark:text-dark-400 font-semibold">
+                        <span className="text-[10px] font-semibold" style={{ color: 'var(--text-secondary)' }}>
                           +{dayEvents.length - 3}
                         </span>
                       )}
@@ -186,13 +196,13 @@ export const CalendarTab: React.FC = () => {
 
       {/* Selected Day Events */}
       <div className="lg:w-1/3">
-        <div className="bg-white dark:bg-dark-900 border border-slate-200 dark:border-dark-800 rounded-2xl p-4">
-          <h3 className="text-sm font-heading font-bold text-slate-800 dark:text-dark-100 mb-3">
+        <div className="rounded-2xl p-4" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)' }}>
+          <h3 className="text-sm font-heading font-bold mb-3" style={{ color: 'var(--text-primary)' }}>
             {selectedDate ? formatDate(selectedDate) : 'Selecione um dia'}
           </h3>
 
           {selectedDate && selectedEvents.length === 0 && (
-            <p className="text-sm text-slate-400 dark:text-dark-400">
+            <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
               Nenhum evento neste dia.
             </p>
           )}
@@ -202,37 +212,37 @@ export const CalendarTab: React.FC = () => {
               {selectedEvents.map((event) => (
                 <div
                   key={event.id}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-xl border ${
-                    event.status === 'completed'
-                      ? 'border-slate-100 dark:border-dark-800/60 opacity-60'
-                      : 'border-slate-100 dark:border-dark-800'
-                  }`}
+                  className="flex items-center gap-2 px-3 py-2 rounded-xl"
+                  style={{
+                    border: '1px solid var(--border-color)',
+                    opacity: event.status === 'completed' ? 0.6 : 1,
+                  }}
                 >
                   <button
                     type="button"
                     onClick={() => handleToggleStatus(event.id, event.status)}
-                    className={`flex-shrink-0 w-4 h-4 rounded-full border-2 cursor-pointer transition-colors ${
-                      event.status === 'completed'
-                        ? 'bg-emerald-500 border-emerald-500'
-                        : 'border-slate-300 dark:border-dark-500 hover:border-violet-400'
-                    }`}
+                    className="flex-shrink-0 w-4 h-4 rounded-full border-2 cursor-pointer transition-colors"
+                    style={{
+                      background: event.status === 'completed' ? '#10B981' : 'transparent',
+                      borderColor: event.status === 'completed' ? '#10B981' : 'var(--border-color)',
+                    }}
                   />
                   <div className="flex-grow min-w-0">
-                    <p className={`text-sm font-medium truncate ${
-                      event.status === 'completed'
-                        ? 'text-slate-400 dark:text-dark-400 line-through'
-                        : 'text-slate-800 dark:text-dark-100'
-                    }`}>
+                    <p className="text-sm font-medium truncate" style={{
+                      color: event.status === 'completed' ? 'var(--text-secondary)' : 'var(--text-primary)',
+                      textDecoration: event.status === 'completed' ? 'line-through' : 'none',
+                    }}>
                       {event.title}
                     </p>
                     {event.time && (
-                      <p className="text-xs text-slate-400 dark:text-dark-400">{event.time}h</p>
+                      <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>{event.time}h</p>
                     )}
                   </div>
                   <button
                     type="button"
                     onClick={() => setDeleteConfirmId(event.id)}
-                    className="p-1 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-lg transition-colors cursor-pointer opacity-0 group-hover:opacity-100"
+                    className="p-1 rounded-lg transition-colors cursor-pointer"
+                    style={{ color: 'var(--text-secondary)' }}
                   >
                     <CalendarDays className="h-3.5 w-3.5" />
                   </button>

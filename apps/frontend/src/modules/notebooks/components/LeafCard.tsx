@@ -36,14 +36,14 @@ export const LeafCard: React.FC<LeafCardProps> = ({ leaf, notebookId, onCreateSu
       <Card
         hoverable
         onClick={() => navigate(`/notebooks/${notebookId}/leaves/${leaf.id}`)}
-        className="flex items-center gap-4 p-4 border border-slate-100 dark:border-dark-800"
+        className="flex items-center gap-4 p-4"
       >
-        <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-dark-800 flex items-center justify-center text-slate-500 dark:text-dark-300 flex-shrink-0">
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'var(--bg-surface-hover)', color: 'var(--text-secondary)' }}>
           <FileText className="h-5 w-5" />
         </div>
         <div className="flex-grow min-w-0">
           <div className="flex items-center gap-2">
-            <h4 className="font-heading font-bold truncate text-slate-800 dark:text-dark-50">
+            <h4 className="font-heading font-bold truncate" style={{ color: 'var(--text-primary)' }}>
               {leaf.title}
             </h4>
             {/* Tags */}
@@ -58,16 +58,16 @@ export const LeafCard: React.FC<LeafCardProps> = ({ leaf, notebookId, onCreateSu
                   />
                 ))}
                 {leaf.tags.length > 3 && (
-                  <span className="text-[10px] text-slate-400">+{leaf.tags.length - 3}</span>
+                  <span className="text-[10px]" style={{ color: 'var(--text-secondary)' }}>+{leaf.tags.length - 3}</span>
                 )}
               </div>
             )}
           </div>
-          <p className="text-xs text-slate-400 dark:text-dark-400 mt-1 flex items-center gap-1.5">
+          <p className="text-xs mt-1 flex items-center gap-1.5" style={{ color: 'var(--text-secondary)' }}>
             <Calendar className="h-3.5 w-3.5" />
             Atualizado em {new Date(leaf.updatedAt).toLocaleDateString('pt-BR')}
             {hasChildren && (
-              <span className="text-brand-500 ml-1">
+              <span className="ml-1" style={{ color: 'var(--primary)' }}>
                 · {leaf.children!.length} sub-folha(s)
               </span>
             )}
@@ -81,7 +81,8 @@ export const LeafCard: React.FC<LeafCardProps> = ({ leaf, notebookId, onCreateSu
                 e.stopPropagation();
                 setExpanded(!expanded);
               }}
-              className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-dark-800 text-slate-400 cursor-pointer"
+              className="p-1.5 rounded-lg cursor-pointer hover:bg-[var(--bg-surface-hover)] transition-colors"
+              style={{ color: 'var(--text-secondary)' }}
             >
               {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
             </button>
@@ -92,34 +93,35 @@ export const LeafCard: React.FC<LeafCardProps> = ({ leaf, notebookId, onCreateSu
               e.stopPropagation();
               onCreateSubLeaf();
             }}
-            className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-dark-800 text-slate-400 hover:text-brand-500 cursor-pointer"
+            className="p-1.5 rounded-lg cursor-pointer hover:bg-[var(--bg-surface-hover)] transition-colors"
+            style={{ color: 'var(--text-secondary)' }}
             title="Criar sub-folha"
           >
             <Plus className="h-3.5 w-3.5" />
           </button>
-          <ChevronRight className="h-5 w-5 text-slate-400 dark:text-dark-500 flex-shrink-0" />
+          <ChevronRight className="h-5 w-5 flex-shrink-0" style={{ color: 'var(--text-secondary)' }} />
         </div>
       </Card>
 
       {/* Sub-folhas (children) */}
       {hasChildren && expanded && (
-        <div className="ml-6 flex flex-col gap-1 pl-4 border-l-2 border-slate-100 dark:border-dark-800">
+        <div className="ml-6 flex flex-col gap-1 pl-4" style={{ borderLeft: '2px solid var(--border-color)' }}>
           {leaf.children!.map((child) => (
             <Card
               key={child.id}
               hoverable
               onClick={() => navigate(`/notebooks/${notebookId}/leaves/${child.id}`)}
-              className="flex items-center gap-3 p-3 border border-slate-100 dark:border-dark-800"
+              className="flex items-center gap-3 p-3"
             >
-              <div className="w-8 h-8 rounded-lg bg-slate-50 dark:bg-dark-800 flex items-center justify-center text-slate-400 dark:text-dark-300 flex-shrink-0">
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'var(--bg-surface-hover)', color: 'var(--text-secondary)' }}>
                 <FileText className="h-4 w-4" />
               </div>
               <div className="flex-grow min-w-0">
-                <h5 className="font-heading font-semibold text-sm truncate text-slate-700 dark:text-dark-100">
+                <h5 className="font-heading font-semibold text-sm truncate" style={{ color: 'var(--text-primary)' }}>
                   {child.title}
                 </h5>
               </div>
-              <ChevronRight className="h-4 w-4 text-slate-400 dark:text-dark-500 flex-shrink-0" />
+              <ChevronRight className="h-4 w-4 flex-shrink-0" style={{ color: 'var(--text-secondary)' }} />
             </Card>
           ))}
         </div>
