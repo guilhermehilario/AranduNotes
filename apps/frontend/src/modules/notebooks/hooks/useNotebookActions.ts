@@ -9,6 +9,7 @@ import { NOTEBOOK_COLORS } from "../constants";
 import { useToastStore } from "../../../store/toastStore";
 import { extractApiError } from "../../../utils/api-errors";
 import type { UseMutateAsyncFunction } from "@tanstack/react-query";
+import type { Flashcard } from "../../study/types";
 
 interface UseNotebookActionsParams {
   notebookId: string;
@@ -88,10 +89,12 @@ export function useNotebookActions({
       front: string;
       back: string;
     }) => studyService.createFlashcard(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["notebook-flashcards", notebookId],
-      });
+    onSuccess: (newFlashcard) => {
+      // ✅ Adiciona o novo flashcard ao cache imediatamente — sem precisar recarregar
+      queryClient.setQueryData<Flashcard[]>(
+        ["notebook-flashcards", notebookId],
+        (old) => [...(old || []), newFlashcard],
+      );
       // ✅ Invalida as estatísticas para refletir novos cards no Dashboard
       queryClient.invalidateQueries({ queryKey: ["study-stats"] });
       setIsFlashcardModalOpen(false);

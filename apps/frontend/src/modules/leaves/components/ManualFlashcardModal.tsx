@@ -6,6 +6,7 @@ import { useToastStore } from '../../../store/toastStore';
 import { extractApiError } from '../../../utils/api-errors';
 import { Input } from '../../../components/ui/Input.tsx';
 import { TextArea } from '../../../components/ui/TextArea.tsx';
+import type { Flashcard } from '../../study/types';
 import studyService from '../../study/services/studyService';
 
 interface ManualFlashcardModalProps {
@@ -32,13 +33,16 @@ export const ManualFlashcardModal: React.FC<ManualFlashcardModalProps> = ({
       front: string;
       back: string;
     }) => studyService.createFlashcard(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ['leaves', leafId, 'flashcards'],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ['notebook-flashcards', notebookId],
-      });
+    onSuccess: (newFlashcard) => {
+      // ✅ Adiciona o novo flashcard ao cache imediatamente — sem precisar recarregar
+      queryClient.setQueryData<Flashcard[]>(
+        ['notebook-flashcards', notebookId],
+        (old) => [...(old || []), newFlashcard],
+      );
+      queryClient.setQueryData<Flashcard[]>(
+        ['leaves', leafId, 'flashcards'],
+        (old) => [...(old || []), newFlashcard],
+      );
       // ✅ Invalida as estatísticas para refletir novos cards no Dashboard
       queryClient.invalidateQueries({ queryKey: ['study-stats'] });
       handleClose();
