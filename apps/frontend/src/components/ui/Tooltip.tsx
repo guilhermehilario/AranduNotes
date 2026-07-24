@@ -32,13 +32,13 @@ export const Tooltip: React.FC<TooltipProps> = ({
 
   return (
     <div
-      className="relative inline-flex"
+      className="relative flex w-full"
       onMouseEnter={() => setIsVisible(true)}
       onMouseLeave={() => setIsVisible(false)}
       onFocus={() => setIsVisible(true)}
       onBlur={() => setIsVisible(false)}
     >
-      <div aria-describedby={tooltipId}>{children}</div>
+      <div className="w-full" aria-describedby={tooltipId}>{children}</div>
 
       {isVisible && (
         <div
@@ -46,7 +46,7 @@ export const Tooltip: React.FC<TooltipProps> = ({
           role="tooltip"
           className={`absolute z-50 ${positionClasses[position]} pointer-events-none`}
         >
-          <div className="bg-slate-800 dark:bg-dark-700 text-white dark:text-dark-100 text-xs font-medium px-3 py-2 rounded-xl shadow-lg whitespace-normal max-w-[220px] text-center leading-relaxed">
+          <div className="bg-zinc-800 dark:bg-zinc-800 text-white text-xs font-medium px-3 py-2 rounded-xl shadow-lg whitespace-normal max-w-[220px] text-center leading-relaxed">
             {content}
           </div>
           <div className={`absolute ${arrowClasses[position]}`} />
