@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useSearchParams, useNavigate, Link } from "react-router-dom";
 import {
   Mail,
@@ -37,12 +37,16 @@ export const VerifyEmailView: React.FC = () => {
   const [resendMessage, setResendMessage] = React.useState<string | null>(null);
 
   // Verifica o token na inicialização
-  React.useEffect(() => {
+  useEffect(() => {
     if (token && step === "verifying") {
       verifyToken(token);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
+
+  useEffect(() => {
+    console.log("Tela verifyEmail montou");
+  }, []);
 
   const verifyToken = async (verificationToken: string) => {
     try {

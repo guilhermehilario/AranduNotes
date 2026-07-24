@@ -6,10 +6,15 @@ import App from "./App.tsx";
 // Se o usuário foi redirecionado via 404.html, restauramos a rota original
 (function restoreSPARoute() {
   const redirect = sessionStorage.getItem("redirect");
-  if (redirect && redirect !== window.location.pathname + window.location.search) {
+  if (
+    redirect &&
+    redirect !== window.location.pathname + window.location.search
+  ) {
     sessionStorage.removeItem("redirect");
     window.history.replaceState(null, "", redirect);
   }
 })();
-
+window.addEventListener("popstate", () => {
+  console.log("URL: ", window.location.href);
+});
 createRoot(document.getElementById("root")!).render(<App />);
