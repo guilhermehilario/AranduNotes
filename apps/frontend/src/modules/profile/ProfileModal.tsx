@@ -154,13 +154,19 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
         `}</style>
 
         {/* Tabs */}
-        <div className="flex border-b border-slate-100 dark:border-dark-800/60 -mx-6 px-6 mb-6 sticky top-0 bg-white dark:bg-dark-900 z-10 rounded-t-2xl">
+        <div
+          className="flex -mx-6 px-6 mb-6 sticky top-0 z-10 rounded-t-2xl"
+          style={{
+            background: 'var(--bg-surface)',
+            borderBottom: '1px solid var(--border-color)',
+          }}
+        >
           <button
             onClick={() => setActiveTab("profile")}
             className={`relative flex items-center gap-2 pb-4 px-4 font-heading font-bold text-sm tracking-wide transition-all duration-300 cursor-pointer ${
               activeTab === "profile"
                 ? "text-brand-500"
-                : "text-slate-500 dark:text-dark-400 hover:text-slate-700"
+                : "hover:opacity-80 text-[var(--text-secondary)]"
             }`}
           >
             <User className="h-4 w-4" /> Perfil
@@ -177,7 +183,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
             className={`relative flex items-center gap-2 pb-4 px-4 font-heading font-bold text-sm tracking-wide transition-all duration-300 cursor-pointer ${
               activeTab === "avatars"
                 ? "text-brand-500"
-                : "text-slate-500 dark:text-dark-400 hover:text-slate-700"
+                : "hover:opacity-80 text-[var(--text-secondary)]"
             }`}
           >
             <Camera className="h-4 w-4" /> Avatares
@@ -194,7 +200,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
             className={`relative flex items-center gap-2 pb-4 px-4 font-heading font-bold text-sm tracking-wide transition-all duration-300 cursor-pointer ${
               activeTab === "settings"
                 ? "text-brand-500"
-                : "text-slate-500 dark:text-dark-400 hover:text-slate-700"
+                : "hover:opacity-80 text-[var(--text-secondary)]"
             }`}
           >
             <Settings className="h-4 w-4" /> Configurações
@@ -213,19 +219,28 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
           <div className="flex flex-col gap-7 max-h-[calc(90vh-12rem)] overflow-y-auto pr-1 tab-enter">
             {/* User info */}
             <div className="flex items-center gap-4">
-              <div className="relative w-16 h-16 rounded-full bg-brand-100 dark:bg-brand-900/30 flex items-center justify-center overflow-hidden border-2 border-brand-200 dark:border-brand-800 flex-shrink-0">
+              <div
+                className="relative w-16 h-16 rounded-full flex items-center justify-center overflow-hidden border-2 flex-shrink-0"
+                style={{
+                  borderColor: 'var(--border-color)',
+                  background: 'var(--bg-surface-hover)',
+                }}
+              >
                 <img
                   src={user?.avatarUrl || ""}
                   alt="Avatar"
                   className="w-full h-full object-cover"
                 />
-                <div className="absolute inset-0 rounded-full ring-2 ring-white/50 dark:ring-dark-900/50" />
+                <div
+                  className="absolute inset-0 rounded-full ring-2"
+                  style={{ ringColor: 'var(--bg-surface)' }}
+                />
               </div>
               <div>
-                <h2 className="text-lg font-heading font-extrabold text-slate-900 dark:text-dark-50">
+                <h2 className="text-lg font-heading font-extrabold" style={{ color: 'var(--text-primary)' }}>
                   {user?.name || "Meu Perfil"}
                 </h2>
-                <p className="text-xs text-slate-500 dark:text-dark-400 mt-0.5">
+                <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>
                   {user?.email}
                 </p>
               </div>
@@ -242,11 +257,12 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
             {/* Save message */}
             {saveMessage && (
               <div
-                className={`p-3 rounded-xl text-sm font-medium ${
-                  saveMessage.includes("sucesso")
-                    ? "bg-emerald-50 text-emerald-600 border border-emerald-100 dark:bg-emerald-950/20 dark:text-emerald-400"
-                    : "bg-rose-50 text-rose-600 border border-rose-100 dark:bg-rose-950/20 dark:text-rose-400"
-                }`}
+                className={`p-3 rounded-xl text-sm font-medium border`}
+                style={{
+                  background: saveMessage.includes("sucesso") ? 'rgba(16,185,129,0.1)' : 'rgba(244,63,94,0.1)',
+                  borderColor: saveMessage.includes("sucesso") ? 'rgba(16,185,129,0.3)' : 'rgba(244,63,94,0.3)',
+                  color: saveMessage.includes("sucesso") ? '#34D399' : '#FB7185',
+                }}
               >
                 {saveMessage}
               </div>
@@ -264,7 +280,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
             <PasswordChangeForm />
 
             {/* Delete Account */}
-            <div className="border-t border-red-100 dark:border-red-900/30 pt-6 pb-2">
+            <div className="pt-6 pb-2" style={{ borderTop: '1px solid rgba(244,63,94,0.2)' }}>
               <div className="flex items-center gap-2 mb-3">
                 <AlertTriangle className="h-4 w-4 text-rose-500" />
                 <span className="text-xs font-bold text-rose-500 uppercase tracking-wider">
@@ -274,42 +290,62 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
               <button
                 type="button"
                 onClick={() => setShowDeleteFlow(true)}
-                className="flex items-center gap-3 w-full px-4 py-3 rounded-xl bg-rose-50/50 dark:bg-rose-950/10 border border-rose-200 dark:border-rose-900/30 hover:bg-rose-50 dark:hover:bg-rose-950/20 hover:border-rose-300 dark:hover:border-rose-800/40 transition-all cursor-pointer text-left group"
+                className="flex items-center gap-3 w-full px-4 py-3 rounded-xl transition-all cursor-pointer text-left group"
+                style={{
+                  background: 'rgba(244,63,94,0.06)',
+                  border: '1px solid rgba(244,63,94,0.2)',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(244,63,94,0.12)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'rgba(244,63,94,0.06)';
+                }}
               >
-                <div className="w-9 h-9 rounded-lg bg-rose-100 dark:bg-rose-950/30 flex items-center justify-center text-rose-500 group-hover:scale-105 transition-transform">
+                <div className="w-9 h-9 rounded-lg flex items-center justify-center text-rose-500 group-hover:scale-105 transition-transform" style={{ background: 'rgba(244,63,94,0.15)' }}>
                   <Trash2 className="h-4 w-4" />
                 </div>
                 <div className="flex-1">
-                  <span className="text-sm font-bold text-rose-600 dark:text-rose-400">
+                  <span className="text-sm font-bold" style={{ color: '#FB7185' }}>
                     Excluir Conta
                   </span>
-                  <p className="text-[10px] text-rose-400 dark:text-rose-500/70">
+                  <p className="text-[10px]" style={{ color: 'rgba(251,113,133,0.7)' }}>
                     Remover permanentemente sua conta e todos os dados
                   </p>
                 </div>
-                <ChevronRight className="h-4 w-4 text-rose-300 dark:text-rose-700" />
+                <ChevronRight className="h-4 w-4" style={{ color: 'rgba(244,63,94,0.4)' }} />
               </button>
             </div>
 
             {/* Logout */}
-            <div className="border-t border-slate-100 dark:border-dark-800/60 pt-6 pb-2">
+            <div className="pt-6 pb-2" style={{ borderTop: '1px solid var(--border-color)' }}>
               <button
                 type="button"
                 onClick={handleLogout}
-                className="flex items-center gap-3 w-full px-4 py-3 rounded-xl bg-rose-50/50 dark:bg-rose-950/10 border border-rose-100 dark:border-rose-900/30 hover:bg-rose-50 dark:hover:bg-rose-950/20 hover:border-rose-200 dark:hover:border-rose-800/40 transition-all cursor-pointer text-left group"
+                className="flex items-center gap-3 w-full px-4 py-3 rounded-xl transition-all cursor-pointer text-left group"
+                style={{
+                  background: 'rgba(244,63,94,0.06)',
+                  border: '1px solid rgba(244,63,94,0.2)',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(244,63,94,0.12)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'rgba(244,63,94,0.06)';
+                }}
               >
-                <div className="w-9 h-9 rounded-lg bg-rose-100 dark:bg-rose-950/30 flex items-center justify-center text-rose-500 group-hover:scale-105 transition-transform">
+                <div className="w-9 h-9 rounded-lg flex items-center justify-center text-rose-500 group-hover:scale-105 transition-transform" style={{ background: 'rgba(244,63,94,0.15)' }}>
                   <LogOut className="h-4 w-4" />
                 </div>
                 <div className="flex-1">
-                  <span className="text-sm font-bold text-rose-600 dark:text-rose-400">
+                  <span className="text-sm font-bold" style={{ color: '#FB7185' }}>
                     Sair da conta
                   </span>
-                  <p className="text-[10px] text-rose-400 dark:text-rose-500/70">
+                  <p className="text-[10px]" style={{ color: 'rgba(251,113,133,0.7)' }}>
                     Fazer logout do aplicativo
                   </p>
                 </div>
-                <ChevronRight className="h-4 w-4 text-rose-300 dark:text-rose-700" />
+                <ChevronRight className="h-4 w-4" style={{ color: 'rgba(244,63,94,0.4)' }} />
               </button>
             </div>
           </div>

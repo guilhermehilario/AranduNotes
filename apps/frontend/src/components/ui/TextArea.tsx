@@ -21,7 +21,8 @@ export const TextArea = React.forwardRef<HTMLTextAreaElement, TextAreaProps>(
         {label && (
           <label
             htmlFor={textareaId}
-            className="text-sm font-medium text-slate-700 dark:text-dark-200"
+            className="text-sm font-medium"
+            style={{ color: 'var(--text-primary)' }}
           >
             {label}
           </label>
@@ -30,12 +31,21 @@ export const TextArea = React.forwardRef<HTMLTextAreaElement, TextAreaProps>(
           ref={ref}
           id={textareaId}
           rows={rows}
-          className={`w-full px-3.5 py-2.5 bg-white dark:bg-dark-900 border ${
-            error
-              ? 'border-rose-500 focus:ring-rose-200 dark:border-rose-500/50'
-              : 'border-slate-200 focus:ring-brand-100 dark:border-dark-700 dark:focus:ring-brand-900/20'
-          } rounded-xl text-slate-900 dark:text-dark-50 placeholder-slate-400 focus:outline-none focus:ring-4 focus:border-brand-500 dark:focus:border-brand-600 transition-all duration-200 resize-none ${className}`}
+          className={`w-full px-3.5 py-2.5 border rounded-xl focus:outline-none transition-all duration-200 resize-none ${className}`}
+          style={{
+            background: 'var(--bg-surface)',
+            borderColor: error ? '#F43F5E' : 'var(--border-color)',
+            color: 'var(--text-primary)',
+          }}
           {...props}
+          onFocus={(e) => {
+            if (!error) e.currentTarget.style.borderColor = 'var(--border-active)';
+            props.onFocus?.(e);
+          }}
+          onBlur={(e) => {
+            if (!error) e.currentTarget.style.borderColor = 'var(--border-color)';
+            props.onBlur?.(e);
+          }}
         />
         {error && (
           <span className="text-xs text-rose-500 font-medium tracking-wide">

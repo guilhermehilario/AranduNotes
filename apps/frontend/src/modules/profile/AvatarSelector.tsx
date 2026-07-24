@@ -65,20 +65,35 @@ export const AvatarSelector: React.FC<AvatarSelectorProps> = ({
   return (
     <div className="flex flex-col gap-4">
       {/* Preview do avatar selecionado */}
-      <div className="flex items-center gap-4 p-4 rounded-xl bg-gradient-to-br from-brand-50/50 to-purple-50/50 dark:from-brand-950/10 dark:to-purple-950/10 border border-brand-100 dark:border-brand-900/30">
-        <div className="relative w-16 h-16 rounded-full bg-brand-100 dark:bg-brand-900/30 flex items-center justify-center overflow-hidden border-2 border-brand-300 dark:border-brand-700 flex-shrink-0 shadow-sm">
+      <div
+        className="flex items-center gap-4 p-4 rounded-xl"
+        style={{
+          background: 'linear-gradient(135deg, rgba(77,161,255,0.08), rgba(139,92,246,0.08))',
+          border: '1px solid var(--border-color)',
+        }}
+      >
+        <div
+          className="relative w-16 h-16 rounded-full flex items-center justify-center overflow-hidden border-2 flex-shrink-0 shadow-sm"
+          style={{
+            borderColor: 'var(--border-active)',
+            background: 'var(--bg-surface-hover)',
+          }}
+        >
           <img
             src={customAvatarUrl || currentAvatarUrl}
             alt="Avatar selecionado"
             className="w-full h-full object-cover"
           />
-          <div className="absolute inset-0 rounded-full ring-2 ring-white/50 dark:ring-dark-900/50" />
+          <div
+            className="absolute inset-0 rounded-full ring-2"
+            style={{ borderColor: 'var(--bg-surface)' }}
+          />
         </div>
         <div>
-          <p className="text-sm font-bold text-slate-800 dark:text-dark-100">
+          <p className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>
             Avatar selecionado
           </p>
-          <p className="text-[11px] text-slate-500 dark:text-dark-400 mt-0.5">
+          <p className="text-[11px] mt-0.5" style={{ color: 'var(--text-secondary)' }}>
             {customAvatarUrl
               ? "📸 Sua foto"
               : `${currentCategory.icon} ${currentCategory.name} · ${currentVariant.seed}`
@@ -89,7 +104,16 @@ export const AvatarSelector: React.FC<AvatarSelectorProps> = ({
           <button
             type="button"
             onClick={() => onCustomUpload?.("")}
-            className="ml-auto p-1.5 rounded-lg hover:bg-rose-100 dark:hover:bg-rose-950/30 text-slate-400 hover:text-rose-500 transition-all cursor-pointer"
+            className="ml-auto p-1.5 rounded-lg transition-all cursor-pointer"
+            style={{ color: 'var(--text-secondary)' }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'var(--bg-surface-active)';
+              e.currentTarget.style.color = '#FB7185';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'transparent';
+              e.currentTarget.style.color = 'var(--text-secondary)';
+            }}
             title="Remover foto personalizada"
           >
             <X className="h-4 w-4" />
@@ -98,7 +122,19 @@ export const AvatarSelector: React.FC<AvatarSelectorProps> = ({
       </div>
 
       {/* Upload de imagem personalizada */}
-      <div className="flex items-center gap-3 p-4 rounded-xl border-2 border-dashed border-slate-200 dark:border-dark-700 hover:border-brand-300 dark:hover:border-brand-700 transition-all bg-slate-50/50 dark:bg-dark-950/20">
+      <div
+        className="flex items-center gap-3 p-4 rounded-xl border-2 border-dashed transition-all cursor-pointer"
+        style={{
+          borderColor: 'var(--border-color)',
+          background: 'var(--bg-surface)',
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.borderColor = 'var(--border-active)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.borderColor = 'var(--border-color)';
+        }}
+      >
         <input
           ref={fileInputRef}
           type="file"
@@ -106,18 +142,22 @@ export const AvatarSelector: React.FC<AvatarSelectorProps> = ({
           onChange={handleFileSelect}
           className="hidden"
         />
-        <div className="w-10 h-10 rounded-lg bg-brand-50 dark:bg-brand-950/20 flex items-center justify-center flex-shrink-0">
-          <Upload className="h-5 w-5 text-brand-500" />
+        <div
+          className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
+          style={{ background: 'var(--bg-surface-hover)', color: 'var(--primary)' }}
+        >
+          <Upload className="h-5 w-5" />
         </div>
         <div className="flex-1 min-w-0">
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="text-sm font-bold text-brand-600 dark:text-brand-400 hover:text-brand-700 transition-colors cursor-pointer"
+            className="text-sm font-bold transition-colors cursor-pointer"
+            style={{ color: 'var(--primary)' }}
           >
             Enviar foto própria
           </button>
-          <p className="text-[10px] text-slate-400 dark:text-dark-500 mt-0.5">
+          <p className="text-[10px] mt-0.5" style={{ color: 'var(--text-secondary)' }}>
             PNG, JPG ou GIF · Máx. 5MB
           </p>
         </div>
@@ -125,45 +165,51 @@ export const AvatarSelector: React.FC<AvatarSelectorProps> = ({
 
       {/* Erro no upload */}
       {uploadError && (
-        <div className="p-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-900/30">
-          <p className="text-xs font-medium text-rose-600 dark:text-rose-400">
+        <div
+          className="p-2.5 rounded-xl"
+          style={{
+            background: 'rgba(244,63,94,0.08)',
+            border: '1px solid rgba(244,63,94,0.25)',
+          }}
+        >
+          <p className="text-xs font-medium" style={{ color: '#FB7185' }}>
             {uploadError}
           </p>
         </div>
       )}
 
-      <label className="text-sm font-bold text-slate-700 dark:text-dark-200 flex items-center gap-2">
-        <Camera className="h-4 w-4 text-brand-500" /> Escolher Avatar
+      <label className="text-sm font-bold flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
+        <Camera className="h-4 w-4" style={{ color: 'var(--primary)' }} /> Escolher Avatar
       </label>
 
       {/* Category Pills */}
       <div className="flex flex-wrap gap-2">
-        {AVATAR_CATEGORIES.map((cat) => (
-          <button
-            key={cat.id}
-            type="button"
-            onClick={() => onCategoryChange(cat.id)}
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border-2 transition-all cursor-pointer whitespace-nowrap flex-shrink-0 ${
-              selectedCategory === cat.id
-                ? "border-brand-500 bg-brand-50 dark:bg-brand-950/20 ring-1 ring-brand-200 dark:ring-brand-800"
-                : "border-slate-100 dark:border-dark-800 hover:border-slate-300 dark:hover:border-dark-600"
-            }`}
-          >
-            <span className="text-base">{cat.icon}</span>
-            <span
-              className={`text-xs font-bold ${
-                selectedCategory === cat.id
-                  ? "text-brand-600 dark:text-brand-400"
-                  : "text-slate-600 dark:text-dark-300"
-              }`}
+        {AVATAR_CATEGORIES.map((cat) => {
+          const isSelectedCat = selectedCategory === cat.id;
+          return (
+            <button
+              key={cat.id}
+              type="button"
+              onClick={() => onCategoryChange(cat.id)}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border-2 transition-all cursor-pointer whitespace-nowrap flex-shrink-0 clickable`}
+              style={{
+                borderColor: isSelectedCat ? 'var(--border-active)' : 'var(--border-color)',
+                background: isSelectedCat ? 'var(--bg-surface-hover)' : 'transparent',
+              }}
             >
-              {cat.name}
-            </span>
-            <span className="text-[10px] text-slate-400 dark:text-dark-500 ml-0.5">
-              {cat.variants.length}
-            </span>
-          </button>
-        ))}
+              <span className="text-base">{cat.icon}</span>
+              <span
+                className="text-xs font-bold"
+                style={{ color: isSelectedCat ? 'var(--primary)' : 'var(--text-secondary)' }}
+              >
+                {cat.name}
+              </span>
+              <span className="text-[10px] ml-0.5" style={{ color: 'var(--text-secondary)' }}>
+                {cat.variants.length}
+              </span>
+            </button>
+          );
+        })}
       </div>
 
       {/* Variants Grid */}
@@ -176,15 +222,17 @@ export const AvatarSelector: React.FC<AvatarSelectorProps> = ({
               key={variant.id}
               type="button"
               onClick={() => onSelect(currentCategory.id, variant.id)}
-              className={`relative flex flex-col items-center gap-1 p-1.5 rounded-xl border-2 transition-all cursor-pointer ${
-                isSelected
-                  ? "border-brand-500 bg-brand-50 dark:bg-brand-950/20 ring-2 ring-brand-200 dark:ring-brand-800 scale-105"
-                  : "border-slate-100 dark:border-dark-800 hover:border-slate-300 dark:hover:border-dark-600 hover:bg-slate-50 dark:hover:bg-dark-900"
-              }`}
+              className={`relative flex flex-col items-center gap-1 p-1.5 rounded-xl border-2 transition-all duration-150 clickable`}
+              style={{
+                borderColor: isSelected ? 'var(--border-active)' : 'var(--border-color)',
+                background: isSelected ? 'var(--bg-surface-hover)' : 'transparent',
+                transform: isSelected ? 'scale(1.05)' : 'scale(1)',
+              }}
               title={variant.seed}
             >
               <div
-                className={`w-10 h-10 rounded-lg overflow-hidden ${isSelected ? "ring-2 ring-brand-300" : ""}`}
+                className={`w-10 h-10 rounded-lg overflow-hidden ${isSelected ? "ring-2" : ""}`}
+                style={isSelected ? { ringColor: 'var(--primary)' } : {}}
               >
                 <img
                   src={url}
@@ -194,11 +242,11 @@ export const AvatarSelector: React.FC<AvatarSelectorProps> = ({
                 />
               </div>
               {isSelected && (
-                <div className="absolute -top-1.5 -right-1.5 w-4.5 h-4.5 rounded-full bg-brand-500 flex items-center justify-center shadow-sm">
+                <div className="absolute -top-1.5 -right-1.5 w-4.5 h-4.5 rounded-full flex items-center justify-center shadow-sm" style={{ background: 'var(--primary)' }}>
                   <Check className="h-2.5 w-2.5 text-white" />
                 </div>
               )}
-              <span className="text-[8px] text-slate-400 dark:text-dark-500 truncate max-w-full">
+              <span className="text-[8px] truncate max-w-full" style={{ color: 'var(--text-secondary)' }}>
                 {variant.seed}
               </span>
             </button>
@@ -208,27 +256,37 @@ export const AvatarSelector: React.FC<AvatarSelectorProps> = ({
 
       {/* More categories collapsed */}
       <details className="group">
-        <summary className="text-xs font-semibold text-brand-500 cursor-pointer hover:text-brand-600 transition-colors list-none flex items-center gap-1 py-1">
+        <summary
+          className="text-xs font-semibold cursor-pointer hover:opacity-80 transition-opacity list-none flex items-center gap-1 py-1"
+          style={{ color: 'var(--primary)' }}
+        >
           <ChevronRight className="h-3 w-3 group-open:rotate-90 transition-transform" />
           {AVATAR_CATEGORIES.length} categorias ·{" "}
           {AVATAR_CATEGORIES.reduce((a, c) => a + c.variants.length, 0)}{" "}
           avatares no total
         </summary>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-1.5 mt-2 p-3 bg-slate-50 dark:bg-dark-950/30 rounded-xl">
+        <div
+          className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-1.5 mt-2 p-3 rounded-xl"
+          style={{
+            background: 'var(--bg-surface-hover)',
+            border: '1px solid var(--border-color)',
+          }}
+        >
           {AVATAR_CATEGORIES.map((cat) => {
             const previewUrl = getAvatarUrl(cat.style, cat.variants[0].seed);
+            const isSelectedCat = selectedCategory === cat.id;
             return (
               <button
                 key={cat.id}
                 type="button"
                 onClick={() => onCategoryChange(cat.id)}
-                className={`flex items-center gap-2 px-2 py-1.5 rounded-lg border transition-all cursor-pointer text-left min-w-0 ${
-                  selectedCategory === cat.id
-                    ? "border-brand-500 bg-brand-50 dark:bg-brand-950/20"
-                    : "border-transparent hover:bg-white dark:hover:bg-dark-800/60"
-                }`}
+                className="flex items-center gap-2 px-2 py-1.5 rounded-lg border transition-all cursor-pointer text-left min-w-0 clickable"
+                style={{
+                  borderColor: isSelectedCat ? 'var(--border-active)' : 'transparent',
+                  background: isSelectedCat ? 'var(--bg-surface-active)' : 'transparent',
+                }}
               >
-                <div className="w-7 h-7 rounded-md overflow-hidden flex-shrink-0 bg-white dark:bg-dark-900">
+                <div className="w-7 h-7 rounded-md overflow-hidden flex-shrink-0" style={{ background: 'var(--bg-surface)' }}>
                   <img
                     src={previewUrl}
                     alt=""
@@ -236,7 +294,7 @@ export const AvatarSelector: React.FC<AvatarSelectorProps> = ({
                     loading="lazy"
                   />
                 </div>
-                <span className="text-[10px] font-semibold text-slate-600 dark:text-dark-300 truncate">
+                <span className="text-[10px] font-semibold truncate" style={{ color: 'var(--text-secondary)' }}>
                   {cat.icon} {cat.name}
                 </span>
               </button>

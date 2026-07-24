@@ -20,7 +20,8 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
         {label && (
           <label
             htmlFor={inputId}
-            className="text-sm font-medium text-slate-700 dark:text-dark-200"
+            className="text-sm font-medium"
+            style={{ color: 'var(--text-primary)' }}
           >
             {label}
           </label>
@@ -30,18 +31,28 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
             ref={ref}
             id={inputId}
             type={inputType}
-            className={`w-full px-3.5 py-2.5 bg-white dark:bg-dark-900 border ${
-              error
-                ? 'border-rose-500 focus:ring-rose-200 dark:border-rose-500/50'
-                : 'border-slate-200 focus:ring-brand-100 dark:border-dark-700 dark:focus:ring-brand-900/20'
-            } rounded-xl text-slate-900 dark:text-dark-50 placeholder-slate-400 focus:outline-none focus:ring-4 focus:border-brand-500 dark:focus:border-brand-600 transition-all duration-200 disabled:opacity-50 disabled:bg-slate-50 dark:disabled:bg-dark-950 ${isPassword ? 'pr-10' : ''} ${className}`}
+            className={`w-full px-3.5 py-2.5 border rounded-xl focus:outline-none transition-all duration-200 disabled:opacity-50 ${isPassword ? 'pr-10' : ''} ${className}`}
+            style={{
+              background: error ? 'var(--bg-surface)' : 'var(--bg-surface)',
+              borderColor: error ? '#F43F5E' : 'var(--border-color)',
+              color: 'var(--text-primary)',
+            }}
             {...props}
+            onFocus={(e) => {
+              if (!error) e.currentTarget.style.borderColor = 'var(--border-active)';
+              props.onFocus?.(e);
+            }}
+            onBlur={(e) => {
+              if (!error) e.currentTarget.style.borderColor = 'var(--border-color)';
+              props.onBlur?.(e);
+            }}
           />
           {isPassword && (
             <button
               type="button"
               onClick={() => setShowPassword((prev) => !prev)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:text-dark-400 dark:hover:text-dark-200 transition-colors cursor-pointer"
+              className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors cursor-pointer"
+              style={{ color: 'var(--text-secondary)' }}
               tabIndex={-1}
               aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
             >
@@ -59,7 +70,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
           </span>
         )}
         {!error && helperText && (
-          <span className="text-xs text-slate-500 dark:text-dark-400">
+          <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
             {helperText}
           </span>
         )}

@@ -1,5 +1,4 @@
 import React from 'react';
-import { Card } from './Card.tsx';
 
 interface EmptyStateProps {
   icon: React.ReactNode;
@@ -30,20 +29,29 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
   className = '',
 }) => {
   return (
-    <Card
-      className={`flex flex-col items-center justify-center text-center p-12 min-h-[30vh] border border-dashed border-slate-200 dark:border-dark-800 ${className}`}
+    <div
+      className={`flex flex-col items-center justify-center text-center p-12 min-h-[30vh] border border-dashed rounded-2xl ${className}`}
+      style={{
+        background: 'var(--bg-surface)',
+        borderColor: 'var(--border-color)',
+      }}
     >
-      <div className="w-14 h-14 rounded-2xl bg-brand-50 dark:bg-brand-950/20 flex items-center justify-center text-brand-500 mb-4">
+      <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4"
+        style={{
+          background: 'var(--bg-surface-hover)',
+          color: 'var(--primary)',
+        }}
+      >
         {icon}
       </div>
-      <h3 className="text-md font-heading font-bold text-slate-850 dark:text-dark-100">
+      <h3 className="text-md font-heading font-bold" style={{ color: 'var(--text-primary)' }}>
         {title}
       </h3>
-      <p className="text-sm text-slate-500 dark:text-dark-350 mt-1 max-w-sm">
+      <p className="text-sm mt-1 max-w-sm" style={{ color: 'var(--text-secondary)' }}>
         {description}
       </p>
       {action && <div className="mt-4">{action}</div>}
-    </Card>
+    </div>
   );
 };
 

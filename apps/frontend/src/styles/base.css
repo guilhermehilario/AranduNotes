@@ -38,13 +38,86 @@
   --color-accent-teal: oklch(0.72 0.16 195);
 }
 
+/* ───── Dark Elegance Palette ───── */
+/* CSS Custom Properties para tema escuro com clareza e elegância */
+:root {
+  --bg-primary: #F8FAFC;
+  --bg-surface: #FFFFFF;
+  --bg-surface-hover: #F1F5F9;
+  --bg-surface-active: #E2E8F0;
+  --border-color: #E2E8F0;
+  --border-active: #4DA1FF;
+  --text-primary: #0F172A;
+  --text-secondary: #64748B;
+  --primary: #4DA1FF;
+}
+
+.dark {
+  --bg-primary: #121418;
+  --bg-surface: #1C1F26;
+  --bg-surface-hover: #252A34;
+  --bg-surface-active: #2E3442;
+  --border-color: #2C313C;
+  --border-active: #4DA1FF;
+  --text-primary: #E0E6ED;
+  --text-secondary: #A3B1C6;
+  --primary: #4DA1FF;
+}
+
+/* ───── Semantic Utility Classes (Dark Mode Ready) ───── */
+
+/* Superfície / Card Base */
+.surface {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+}
+
+/* Elevação para modals */
+.surface-elevated {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+/* Elemento clicável base */
+.clickable {
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+}
+
+.clickable:hover {
+  background: var(--bg-surface-hover);
+  border-color: var(--text-secondary);
+}
+
+.clickable:active {
+  background: var(--bg-surface-active);
+  transform: scale(0.98);
+}
+
+.clickable:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* Item selecionado */
+.selected {
+  border: 2px solid var(--border-active) !important;
+  background: var(--bg-surface-hover);
+}
+
+/* Anel de foco para teclado */
+.focus-ring:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
 @layer base {
   html, body {
-    @apply font-sans bg-slate-50 text-slate-900 antialiased scroll-smooth transition-colors duration-200;
-  }
-
-  html.dark body {
-    @apply bg-dark-950 text-dark-50;
+    @apply font-sans antialiased scroll-smooth transition-colors duration-200;
+    background: var(--bg-primary);
+    color: var(--text-primary);
   }
 
   h1, h2, h3, h4, h5, h6 {

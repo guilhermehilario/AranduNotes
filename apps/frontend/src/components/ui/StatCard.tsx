@@ -26,19 +26,26 @@ export const StatCard: React.FC<StatCardProps> = ({
   tooltip,
 }) => {
   const card = (
-    <div className="flex items-center gap-3.5 p-4 bg-white dark:bg-dark-900 rounded-2xl border border-slate-100 dark:border-dark-800 shadow-sm transition-all duration-200 hover:shadow-md hover:border-slate-200 dark:hover:border-dark-700">
+    <div
+      className="flex items-center gap-3.5 p-4 rounded-2xl transition-all duration-150 hover:-translate-y-0.5 clickable"
+      style={{
+        background: 'var(--bg-surface)',
+        border: '1px solid var(--border-color)',
+        boxShadow: tooltip ? '0 4px 20px rgba(0,0,0,0.35)' : '0 1px 3px rgba(0,0,0,0.1)',
+      }}
+    >
       <div className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ${iconBgClass}`}>
         <div className={colorClass}>{icon}</div>
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-xs font-medium text-slate-400 dark:text-dark-400 uppercase tracking-wide truncate">
+        <p className="text-xs font-medium uppercase tracking-wide truncate" style={{ color: 'var(--text-secondary)' }}>
           {label}
         </p>
-        <p className="text-xl font-heading font-extrabold text-slate-800 dark:text-dark-50 mt-0.5">
+        <p className="text-xl font-heading font-extrabold mt-0.5" style={{ color: 'var(--text-primary)' }}>
           {value}
         </p>
         {sublabel && (
-          <p className="text-[11px] text-slate-400 dark:text-dark-500 mt-0.5 truncate">
+          <p className="text-[11px] mt-0.5 truncate" style={{ color: 'var(--text-secondary)' }}>
             {sublabel}
           </p>
         )}
