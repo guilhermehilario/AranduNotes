@@ -430,16 +430,16 @@ const EditorToolbarComponent: React.FC<EditorToolbarProps> = ({ editor, annotati
               />
             </button>
 
-            {/* Dropdown Overlay Horizontal com fade/scale */}
+            {/* Dropdown Overlay Horizontal com fade (sem backdrop-filter p/ não quebrar position:fixed) */}
             {showMenu && (
               <div
-                className={`absolute right-0 top-full mt-2 z-[9999] transition-all duration-[150ms] ease-out origin-top-right ${
+                className={`absolute right-0 top-full z-[9999] transition-all duration-[150ms] ease-out ${
                   animVisible
-                    ? 'opacity-100 scale-100 translate-y-0'
-                    : 'opacity-0 scale-95 translate-y-1 pointer-events-none'
+                    ? 'opacity-100 mt-2'
+                    : 'opacity-0 mt-0 pointer-events-none'
                 }`}
               >
-                <div className="flex items-center gap-1 px-3 py-2 rounded-xl border shadow-xl bg-slate-900/95 dark:bg-dark-900/95 backdrop-blur-sm border-slate-700/50 dark:border-dark-700/50">
+                <div className="flex items-center gap-1 px-3 py-2 rounded-xl border shadow-xl bg-slate-900 dark:bg-dark-900 border-slate-700/50 dark:border-dark-700/50">
                   {hiddenItems.map((item, idx) => {
                     // Detect dividers by their key prefix (sep-1, sep-2, etc.)
                     const itemKey = React.isValidElement(item) && typeof item.key === 'string' ? item.key : '';
