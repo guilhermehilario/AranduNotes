@@ -3,14 +3,18 @@
   width: 100% !important;
   max-width: 100% !important;
   min-width: 0 !important;
+  overflow-x: hidden !important;
+  overflow-y: auto;
   scroll-behavior: smooth;
 }
 
 /* Garante que o elemento raiz do editor não ultrapasse o container */
 div.tiptap-content {
+  width: 100% !important;
   max-width: 100% !important;
   min-width: 0 !important;
   box-sizing: border-box !important;
+  overflow: hidden !important;
 }
 
 /* Base ProseMirror — !important como última barreira contra conflitos de CSS */
@@ -25,7 +29,8 @@ div.tiptap-content {
   overflow-wrap: anywhere !important;
   word-break: break-word !important;
   white-space: pre-wrap !important;
-  overflow-x: hidden;
+  overflow-x: hidden !important;
+  overflow-y: visible;
   @apply leading-relaxed text-base caret-slate-800;
 }
 
