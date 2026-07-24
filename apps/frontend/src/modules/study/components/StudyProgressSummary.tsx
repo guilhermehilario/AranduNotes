@@ -6,6 +6,7 @@ import { EmptyState } from "../../../components/ui/EmptyState.tsx";
 import { StatCard } from "../../../components/ui/StatCard.tsx";
 import { MiniProgressRing } from "../../../components/ui/MiniProgressRing.tsx";
 import { ProgressBar } from "../../../components/ui/ProgressBar.tsx";
+import { Tooltip } from "../../../components/ui/Tooltip.tsx";
 import { StatsSkeleton } from "./StatsSkeleton.tsx";
 
 export const StudyProgressSummary: React.FC = () => {
@@ -43,6 +44,7 @@ export const StudyProgressSummary: React.FC = () => {
           sublabel={`${stats.dueForReview} pendentes para revisão`}
           colorClass="text-brand-500"
           iconBgClass="bg-brand-50 dark:bg-brand-950/20"
+          tooltip="Quanto mais flashcards você criar, melhor será sua revisão. Tente gerar ao menos 5 cards por folha de anotação para fixar o conteúdo."
         />
 
         <StatCard
@@ -56,6 +58,7 @@ export const StudyProgressSummary: React.FC = () => {
           }
           colorClass="text-emerald-500"
           iconBgClass="bg-emerald-50 dark:bg-emerald-950/20"
+          tooltip="A consistência diária é o segredo da memorização de longo prazo. O ideal é revisar pelo menos 20-30 cards por dia para manter o ciclo SM-2 ativo."
         />
 
         <StatCard
@@ -69,37 +72,43 @@ export const StudyProgressSummary: React.FC = () => {
           }
           colorClass="text-amber-500"
           iconBgClass="bg-amber-50 dark:bg-amber-950/20"
+          tooltip="Cards acumulados podem sobrecarregar sua sessão de estudo. Priorize revisar os pendentes antes de criar novos flashcards."
         />
 
-        <div
-          className="flex items-center gap-3.5 p-4 rounded-2xl"
-          style={{
-            background: "var(--bg-surface)",
-            border: "1px solid var(--border-color)",
-          }}
+        <Tooltip
+          content="Quanto maior a taxa de acerto, melhor o momento da revisão. Acima de 80% é o ideal — significa que o SM-2 está espaçando corretamente."
+          position="top"
         >
-          <MiniProgressRing value={stats.accuracyRate} />
-          <div className="min-w-0 flex-1">
-            <p
-              className="text-xs font-medium uppercase tracking-wide truncate"
-              style={{ color: "var(--text-secondary)" }}
-            >
-              Taxa de Acerto
-            </p>
-            <p
-              className="text-xl font-heading font-extrabold mt-0.5"
-              style={{ color: "var(--text-primary)" }}
-            >
-              {stats.accuracyRate}%
-            </p>
-            <p
-              className="text-[11px] mt-0.5 truncate"
-              style={{ color: "var(--text-secondary)" }}
-            >
-              Baseado no algoritmo SM-2
-            </p>
+          <div
+            className="flex items-center gap-3.5 p-4 rounded-2xl"
+            style={{
+              background: "var(--bg-surface)",
+              border: "1px solid var(--border-color)",
+            }}
+          >
+            <MiniProgressRing value={stats.accuracyRate} />
+            <div className="min-w-0 flex-1">
+              <p
+                className="text-xs font-medium uppercase tracking-wide truncate"
+                style={{ color: "var(--text-secondary)" }}
+              >
+                Taxa de Acerto
+              </p>
+              <p
+                className="text-xl font-heading font-extrabold mt-0.5"
+                style={{ color: "var(--text-primary)" }}
+              >
+                {stats.accuracyRate}%
+              </p>
+              <p
+                className="text-[11px] mt-0.5 truncate"
+                style={{ color: "var(--text-secondary)" }}
+              >
+                Baseado no algoritmo SM-2
+              </p>
+            </div>
           </div>
-        </div>
+        </Tooltip>
       </div>
 
       {/* Per-Notebook Breakdown */}
