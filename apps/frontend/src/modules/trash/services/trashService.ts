@@ -3,7 +3,7 @@ import { api } from '../../../core/api/client';
 export interface TrashItem {
   id: string;
   title: string;
-  type: 'notebook' | 'leaf';
+  type: 'notebook' | 'leaf' | 'flashcard';
   deletedAt: string;
   color?: string;
   description?: string;
@@ -11,11 +11,15 @@ export interface TrashItem {
   flashcardsCount?: number;
   notebookTitle?: string;
   notebookColor?: string;
+  front?: string;
+  back?: string;
+  leafTitle?: string | null;
 }
 
 export interface TrashData {
   notebooks: TrashItem[];
   leaves: TrashItem[];
+  flashcards: TrashItem[];
 }
 
 export const trashService = {
@@ -44,12 +48,20 @@ export const trashService = {
     await api.post(`/trash/leaves/${leafId}/restore`);
   },
 
+  async restoreFlashcard(cardId: string): Promise<void> {
+    await api.post(`/trash/flashcards/${cardId}/restore`);
+  },
+
   async permanentDeleteNotebook(notebookId: string): Promise<void> {
     await api.delete(`/trash/notebooks/${notebookId}`);
   },
 
   async permanentDeleteLeaf(leafId: string): Promise<void> {
     await api.delete(`/trash/leaves/${leafId}`);
+  },
+
+  async permanentDeleteFlashcard(cardId: string): Promise<void> {
+    await api.delete(`/trash/flashcards/${cardId}`);
   },
 
   async cleanOldTrash(): Promise<void> {

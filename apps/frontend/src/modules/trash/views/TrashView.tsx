@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { useTrash, useRestoreNotebook, useRestoreLeaf, usePermanentDeleteNotebook, usePermanentDeleteLeaf, useCleanTrash } from '../hooks/useTrash';
-import { Trash2, RotateCcw, Loader2, BookOpen, FileText, Clock, XCircle } from 'lucide-react';
+import { useTrash, useRestoreNotebook, useRestoreLeaf, useRestoreFlashcard, usePermanentDeleteNotebook, usePermanentDeleteLeaf, usePermanentDeleteFlashcard, useCleanTrash } from '../hooks/useTrash';
+import { Trash2, RotateCcw, Loader2, BookOpen, FileText, HelpCircle, Clock, XCircle } from 'lucide-react';
 import { PageContainer } from '../../../components/ui/PageContainer.tsx';
 import { Card } from '../../../components/ui/Card.tsx';
 import { Button } from '../../../components/ui/Button.tsx';
@@ -13,13 +13,16 @@ export const TrashView: React.FC = () => {
   const { data: trash, isLoading } = useTrash();
   const restoreNotebook = useRestoreNotebook();
   const restoreLeaf = useRestoreLeaf();
+  const restoreFlashcard = useRestoreFlashcard();
   const permanentDeleteNotebook = usePermanentDeleteNotebook();
   const permanentDeleteLeaf = usePermanentDeleteLeaf();
+  const permanentDeleteFlashcard = usePermanentDeleteFlashcard();
   const cleanTrash = useCleanTrash();
 
   const allItems = [
     ...(trash?.notebooks || []),
     ...(trash?.leaves || []),
+    ...(trash?.flashcards || []),
   ].sort(
     (a, b) => new Date(b.deletedAt).getTime() - new Date(a.deletedAt).getTime(),
   );
@@ -28,8 +31,10 @@ export const TrashView: React.FC = () => {
     try {
       if (item.type === 'notebook') {
         await restoreNotebook.mutateAsync(item.id);
-      } else {
+      } else if (item.type === 'leaf') {
         await restoreLeaf.mutateAsync(item.id);
+      } else {
+        await restoreFlashcard.mutateAsync(item.id);
       }
     } catch (err) {
       useToastStore.getState().addToast(extractApiError(err, 'Erro ao restaurar item.'), 'error');
@@ -44,8 +49,10 @@ export const TrashView: React.FC = () => {
     try {
       if (confirmDeleteItem.type === 'notebook') {
         await permanentDeleteNotebook.mutateAsync(confirmDeleteItem.id);
-      } else {
+      } else if (confirmDeleteItem.type === 'leaf') {
         await permanentDeleteLeaf.mutateAsync(confirmDeleteItem.id);
+      } else {
+        await permanentDeleteFlashcard.mutateAsync(confirmDeleteItem.id);
       }
       setConfirmDeleteItem(null);
     } catch (err) {
@@ -120,9 +127,11 @@ export const TrashView: React.FC = () => {
                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
                   item.type === 'notebook'
                     ? 'bg-slate-100 dark:bg-dark-800 text-slate-500'
-                    : 'bg-rose-50 dark:bg-rose-950/20 text-rose-500'
+                    : item.type === 'leaf'
+                      ? 'bg-rose-50 dark:bg-rose-950/20 text-rose-500'
+                      : 'bg-amber-50 dark:bg-amber-950/20 text-amber-500'
                 }`}>
-                  {item.type === 'notebook' ? <BookOpen className="h-5 w-5" /> : <FileText className="h-5 w-5" />}
+                  {item.type === 'notebook' ? <BookOpen className="h-5 w-5" /> : item.type === 'leaf' ? <FileText className="h-5 w-5" /> : <HelpCircle className="h-5 w-5" />}
                 </div>
                 <div className="flex-grow min-w-0">
                   <div className="flex items-center gap-2">

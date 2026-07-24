@@ -64,6 +64,26 @@ export function useSoftDeleteLeaf() {
   });
 }
 
+export function useRestoreFlashcard() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (cardId: string) => trashService.restoreFlashcard(cardId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['trash'] });
+    },
+  });
+}
+
+export function usePermanentDeleteFlashcard() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (cardId: string) => trashService.permanentDeleteFlashcard(cardId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['trash'] });
+    },
+  });
+}
+
 export function useRestoreNotebook() {
   const queryClient = useQueryClient();
   return useMutation({

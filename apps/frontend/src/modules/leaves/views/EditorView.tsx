@@ -45,8 +45,8 @@ export const EditorView: React.FC = () => {
   // ── Flashcard Edit/Delete ──
   const [editingFlashcard, setEditingFlashcard] = useState<Flashcard | null>(null);
   const [isEditFlashcardModalOpen, setIsEditFlashcardModalOpen] = useState(false);
-  const updateFlashcardMutation = useUpdateFlashcard(notebookId, leafId);
-  const deleteFlashcardMutation = useDeleteFlashcard(notebookId, leafId);
+  const updateFlashcardMutation = useUpdateFlashcard(notebookId || undefined, leafId || undefined);
+  const deleteFlashcardMutation = useDeleteFlashcard(notebookId || undefined, leafId || undefined);
   const { isBookmarked, toggleBookmark } = useToggleBookmark({
     type: "leaf",
     id: leafId || "",
