@@ -1,12 +1,16 @@
-import React from "react";
-import { Camera, Check, ChevronRight } from "lucide-react";
+import React, { useRef, useState } from "react";
+import { Camera, Check, ChevronRight, Upload, X } from "lucide-react";
 import { AVATAR_CATEGORIES, getAvatarUrl } from "./avatarCategories";
+
+const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
 
 interface AvatarSelectorProps {
   selectedCategory: string;
   selectedVariant: string;
   onSelect: (catId: string, variantId: string) => void;
   onCategoryChange: (catId: string) => void;
+  customAvatarUrl?: string | null;
+  onCustomUpload?: (dataUrl: string) => void;
 }
 
 export const AvatarSelector: React.FC<AvatarSelectorProps> = ({
@@ -14,23 +18,119 @@ export const AvatarSelector: React.FC<AvatarSelectorProps> = ({
   selectedVariant,
   onSelect,
   onCategoryChange,
+  customAvatarUrl,
+  onCustomUpload,
 }) => {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
   const currentCategory =
     AVATAR_CATEGORIES.find((c) => c.id === selectedCategory) ||
     AVATAR_CATEGORIES[0];
+  const currentVariant =
+    currentCategory.variants.find((v) => v.id === selectedVariant) ||
+    currentCategory.variants[0];
+  const currentAvatarUrl = getAvatarUrl(currentCategory.style, currentVariant.seed);
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadError(null);
+
+    if (!file.type.startsWith("image/")) {
+      setUploadError("Selecione apenas arquivos de imagem.");
+      return;
+    }
+
+    if (file.size > MAX_IMAGE_SIZE) {
+      setUploadError("A imagem deve ter no máximo 5MB.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const dataUrl = event.target?.result as string;
+      onCustomUpload?.(dataUrl);
+    };
+    reader.onerror = () => {
+      setUploadError("Erro ao ler o arquivo. Tente novamente.");
+    };
+    reader.readAsDataURL(file);
+
+    // Limpa o input para permitir selecionar o mesmo arquivo novamente
+    e.target.value = "";
+  };
+
   return (
     <div className="flex flex-col gap-4">
-      {/* Preview do avatar atual */}
-      <div className="flex items-center gap-4">
-        {/* <div className="relative w-16 h-16 rounded-full bg-brand-100 dark:bg-brand-900/30 flex items-center justify-center overflow-hidden border-2 border-brand-200 dark:border-brand-800 flex-shrink-0">
+      {/* Preview do avatar selecionado */}
+      <div className="flex items-center gap-4 p-4 rounded-xl bg-gradient-to-br from-brand-50/50 to-purple-50/50 dark:from-brand-950/10 dark:to-purple-950/10 border border-brand-100 dark:border-brand-900/30">
+        <div className="relative w-16 h-16 rounded-full bg-brand-100 dark:bg-brand-900/30 flex items-center justify-center overflow-hidden border-2 border-brand-300 dark:border-brand-700 flex-shrink-0 shadow-sm">
           <img
-            src={currentAvatarUrl}
-            alt="Avatar"
+            src={customAvatarUrl || currentAvatarUrl}
+            alt="Avatar selecionado"
             className="w-full h-full object-cover"
           />
           <div className="absolute inset-0 rounded-full ring-2 ring-white/50 dark:ring-dark-900/50" />
-        </div> */}
+        </div>
+        <div>
+          <p className="text-sm font-bold text-slate-800 dark:text-dark-100">
+            Avatar selecionado
+          </p>
+          <p className="text-[11px] text-slate-500 dark:text-dark-400 mt-0.5">
+            {customAvatarUrl
+              ? "📸 Sua foto"
+              : `${currentCategory.icon} ${currentCategory.name} · ${currentVariant.seed}`
+            }
+          </p>
+        </div>
+        {customAvatarUrl && (
+          <button
+            type="button"
+            onClick={() => onCustomUpload?.("")}
+            className="ml-auto p-1.5 rounded-lg hover:bg-rose-100 dark:hover:bg-rose-950/30 text-slate-400 hover:text-rose-500 transition-all cursor-pointer"
+            title="Remover foto personalizada"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        )}
       </div>
+
+      {/* Upload de imagem personalizada */}
+      <div className="flex items-center gap-3 p-4 rounded-xl border-2 border-dashed border-slate-200 dark:border-dark-700 hover:border-brand-300 dark:hover:border-brand-700 transition-all bg-slate-50/50 dark:bg-dark-950/20">
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          onChange={handleFileSelect}
+          className="hidden"
+        />
+        <div className="w-10 h-10 rounded-lg bg-brand-50 dark:bg-brand-950/20 flex items-center justify-center flex-shrink-0">
+          <Upload className="h-5 w-5 text-brand-500" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="text-sm font-bold text-brand-600 dark:text-brand-400 hover:text-brand-700 transition-colors cursor-pointer"
+          >
+            Enviar foto própria
+          </button>
+          <p className="text-[10px] text-slate-400 dark:text-dark-500 mt-0.5">
+            PNG, JPG ou GIF · Máx. 5MB
+          </p>
+        </div>
+      </div>
+
+      {/* Erro no upload */}
+      {uploadError && (
+        <div className="p-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-900/30">
+          <p className="text-xs font-medium text-rose-600 dark:text-rose-400">
+            {uploadError}
+          </p>
+        </div>
+      )}
 
       <label className="text-sm font-bold text-slate-700 dark:text-dark-200 flex items-center gap-2">
         <Camera className="h-4 w-4 text-brand-500" /> Escolher Avatar

@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from "react";
-import { User, Settings, LogOut, ChevronRight, AlertTriangle, Trash2 } from "lucide-react";
+import { User, Camera, Settings, LogOut, ChevronRight, AlertTriangle, Trash2 } from "lucide-react";
 import { Modal } from "../../components/ui/Modal.tsx";
 import { Button } from "../../components/ui/Button.tsx";
 import { Input } from "../../components/ui/Input.tsx";
@@ -17,7 +17,7 @@ interface ProfileModalProps {
   onClose: () => void;
 }
 
-type Tab = "profile" | "settings";
+type Tab = "profile" | "avatars" | "settings";
 
 export const ProfileModal: React.FC<ProfileModalProps> = ({
   isOpen,
@@ -38,6 +38,29 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
   useEffect(() => {
     setName(user?.name || "");
   }, [user?.name]);
+
+  // Sincroniza avatar com o usuário quando abre o modal
+  useEffect(() => {
+    if (user?.avatarUrl) {
+      for (const cat of AVATAR_CATEGORIES) {
+        if (user.avatarUrl.includes(`/${cat.style}/`)) {
+          setSelectedCategory(cat.id);
+          break;
+        }
+      }
+      const match = user.avatarUrl.match(/seed=([^&]+)/);
+      if (match) {
+        const decodedSeed = decodeURIComponent(match[1]);
+        for (const cat of AVATAR_CATEGORIES) {
+          const found = cat.variants.find((v) => v.seed === decodedSeed);
+          if (found) {
+            setSelectedVariant(found.id);
+            break;
+          }
+        }
+      }
+    }
+  }, [user?.avatarUrl, isOpen]);
 
   // Profile state
   const [name, setName] = useState(user?.name || "");
@@ -62,6 +85,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
     }
     return "adv-luna";
   });
+  const [customAvatarUrl, setCustomAvatarUrl] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
 
@@ -69,16 +93,21 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
     setSaving(true);
     setSaveMessage(null);
     try {
-      const currentCategory =
-        AVATAR_CATEGORIES.find((c) => c.id === selectedCategory) ||
-        AVATAR_CATEGORIES[0];
-      const currentVariant =
-        currentCategory.variants.find((v) => v.id === selectedVariant) ||
-        currentCategory.variants[0];
-      const avatarUrl = getAvatarUrl(
-        currentCategory.style,
-        currentVariant.seed,
-      );
+      let avatarUrl: string;
+      if (customAvatarUrl) {
+        avatarUrl = customAvatarUrl;
+      } else {
+        const currentCategory =
+          AVATAR_CATEGORIES.find((c) => c.id === selectedCategory) ||
+          AVATAR_CATEGORIES[0];
+        const currentVariant =
+          currentCategory.variants.find((v) => v.id === selectedVariant) ||
+          currentCategory.variants[0];
+        avatarUrl = getAvatarUrl(
+          currentCategory.style,
+          currentVariant.seed,
+        );
+      }
       await api.put("/auth/profile", { name, avatarUrl });
       queryClient.invalidateQueries({ queryKey: ["profile"] });
       setSaveMessage("Perfil atualizado com sucesso!");
@@ -107,33 +136,81 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
         title=""
         size="lg"
       >
+        {/* Animações das abas */}
+        <style>{`
+          @keyframes tab-fade-slide {
+            from {
+              opacity: 0;
+              transform: translateY(12px);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+          .tab-enter {
+            animation: tab-fade-slide 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+          }
+        `}</style>
+
         {/* Tabs */}
         <div className="flex border-b border-slate-100 dark:border-dark-800/60 -mx-6 px-6 mb-6 sticky top-0 bg-white dark:bg-dark-900 z-10 rounded-t-2xl">
           <button
             onClick={() => setActiveTab("profile")}
-            className={`flex items-center gap-2 pb-4 px-4 font-heading font-bold text-sm tracking-wide border-b-2 transition-all cursor-pointer ${
+            className={`relative flex items-center gap-2 pb-4 px-4 font-heading font-bold text-sm tracking-wide transition-all duration-300 cursor-pointer ${
               activeTab === "profile"
-                ? "border-brand-500 text-brand-500"
-                : "border-transparent text-slate-500 dark:text-dark-400 hover:text-slate-700"
+                ? "text-brand-500"
+                : "text-slate-500 dark:text-dark-400 hover:text-slate-700"
             }`}
           >
             <User className="h-4 w-4" /> Perfil
+            <span
+              className={`absolute bottom-0 left-0 right-0 h-0.5 rounded-full transition-all duration-300 ${
+                activeTab === "profile"
+                  ? "bg-brand-500 scale-x-100"
+                  : "bg-transparent scale-x-0"
+              }`}
+            />
+          </button>
+          <button
+            onClick={() => setActiveTab("avatars")}
+            className={`relative flex items-center gap-2 pb-4 px-4 font-heading font-bold text-sm tracking-wide transition-all duration-300 cursor-pointer ${
+              activeTab === "avatars"
+                ? "text-brand-500"
+                : "text-slate-500 dark:text-dark-400 hover:text-slate-700"
+            }`}
+          >
+            <Camera className="h-4 w-4" /> Avatares
+            <span
+              className={`absolute bottom-0 left-0 right-0 h-0.5 rounded-full transition-all duration-300 ${
+                activeTab === "avatars"
+                  ? "bg-brand-500 scale-x-100"
+                  : "bg-transparent scale-x-0"
+              }`}
+            />
           </button>
           <button
             onClick={() => setActiveTab("settings")}
-            className={`flex items-center gap-2 pb-4 px-4 font-heading font-bold text-sm tracking-wide border-b-2 transition-all cursor-pointer ${
+            className={`relative flex items-center gap-2 pb-4 px-4 font-heading font-bold text-sm tracking-wide transition-all duration-300 cursor-pointer ${
               activeTab === "settings"
-                ? "border-brand-500 text-brand-500"
-                : "border-transparent text-slate-500 dark:text-dark-400 hover:text-slate-700"
+                ? "text-brand-500"
+                : "text-slate-500 dark:text-dark-400 hover:text-slate-700"
             }`}
           >
             <Settings className="h-4 w-4" /> Configurações
+            <span
+              className={`absolute bottom-0 left-0 right-0 h-0.5 rounded-full transition-all duration-300 ${
+                activeTab === "settings"
+                  ? "bg-brand-500 scale-x-100"
+                  : "bg-transparent scale-x-0"
+              }`}
+            />
           </button>
         </div>
 
         {/* ── CONTEÚDO: PERFIL ── */}
         {activeTab === "profile" && (
-          <div className="flex flex-col gap-7 max-h-[calc(90vh-12rem)] overflow-y-auto pr-1">
+          <div className="flex flex-col gap-7 max-h-[calc(90vh-12rem)] overflow-y-auto pr-1 tab-enter">
             {/* User info */}
             <div className="flex items-center gap-4">
               <div className="relative w-16 h-16 rounded-full bg-brand-100 dark:bg-brand-900/30 flex items-center justify-center overflow-hidden border-2 border-brand-200 dark:border-brand-800 flex-shrink-0">
@@ -153,17 +230,6 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                 </p>
               </div>
             </div>
-
-            {/* Avatar Selection */}
-            <AvatarSelector
-              selectedCategory={selectedCategory}
-              selectedVariant={selectedVariant}
-              onSelect={(catId, variantId) => {
-                setSelectedCategory(catId);
-                setSelectedVariant(variantId);
-              }}
-              onCategoryChange={setSelectedCategory}
-            />
 
             {/* Name */}
             <Input
@@ -249,8 +315,31 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
           </div>
         )}
 
+        {/* ── CONTEÚDO: AVATARES ── */}
+        {activeTab === "avatars" && (
+          <div className="flex flex-col gap-7 max-h-[calc(90vh-12rem)] overflow-y-auto pr-1 scroll-smooth tab-enter">
+            <AvatarSelector
+              selectedCategory={selectedCategory}
+              selectedVariant={selectedVariant}
+              onSelect={(catId, variantId) => {
+                setSelectedCategory(catId);
+                setSelectedVariant(variantId);
+              }}
+              onCategoryChange={setSelectedCategory}
+              customAvatarUrl={customAvatarUrl}
+              onCustomUpload={(dataUrl) => {
+                setCustomAvatarUrl(dataUrl || null);
+              }}
+            />
+          </div>
+        )}
+
         {/* ── CONTEÚDO: CONFIGURAÇÕES ── */}
-        {activeTab === "settings" && <SettingsTab />}
+        {activeTab === "settings" && (
+          <div className="tab-enter">
+            <SettingsTab />
+          </div>
+        )}
       </Modal>
 
       {/* Delete Account Flow (3 modals) */}
