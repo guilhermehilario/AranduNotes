@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useReducer } from 'react';
 import type { Editor } from '@tiptap/react';
 import {
   Undo2,
@@ -44,11 +44,11 @@ const ToolbarButton: React.FC<ToolbarButtonProps> = ({
     onClick={onClick}
     disabled={disabled}
     title={title}
-    className={`p-2 rounded-lg transition-all duration-150 cursor-pointer ${
+    className={`p-2 rounded-lg transition-all duration-150 cursor-pointer select-none ${
       disabled
         ? 'text-slate-300 dark:text-dark-600 cursor-not-allowed'
         : isActive
-          ? 'bg-brand-100 text-brand-600 dark:bg-brand-900/30 dark:text-brand-400 shadow-sm'
+          ? 'bg-brand-100 text-brand-600 dark:bg-brand-900/40 dark:text-brand-300 shadow-sm ring-1 ring-brand-300/40 dark:ring-brand-600/40'
           : 'text-slate-500 hover:bg-slate-100 dark:text-dark-400 dark:hover:bg-dark-800'
     }`}
   >
@@ -69,10 +69,27 @@ const kbd = (keys: string) => `${mod}${keys}`;
 const kbdShift = (keys: string) => `${mod}${shift}${keys}`;
 
 const EditorToolbarComponent: React.FC<EditorToolbarProps> = ({ editor, annotationTrigger }) => {
+  // ── Força re-render quando a seleção ou conteúdo do editor muda ──
+  // Isso é essencial para que editor.isActive() seja reavaliado dinamicamente.
+  const [, forceRender] = useReducer(x => x + 1, 0);
+
+  useEffect(() => {
+    if (!editor) return;
+    const handler = () => forceRender();
+    editor.on('selectionUpdate', handler);
+    editor.on('update', handler);
+    return () => {
+      editor.off('selectionUpdate', handler);
+      editor.off('update', handler);
+    };
+  }, [editor]);
+
   if (!editor) return null;
 
   const canUndo = editor.can().undo();
   const canRedo = editor.can().redo();
+  const canIndent = editor.can().indent();
+  const canOutdent = editor.can().outdent();
 
   return (
     <div className="flex items-center gap-1 pb-3 mb-4 border-b border-slate-100 dark:border-dark-800/80 flex-shrink-0 overflow-x-auto">
@@ -219,14 +236,16 @@ const EditorToolbarComponent: React.FC<EditorToolbarProps> = ({ editor, annotati
 
       <ToolbarButton
         onClick={() => editor.chain().focus().indent().run()}
-        title="Aumentar recuo"
+        disabled={!canIndent}
+        title={canIndent ? 'Aumentar recuo' : 'Recuo máximo atingido'}
       >
         <IndentIncrease className="h-4 w-4" />
       </ToolbarButton>
 
       <ToolbarButton
         onClick={() => editor.chain().focus().outdent().run()}
-        title="Diminuir recuo"
+        disabled={!canOutdent}
+        title={canOutdent ? 'Diminuir recuo' : 'Recuo mínimo atingido'}
       >
         <IndentDecrease className="h-4 w-4" />
       </ToolbarButton>

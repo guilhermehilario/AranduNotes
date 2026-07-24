@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useReducer } from 'react';
 import { BubbleMenu } from '@tiptap/react/menus';
 import type { Editor } from '@tiptap/react';
 import {
@@ -27,6 +27,7 @@ import { AnnotationPopover } from './AnnotationPopover';
 interface BubbleMenuItemProps {
   onClick: () => void;
   isActive?: boolean;
+  disabled?: boolean;
   title: string;
   children: React.ReactNode;
 }
@@ -34,17 +35,21 @@ interface BubbleMenuItemProps {
 const BubbleMenuItem: React.FC<BubbleMenuItemProps> = ({
   onClick,
   isActive,
+  disabled,
   title,
   children,
 }) => (
   <button
     type="button"
     onClick={onClick}
+    disabled={disabled}
     title={title}
-    className={`p-1.5 rounded-md transition-all duration-150 cursor-pointer ${
-      isActive
-        ? 'bg-white/20 text-white'
-        : 'text-white/70 hover:bg-white/10 hover:text-white'
+    className={`p-1.5 rounded-md transition-all duration-150 cursor-pointer select-none ${
+      disabled
+        ? 'text-white/20 cursor-not-allowed'
+        : isActive
+          ? 'bg-white/25 text-white ring-1 ring-white/30'
+          : 'text-white/70 hover:bg-white/10 hover:text-white'
     }`}
   >
     {children}
@@ -63,6 +68,20 @@ interface EditorBubbleMenuProps {
 }
 
 const EditorBubbleMenuComponent: React.FC<EditorBubbleMenuProps> = ({ editor }) => {
+  // ── Força re-render quando a seleção ou conteúdo do editor muda ──
+  const [, forceRender] = useReducer(x => x + 1, 0);
+
+  useEffect(() => {
+    if (!editor) return;
+    const handler = () => forceRender();
+    editor.on('selectionUpdate', handler);
+    editor.on('update', handler);
+    return () => {
+      editor.off('selectionUpdate', handler);
+      editor.off('update', handler);
+    };
+  }, [editor]);
+
   const [showExtra, setShowExtra] = React.useState(false);
 
   if (!editor) return null;
@@ -237,14 +256,16 @@ const EditorBubbleMenuComponent: React.FC<EditorBubbleMenuProps> = ({ editor }) 
 
             <BubbleMenuItem
               onClick={() => editor.chain().focus().indent().run()}
-              title="Aumentar recuo"
+              disabled={!editor.can().indent()}
+              title={editor.can().indent() ? 'Aumentar recuo' : 'Recuo máximo atingido'}
             >
               <IndentIncrease className="h-3.5 w-3.5" />
             </BubbleMenuItem>
 
             <BubbleMenuItem
               onClick={() => editor.chain().focus().outdent().run()}
-              title="Diminuir recuo"
+              disabled={!editor.can().outdent()}
+              title={editor.can().outdent() ? 'Diminuir recuo' : 'Recuo mínimo atingido'}
             >
               <IndentDecrease className="h-3.5 w-3.5" />
             </BubbleMenuItem>
