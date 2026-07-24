@@ -1,26 +1,20 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
-import LoginView from "./modules/auth/views/LoginView";
-import VerifyEmailView from "./modules/auth/views/VerifyEmailView";
+import "./styles/index.css";
+import App from "./App.tsx";
 
-const queryClient = new QueryClient();
-const App = () => {
-  return (
-    <Routes>
-      <Route path={"/verify-email"} element={<VerifyEmailView />} />
-      <Route path={"/login"} element={<LoginView />} />
-      <Route path={"*"} element={<Navigate to={"/login"} replace />} />
-    </Routes>
-  );
-};
-createRoot(document.getElementById("root")!).render(
-  <StrictMode>
-    <BrowserRouter>
-      <QueryClientProvider client={queryClient}>
-        <App />
-      </QueryClientProvider>
-    </BrowserRouter>
-  </StrictMode>,
-);
+// ── SPA Redirect from 404.html fallback ──
+// Se o usuário foi redirecionado via 404.html, restauramos a rota original
+(function restoreSPARoute() {
+  const redirect = sessionStorage.getItem("redirect");
+  if (
+    redirect &&
+    redirect !== window.location.pathname + window.location.search
+  ) {
+    sessionStorage.removeItem("redirect");
+    window.history.replaceState(null, "", redirect);
+  }
+})();
+window.addEventListener("popstate", () => {
+  console.log("URL: ", window.location.href);
+});
+createRoot(document.getElementById("root")!).render(<App />);
