@@ -38,7 +38,6 @@ COPY . .
 
 # 6. Build da aplicação
 RUN yarn workspace api build
-RUN cd apps/api && npx prisma migrate deploy
 
 # Final stage for app image
 FROM base
@@ -61,11 +60,10 @@ RUN mkdir -p /data
 VOLUME /data
 
 EXPOSE 3000
-ENV DATABASE_URL="file:///data/sqlite.db"
 
 # Entrypoint prepares the database (runs Prisma migrations, then starts the app)
 COPY apps/api/docker-entrypoint.js /app/docker-entrypoint.js
 RUN chmod +x /app/docker-entrypoint.js
 
-# ENTRYPOINT ["node", "/app/docker-entrypoint.js"]
+ENTRYPOINT ["node", "/app/docker-entrypoint.js"]
 CMD ["node", "apps/api/dist/main.js"]
