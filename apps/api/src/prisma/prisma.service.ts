@@ -1,6 +1,11 @@
-import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
-import { PrismaLibSql } from '@prisma/adapter-libsql';
+import {
+  Injectable,
+  OnModuleInit,
+  OnModuleDestroy,
+  Logger,
+} from "@nestjs/common";
+import { PrismaClient } from "@prisma/client";
+import { PrismaLibSql } from "@prisma/adapter-libsql";
 
 const MAX_RETRIES = 5;
 const BASE_DELAY_MS = 1000;
@@ -15,12 +20,16 @@ export class PrismaService
   private isConnected = false;
   /** Mutex simples para evitar múltiplas reconexões concorrentes */
   private connectLock = false;
+  /** Instância do adaptador LibSQL mantida para encerramento gracioso */
+  private adapter: PrismaLibSql;
 
   constructor() {
-    const adapter = new PrismaLibSql({
-      url: process.env.DATABASE_URL || 'file:./dev.db',
-    });
+    const url = process.env.DATABASE_URL || "file:./dev.db";
+
+    const adapter = new PrismaLibSql({ url });
+
     super({ adapter });
+    this.adapter = adapter;
   }
 
   /**
@@ -34,17 +43,22 @@ export class PrismaService
       try {
         await this.$connect();
         this.isConnected = true;
-        this.logger.log(`✅ Conectado ao banco de dados (tentativa ${attempt}/${retries})`);
+        this.logger.log(
+          `✅ Conectado ao banco de dados (tentativa ${attempt}/${retries})`,
+        );
         return;
       } catch (error) {
         lastError = error as Error;
         this.isConnected = false;
 
         if (attempt < retries) {
-          const delay = Math.min(BASE_DELAY_MS * Math.pow(2, attempt - 1), MAX_DELAY_MS);
+          const delay = Math.min(
+            BASE_DELAY_MS * Math.pow(2, attempt - 1),
+            MAX_DELAY_MS,
+          );
           this.logger.warn(
             `⚠️ Falha ao conectar ao banco (tentativa ${attempt}/${retries}). ` +
-            `Tentando novamente em ${delay}ms... ${lastError.message}`,
+              `Tentando novamente em ${delay}ms... ${lastError.message}`,
           );
           await this.sleep(delay);
         }
@@ -69,21 +83,27 @@ export class PrismaService
         await this.$queryRaw`SELECT 1`;
         return;
       } catch {
-        this.logger.warn('⚠️ Conexão com banco perdida. Tentando reconectar...');
+        this.logger.warn(
+          "⚠️ Conexão com banco perdida. Tentando reconectar...",
+        );
         this.isConnected = false;
       }
     }
 
     // Mutex: se outra requisição já está reconectando, aguarda
     if (this.connectLock) {
-      this.logger.debug('Reconexão já em andamento por outra requisição. Aguardando...');
+      this.logger.debug(
+        "Reconexão já em andamento por outra requisição. Aguardando...",
+      );
       // Aguarda até 15s pela reconexão concorrente
       for (let i = 0; i < 30; i++) {
         await this.sleep(500);
         if (this.isConnected) return;
       }
       // Se passou do tempo, tenta reconectar mesmo assim
-      this.logger.warn('Timeout aguardando reconexão concorrente. Tentando própria reconexão...');
+      this.logger.warn(
+        "Timeout aguardando reconexão concorrente. Tentando própria reconexão...",
+      );
     }
 
     this.connectLock = true;
@@ -112,7 +132,7 @@ export class PrismaService
       // Se for erro de conexão do Prisma/LibSQL, tenta reconectar e retentar
       if (this.isConnectionError(error)) {
         this.logger.warn(
-          '⚠️ Erro de conexão detectado. Tentando reconectar e retentar operação...',
+          "⚠️ Erro de conexão detectado. Tentando reconectar e retentar operação...",
         );
 
         await this.ensureConnection();
@@ -137,24 +157,24 @@ export class PrismaService
    * Detecta se um erro é relacionado a falha de conexão.
    */
   private isConnectionError(error: unknown): boolean {
-    const msg = (error as Error)?.message?.toLowerCase() || '';
+    const msg = (error as Error)?.message?.toLowerCase() || "";
     const prismaError = error as { code?: string };
 
     return (
-      msg.includes('connection') ||
-      msg.includes('timeout') ||
-      msg.includes('etimedout') ||
-      msg.includes('econnrefused') ||
-      msg.includes('econnreset') ||
-      msg.includes('socket') ||
-      msg.includes('handshake') ||
-      msg.includes('database is not connected') ||
-      msg.includes('pool') ||
-      msg.includes('closed') ||
-      prismaError.code === 'P1001' || // Can't reach database
-      prismaError.code === 'P1002' || // Timeout
-      prismaError.code === 'P1008' || // Connection pool timeout
-      prismaError.code === 'P1017' // Server closed connection
+      msg.includes("connection") ||
+      msg.includes("timeout") ||
+      msg.includes("etimedout") ||
+      msg.includes("econnrefused") ||
+      msg.includes("econnreset") ||
+      msg.includes("socket") ||
+      msg.includes("handshake") ||
+      msg.includes("database is not connected") ||
+      msg.includes("pool") ||
+      msg.includes("closed") ||
+      prismaError.code === "P1001" || // Can't reach database
+      prismaError.code === "P1002" || // Timeout
+      prismaError.code === "P1008" || // Connection pool timeout
+      prismaError.code === "P1017" // Server closed connection
     );
   }
 
@@ -180,20 +200,20 @@ export class PrismaService
     poolStatus?: string;
     error?: string;
   }> {
-    const databaseUrl = process.env.DATABASE_URL || 'file:./dev.db';
+    const databaseUrl = process.env.DATABASE_URL || "file:./dev.db";
     // Ofusca credenciais na URL para não expor senhas
     const sanitizedUrl = databaseUrl.replace(
       /\?authToken=([^&]+)/i,
-      '?authToken=***',
+      "?authToken=***",
     );
 
-    const driver = databaseUrl.startsWith('libsql')
-      ? 'Turso/LibSQL'
-      : databaseUrl.startsWith('file')
-        ? 'SQLite (local)'
-        : databaseUrl.startsWith('postgresql')
-          ? 'PostgreSQL'
-          : 'Desconhecido';
+    const driver = databaseUrl.startsWith("libsql")
+      ? "Turso/LibSQL"
+      : databaseUrl.startsWith("file")
+        ? "SQLite (local)"
+        : databaseUrl.startsWith("postgresql")
+          ? "PostgreSQL"
+          : "Desconhecido";
 
     const start = Date.now();
     try {
@@ -205,7 +225,7 @@ export class PrismaService
         latencyMs,
         driver,
         databaseUrl: sanitizedUrl,
-        poolStatus: this.isConnected ? 'ativo' : 'reconectando',
+        poolStatus: this.isConnected ? "ativo" : "reconectando",
       };
     } catch (error) {
       return {
@@ -213,7 +233,7 @@ export class PrismaService
         latencyMs: Date.now() - start,
         driver,
         databaseUrl: sanitizedUrl,
-        poolStatus: 'desconectado',
+        poolStatus: "desconectado",
         error: (error as Error).message,
       };
     }
@@ -223,9 +243,31 @@ export class PrismaService
     await this.connectWithRetry();
   }
 
+  /**
+   * Chamado pelo NestJS ao receber sinais SIGTERM/SIGINT (com app.enableShutdownHooks()).
+   * Garante o encerramento do Prisma e do LibSQL para liberar locks no volume /data.
+   */
   async onModuleDestroy() {
+    this.logger.log("⏳ Desconectando Prisma e liberando arquivos locais...");
     this.isConnected = false;
-    await this.$disconnect();
+
+    try {
+      // 1. Desconecta a camada do ORM Prisma
+      await this.$disconnect();
+
+      // 2. Fecha o cliente do LibSQL gerenciado pelo adaptador (se exposto pelo driver)
+      if (this.adapter && "client" in this.adapter) {
+        await (
+          this.adapter as unknown as { client: { close: () => Promise<void> } }
+        ).client.close();
+      }
+
+      this.logger.log("✅ Conexões do banco de dados encerradas com sucesso.");
+    } catch (error) {
+      this.logger.error(
+        `⚠️ Erro ao encerrar conexões com o banco de dados: ${(error as Error).message}`,
+      );
+    }
   }
 
   private sleep(ms: number): Promise<void> {

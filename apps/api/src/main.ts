@@ -87,6 +87,8 @@ async function bootstrap() {
     exclude: ["health", "warmup"],
   });
 
+  app.enableShutdownHooks();
+
   // ── Security Headers (Helmet) ──
   app.use(
     helmet({
