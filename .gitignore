@@ -33,6 +33,7 @@ context.md
 task.md
 
 !.docs/*
+/docs
 
 CHANGELOG_RECENTE.md
 CHANGE_SEND_EMAIL.md
