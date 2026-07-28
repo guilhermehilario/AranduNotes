@@ -63,10 +63,13 @@ export const EditorView: React.FC = () => {
   const queryClient = useQueryClient();
 
   // ── Excluir Resumo ──
+  const [confirmDeleteSummaryOpen, setConfirmDeleteSummaryOpen] = useState(false);
   const [isDeletingSummary, setIsDeletingSummary] = useState(false);
-  const handleDeleteSummary = useCallback(async () => {
+
+  const handleDeleteSummaryConfirm = useCallback(async () => {
     if (!leafId) return;
     setIsDeletingSummary(true);
+    setConfirmDeleteSummaryOpen(false);
     try {
       const updated = await leafService.updateLeaf(leafId, { summary: null });
       queryClient.setQueryData<Leaf>(['leaves', leafId], (old) => {
@@ -87,6 +90,10 @@ export const EditorView: React.FC = () => {
       setIsDeletingSummary(false);
     }
   }, [leafId, queryClient]);
+
+  const handleDeleteSummaryClick = useCallback(() => {
+    setConfirmDeleteSummaryOpen(true);
+  }, []);
   const editorStatus = useEditorStatusStore();
 
   const isArchived = leaf?.archivedAt != null;
@@ -230,7 +237,7 @@ export const EditorView: React.FC = () => {
             onDeleteFlashcard={(cardId) => deleteFlashcardMutation.mutateAsync(cardId)}
             isDeletingFlashcard={deleteFlashcardMutation.isPending}
             isDeletingSummary={isDeletingSummary}
-            onDeleteSummary={handleDeleteSummary}
+            onDeleteSummary={handleDeleteSummaryClick}
           />
         )}
       </div>
@@ -282,7 +289,18 @@ export const EditorView: React.FC = () => {
         notebookId={notebookId || ""}
       />
 
-      {/* Confirmar exclusão */}
+      {/* Confirmar exclusão do resumo */}
+      <ConfirmDialog
+        isOpen={confirmDeleteSummaryOpen}
+        onClose={() => setConfirmDeleteSummaryOpen(false)}
+        onConfirm={handleDeleteSummaryConfirm}
+        title="Excluir resumo?"
+        message="Tem certeza que deseja excluir este resumo? Esta ação não pode ser desfeita."
+        confirmLabel="Sim, excluir"
+        variant="danger"
+      />
+
+      {/* Confirmar exclusão da folha */}
       <ConfirmDialog
         isOpen={confirmDeleteOpen}
         onClose={() => setConfirmDeleteOpen(false)}
