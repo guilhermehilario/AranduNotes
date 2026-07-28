@@ -94,6 +94,20 @@ export const EditorView: React.FC = () => {
   const handleDeleteSummaryClick = useCallback(() => {
     setConfirmDeleteSummaryOpen(true);
   }, []);
+
+  // ── Excluir Flashcard com confirmação ──
+  const [confirmDeleteFlashcardId, setConfirmDeleteFlashcardId] = useState<string | null>(null);
+
+  const handleDeleteFlashcardClick = useCallback((cardId: string) => {
+    setConfirmDeleteFlashcardId(cardId);
+  }, []);
+
+  const handleDeleteFlashcardConfirm = useCallback(async () => {
+    if (!confirmDeleteFlashcardId) return;
+    const id = confirmDeleteFlashcardId;
+    setConfirmDeleteFlashcardId(null);
+    await deleteFlashcardMutation.mutateAsync(id);
+  }, [confirmDeleteFlashcardId, deleteFlashcardMutation]);
   const editorStatus = useEditorStatusStore();
 
   const isArchived = leaf?.archivedAt != null;
@@ -234,7 +248,7 @@ export const EditorView: React.FC = () => {
               setEditingFlashcard(card);
               setIsEditFlashcardModalOpen(true);
             }}
-            onDeleteFlashcard={(cardId) => deleteFlashcardMutation.mutateAsync(cardId)}
+            onDeleteFlashcard={handleDeleteFlashcardClick}
             isDeletingFlashcard={deleteFlashcardMutation.isPending}
             isDeletingSummary={isDeletingSummary}
             onDeleteSummary={handleDeleteSummaryClick}
@@ -287,6 +301,17 @@ export const EditorView: React.FC = () => {
         onClose={() => setIsFlashcardModalOpen(false)}
         leafId={leafId || ""}
         notebookId={notebookId || ""}
+      />
+
+      {/* Confirmar exclusão do flashcard */}
+      <ConfirmDialog
+        isOpen={!!confirmDeleteFlashcardId}
+        onClose={() => setConfirmDeleteFlashcardId(null)}
+        onConfirm={handleDeleteFlashcardConfirm}
+        title="Excluir flashcard?"
+        message="Tem certeza que deseja excluir este flashcard? Ele será movido para a lixeira."
+        confirmLabel="Sim, excluir"
+        variant="danger"
       />
 
       {/* Confirmar exclusão do resumo */}
