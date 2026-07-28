@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import {
   Play,
   Pause,
@@ -7,6 +7,9 @@ import {
   Timer,
   RotateCcw,
   Settings,
+  ChevronLeft,
+  ChevronRight,
+  XCircle,
 } from 'lucide-react';
 import { usePomodoros, useCreatePomodoro, useUpdatePomodoro, useDeletePomodoro } from '../hooks/usePomodoro.ts';
 import { usePomodoroStore, formatPomodoroTime, POMODORO_DURATION, BREAK_DURATION } from '../../../store/pomodoroStore.ts';
@@ -15,6 +18,8 @@ import { LoadingScreen } from '../../../components/ui/LoadingScreen.tsx';
 import { ConfirmDialog } from '../../../components/ui/ConfirmDialog.tsx';
 import { useToastStore } from '../../../store/toastStore.ts';
 import { extractApiError } from '../../../utils/api-errors.ts';
+
+const ITEMS_PER_PAGE = 5;
 
 export const PomodoroTab: React.FC = () => {
   const { data: sessions = [], isLoading } = usePomodoros();
@@ -42,6 +47,8 @@ export const PomodoroTab: React.FC = () => {
 
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [showDurationSettings, setShowDurationSettings] = useState(false);
+  const [historyTab, setHistoryTab] = useState<'completed' | 'cancelled'>('completed');
+  const [cancelledPage, setCancelledPage] = useState(0);
   const prevTimeLeftRef = useRef(timeLeft);
 
   // Settings store for duration controls
@@ -95,8 +102,28 @@ export const PomodoroTab: React.FC = () => {
   }, [timerMode, handleStartFocus, startTimer]);
 
   const handleReset = useCallback(() => {
+    // Capture current state before reset clears it
+    const currentTimeLeft = usePomodoroStore.getState().timeLeft;
+    const sessionId = usePomodoroStore.getState().currentSessionId;
+    const totalSeconds = pomodoroDuration * 60;
+    const elapsedSeconds = totalSeconds - currentTimeLeft;
+
+    // Reset timer (clears timeLeft, sessionId, etc.)
     resetTimer();
-  }, [resetTimer]);
+
+    // Handle the session based on how long it actually ran
+    if (!sessionId) return;
+    if (elapsedSeconds >= 60) {
+      // Ran for 1+ minute → keep as cancelled session
+      updatePomodoro.mutate({
+        id: sessionId,
+        input: { completed: false },
+      });
+    } else {
+      // Ran for less than 1 minute → remove entirely (including 0 seconds)
+      deletePomodoro.mutate(sessionId);
+    }
+  }, [resetTimer, pomodoroDuration, updatePomodoro, deletePomodoro]);
 
   const handleDeleteSession = useCallback(
     (id: string) => {
@@ -112,6 +139,34 @@ export const PomodoroTab: React.FC = () => {
 
   const completedSessions = sessions.filter((s) => s.completed);
   const totalFocusMinutes = completedSessions.reduce((acc, s) => acc + s.duration, 0);
+
+  // ── Cancelled sessions: not completed (and actually ran for ≥1min, enforced at reset time) ──
+  const cancelledSessions = useMemo(() => {
+    return sessions
+      .filter((s) => !s.completed)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }, [sessions]);
+
+  const totalCancelledPages = Math.max(1, Math.ceil(cancelledSessions.length / ITEMS_PER_PAGE));
+  const paginatedCancelled = cancelledSessions.slice(
+    cancelledPage * ITEMS_PER_PAGE,
+    (cancelledPage + 1) * ITEMS_PER_PAGE,
+  );
+
+  const handlePrevCancelledPage = useCallback(() => {
+    setCancelledPage((p) => Math.max(0, p - 1));
+  }, []);
+
+  const handleNextCancelledPage = useCallback(() => {
+    setCancelledPage((p) => Math.min(totalCancelledPages - 1, p + 1));
+  }, [totalCancelledPages]);
+
+  // Reset page when switching to cancelled tab
+  useEffect(() => {
+    if (historyTab === 'cancelled') {
+      setCancelledPage(0);
+    }
+  }, [historyTab]);
 
   if (isLoading) return <LoadingScreen />;
 
@@ -261,18 +316,19 @@ export const PomodoroTab: React.FC = () => {
                 </button>
               </>
             )}
-            {timerState === 'running' && (                <button
-                  type="button"
-                  onClick={handleReset}
-                  className="flex items-center gap-2 px-4 py-3 rounded-xl font-semibold text-sm transition-all cursor-pointer"
-                  style={{
-                    background: 'var(--bg-surface-hover)',
-                    color: 'var(--text-secondary)',
-                  }}
-                  title="Parar"
-                >
-                  <Square className="h-4 w-4 fill-current" />
-                </button>
+            {timerState === 'running' && (
+              <button
+                type="button"
+                onClick={handleReset}
+                className="flex items-center gap-2 px-4 py-3 rounded-xl font-semibold text-sm transition-all cursor-pointer"
+                style={{
+                  background: 'var(--bg-surface-hover)',
+                  color: 'var(--text-secondary)',
+                }}
+                title="Parar"
+              >
+                <Square className="h-4 w-4 fill-current" />
+              </button>
             )}
           </div>
 
@@ -420,10 +476,34 @@ export const PomodoroTab: React.FC = () => {
       {/* History Section */}
       <div className="lg:w-1/2">
         <div className="rounded-2xl p-5" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)' }}>
+          {/* Tabs: Concluídas / Canceladas */}
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-heading font-bold" style={{ color: 'var(--text-primary)' }}>
-              Histórico de Sessões
-            </h3>
+            <div className="flex items-center gap-1 p-0.5 rounded-lg" style={{ background: 'var(--bg-surface-hover)' }}>
+              <button
+                type="button"
+                onClick={() => setHistoryTab('completed')}
+                className={`px-3 py-1.5 text-[11px] font-bold rounded-md transition-all cursor-pointer`}
+                style={{
+                  background: historyTab === 'completed' ? 'var(--bg-surface)' : 'transparent',
+                  color: historyTab === 'completed' ? '#7C3AED' : 'var(--text-secondary)',
+                  boxShadow: historyTab === 'completed' ? '0 1px 2px rgba(0,0,0,0.08)' : 'none',
+                }}
+              >
+                Concluídas
+              </button>
+              <button
+                type="button"
+                onClick={() => setHistoryTab('cancelled')}
+                className={`px-3 py-1.5 text-[11px] font-bold rounded-md transition-all cursor-pointer`}
+                style={{
+                  background: historyTab === 'cancelled' ? 'var(--bg-surface)' : 'transparent',
+                  color: historyTab === 'cancelled' ? '#EF4444' : 'var(--text-secondary)',
+                  boxShadow: historyTab === 'cancelled' ? '0 1px 2px rgba(0,0,0,0.08)' : 'none',
+                }}
+              >
+                Canceladas
+              </button>
+            </div>
             <div className="text-right">
               <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>Total de foco</p>
               <p className="text-lg font-heading font-extrabold text-violet-500">
@@ -432,39 +512,110 @@ export const PomodoroTab: React.FC = () => {
             </div>
           </div>
 
-          {completedSessions.length === 0 && (
-            <p className="text-sm text-center py-8" style={{ color: 'var(--text-secondary)' }}>
-              Nenhuma sessão concluída ainda.
-            </p>
+          {/* Completed Sessions */}
+          {historyTab === 'completed' && (
+            <>
+              {completedSessions.length === 0 && (
+                <p className="text-sm text-center py-8" style={{ color: 'var(--text-secondary)' }}>
+                  Nenhuma sessão concluída ainda.
+                </p>
+              )}
+
+              <div className="flex flex-col gap-1.5 max-h-[400px] overflow-y-auto">
+                {completedSessions.slice(0, 20).map((session) => (
+                  <div
+                    key={session.id}
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl"
+                    style={{ border: '1px solid var(--border-color)' }}
+                  >
+                    <Timer className="h-4 w-4 text-violet-500 flex-shrink-0" />
+                    <div className="flex-grow min-w-0">
+                      <p className="text-xs font-medium truncate" style={{ color: 'var(--text-primary)' }}>
+                        {session.taskName || 'Sessão de foco'}
+                      </p>
+                      <p className="text-[11px]" style={{ color: 'var(--text-secondary)' }}>
+                        {session.duration}min • {session.createdAt ? new Date(session.createdAt).toLocaleDateString('pt-BR') : ''}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setDeleteConfirmId(session.id)}
+                      className="p-1 rounded-lg transition-colors cursor-pointer"
+                      style={{ color: 'var(--text-secondary)' }}
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </>
           )}
 
-          <div className="flex flex-col gap-1.5 max-h-[400px] overflow-y-auto">
-            {completedSessions.slice(0, 20).map((session) => (
-              <div
-                key={session.id}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-xl"
-                style={{ border: '1px solid var(--border-color)' }}
-              >
-                <Timer className="h-4 w-4 text-violet-500 flex-shrink-0" />
-                <div className="flex-grow min-w-0">
-                  <p className="text-xs font-medium truncate" style={{ color: 'var(--text-primary)' }}>
-                    {session.taskName || 'Sessão de foco'}
-                  </p>
-                  <p className="text-[11px]" style={{ color: 'var(--text-secondary)' }}>
-                    {session.duration}min • {session.createdAt ? new Date(session.createdAt).toLocaleDateString('pt-BR') : ''}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setDeleteConfirmId(session.id)}
-                  className="p-1 rounded-lg transition-colors cursor-pointer"
-                  style={{ color: 'var(--text-secondary)' }}
-                >
-                  <Trash2 className="h-3 w-3" />
-                </button>
+          {/* Cancelled Sessions */}
+          {historyTab === 'cancelled' && (
+            <>
+              {cancelledSessions.length === 0 && (
+                <p className="text-sm text-center py-8" style={{ color: 'var(--text-secondary)' }}>
+                  Nenhuma sessão cancelada.
+                </p>
+              )}
+
+              <div className="flex flex-col gap-1.5 min-h-[200px]">
+                {paginatedCancelled.map((session) => (
+                  <div
+                    key={session.id}
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl"
+                    style={{ border: '1px solid var(--border-color)' }}
+                  >
+                    <XCircle className="h-4 w-4 text-rose-400 flex-shrink-0" />
+                    <div className="flex-grow min-w-0">
+                      <p className="text-xs font-medium truncate" style={{ color: 'var(--text-primary)' }}>
+                        {session.taskName || 'Sessão de foco'}
+                      </p>
+                      <p className="text-[11px]" style={{ color: 'var(--text-secondary)' }}>
+                        {session.duration}min • {session.createdAt ? new Date(session.createdAt).toLocaleDateString('pt-BR') : ''}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setDeleteConfirmId(session.id)}
+                      className="p-1 rounded-lg transition-colors cursor-pointer"
+                      style={{ color: 'var(--text-secondary)' }}
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+
+              {/* Pagination Arrows */}
+              {cancelledSessions.length > ITEMS_PER_PAGE && (
+                <div className="flex items-center justify-center gap-3 mt-3 pt-3" style={{ borderTop: '1px solid var(--border-color)' }}>
+                  <button
+                    type="button"
+                    onClick={handlePrevCancelledPage}
+                    disabled={cancelledPage === 0}
+                    className="p-1.5 rounded-lg transition-all cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                    style={{ color: 'var(--text-secondary)' }}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </button>
+                  <span className="text-[11px] font-semibold" style={{ color: 'var(--text-secondary)' }}>
+                    {cancelledPage + 1} de {totalCancelledPages}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleNextCancelledPage}
+                    disabled={cancelledPage >= totalCancelledPages - 1}
+                    className="p-1.5 rounded-lg transition-all cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                    style={{ color: 'var(--text-secondary)' }}
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </button>
+                </div>
+              )}
+            </>
+          )}
         </div>
       </div>
 
