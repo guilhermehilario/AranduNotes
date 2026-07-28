@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { ClipboardList, Trash2, Pencil, Check, X, Copy, FileText } from 'lucide-react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { ClipboardList, Trash2, Pencil, Check, X, Copy, FileText, Star, Search } from 'lucide-react';
 import { useClipboardStore, type ClipboardItem } from '../../../store/clipboardStore.ts';
 
 function formatTimeAgo(timestamp: number): string {
@@ -88,6 +88,7 @@ interface ClipboardItemRowProps {
 const ClipboardItemRow: React.FC<ClipboardItemRowProps> = ({ item }) => {
   const removeItem = useClipboardStore((s) => s.removeItem);
   const updateItem = useClipboardStore((s) => s.updateItem);
+  const toggleFavorite = useClipboardStore((s) => s.toggleFavorite);
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState(item.text);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -143,6 +144,14 @@ const ClipboardItemRow: React.FC<ClipboardItemRowProps> = ({ item }) => {
     [item.text]
   );
 
+  const handleFavorite = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      toggleFavorite(item.id);
+    },
+    [item.id, toggleFavorite]
+  );
+
   const handleDragStart = useCallback(
     (e: React.DragEvent) => {
       e.dataTransfer.setData('text/plain', item.text);
@@ -172,6 +181,22 @@ const ClipboardItemRow: React.FC<ClipboardItemRowProps> = ({ item }) => {
       }}
       className={`group relative flex items-start gap-2 px-4 py-3 text-left cursor-${isDragging ? 'grabbing' : 'grab'} hover:bg-[var(--bg-surface-hover)] transition-colors border-b border-[var(--border-color)] last:border-b-0 ${isDragging ? 'opacity-50' : ''}`}
     >
+      {/* Favorite star — always visible */}
+      <button
+        type="button"
+        onClick={handleFavorite}
+        className="flex-shrink-0 mt-1 p-0.5 rounded-md transition-colors cursor-pointer"
+        title={item.favorited ? 'Remover dos favoritos' : 'Favoritar'}
+      >
+        <Star
+          className={`h-3.5 w-3.5 transition-all duration-200 ${
+            item.favorited
+              ? 'text-amber-400 fill-amber-400 drop-shadow-sm'
+              : 'text-slate-400 dark:text-dark-500 hover:text-amber-400/50'
+          }`}
+        />
+      </button>
+
       {/* Icon area */}
       <div className="flex-shrink-0 mt-1">
         {justCopied ? (
@@ -270,6 +295,13 @@ export const ClipboardManager: React.FC<ClipboardManagerProps> = ({
 }) => {
   const items = useClipboardStore((s) => s.items);
   const clearAll = useClipboardStore((s) => s.clearAll);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const filteredItems = useMemo(() => {
+    if (!searchQuery.trim()) return items;
+    const query = searchQuery.toLowerCase();
+    return items.filter((item) => item.text.toLowerCase().includes(query));
+  }, [items, searchQuery]);
 
   if (!show) return null;
 
@@ -319,6 +351,47 @@ export const ClipboardManager: React.FC<ClipboardManagerProps> = ({
           </div>
         </div>
 
+        {/* Search */}
+        {items.length > 0 && (
+          <div className="px-4 py-2" style={{ borderBottom: '1px solid var(--border-color)' }}>
+            <div className="relative">
+              <Search
+                className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 pointer-events-none"
+                style={{ color: 'var(--text-secondary)' }}
+              />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Pesquisar no histórico..."
+                className="w-full pl-8 pr-3 py-1.5 text-xs rounded-lg focus:outline-none transition-colors"
+                style={{
+                  background: 'var(--bg-surface-hover)',
+                  border: '1px solid var(--border-color)',
+                  color: 'var(--text-primary)',
+                }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = 'var(--border-active)';
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = 'var(--border-color)';
+                }}
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded-md hover:bg-[var(--bg-surface-active)] transition-colors cursor-pointer"
+                  style={{ color: 'var(--text-secondary)' }}
+                  title="Limpar busca"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Body */}
         <div className="max-h-80 overflow-y-auto">
           {items.length === 0 ? (
@@ -334,9 +407,19 @@ export const ClipboardManager: React.FC<ClipboardManagerProps> = ({
                 Atalho: Ctrl+Shift+V
               </p>
             </div>
+          ) : filteredItems.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-8 px-4 text-center">
+              <Search className="h-8 w-8 mb-2" style={{ color: 'var(--text-secondary)' }} />
+              <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+                Nenhum resultado encontrado
+              </p>
+              <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>
+                Tente outros termos de busca
+              </p>
+            </div>
           ) : (
             <div className="flex flex-col">
-              {items.map((item) => (
+              {filteredItems.map((item) => (
                 <ClipboardItemRow
                   key={item.id}
                   item={item}
@@ -356,7 +439,7 @@ export const ClipboardManager: React.FC<ClipboardManagerProps> = ({
             }}
           >
             <p className="text-[11px] text-center" style={{ color: 'var(--text-secondary)' }}>
-              Clique para colar · Arraste para campos de texto · {items.length} item{items.length !== 1 ? 'ns' : ''}
+              Clique para colar · Arraste para campos de texto · {filteredItems.length} de {items.length} item{items.length !== 1 ? 'ns' : ''}
             </p>
           </div>
         )}

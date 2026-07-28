@@ -225,7 +225,7 @@ export const AppHeader: React.FC = () => {
 
         {/* Clipboard Manager */}
         <div className="relative" ref={clipboardRef}>
-          <Tooltip content="Histórico de cópia (Ctrl+Shift+V)">
+          <Tooltip content="Histórico de cópia (Ctrl+Shift+V)" position="bottom">
             <button
               type="button"
               onClick={toggleClipboard}

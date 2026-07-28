@@ -5,6 +5,7 @@ export interface ClipboardItem {
   id: string;
   text: string;
   createdAt: number;
+  favorited: boolean;
 }
 
 interface ClipboardState {
@@ -15,6 +16,7 @@ interface ClipboardState {
   addItem: (text: string) => void;
   removeItem: (id: string) => void;
   updateItem: (id: string, text: string) => void;
+  toggleFavorite: (id: string) => void;
   clearAll: () => void;
 }
 
@@ -44,10 +46,16 @@ export const useClipboardStore = create<ClipboardState>()(
             id: crypto.randomUUID(),
             text: trimmed,
             createdAt: Date.now(),
+            favorited: false,
           };
 
           return {
-            items: [newItem, ...state.items].slice(0, MAX_ITEMS),
+            items: [newItem, ...state.items]
+              .sort((a, b) => {
+                if (a.favorited !== b.favorited) return a.favorited ? -1 : 1;
+                return b.createdAt - a.createdAt;
+              })
+              .slice(0, MAX_ITEMS),
           };
         }),
 
@@ -62,6 +70,20 @@ export const useClipboardStore = create<ClipboardState>()(
             item.id === id ? { ...item, text } : item
           ),
         })),
+
+      toggleFavorite: (id) =>
+        set((state) => {
+          const updatedItems = state.items.map((item) =>
+            item.id === id ? { ...item, favorited: !item.favorited } : item
+          );
+          // Sort: favorited items first, then by creation date descending
+          return {
+            items: updatedItems.sort((a, b) => {
+              if (a.favorited !== b.favorited) return a.favorited ? -1 : 1;
+              return b.createdAt - a.createdAt;
+            }),
+          };
+        }),
 
       clearAll: () => set({ items: [] }),
     }),
