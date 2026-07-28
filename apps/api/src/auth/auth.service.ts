@@ -225,19 +225,31 @@ export class AuthService {
   ): Promise<{ user: UserPublic; accessToken: string; refreshToken: string }> {
     const sanitizedEmail = email.trim().toLowerCase();
 
-    // Se o cookie de refresh existe e é válido, o usuário já possui sessão ativa.
-    // Isso impede login duplicado mesmo se o frontend deixar passar.
+    // Se o cookie de refresh existe e é válido, faz auto-login devolvendo a
+    // sessão existente. Isso resolve casos onde o frontend perdeu o estado
+    // (localStorage limpo, cache expirado) mas o cookie refreshToken ainda
+    // está presente no navegador.
     if (existingRefreshToken) {
       try {
-        this.jwtService.verify(existingRefreshToken, {
+        const decoded = this.jwtService.verify(existingRefreshToken, {
           secret: this.refreshSecret,
-        });
-        throw new ConflictException(
-          "Você já está logado. Faça logout primeiro se quiser acessar outra conta.",
+        }) as { userId: string };
+
+        const user = await this.prisma.withConnection(() =>
+          this.prisma.user.findUnique({
+            where: { id: decoded.userId },
+          }),
         );
+
+        if (user && !user.deletedAt) {
+          this.logger.log(
+            `Auto-login para ${user.email} (ID: ${user.id}) — refresh token válido existente.`,
+          );
+          const tokens = this.generateTokens(user.id);
+          return { user: this.stripPassword(user), ...tokens };
+        }
+        // Usuário não encontrado ou excluído → permite login normal
       } catch (error) {
-        // Se for o ConflictException que acabamos de lançar, propaga
-        if (error instanceof ConflictException) throw error;
         // Token inválido ou expirado → permite login normalmente
       }
     }
