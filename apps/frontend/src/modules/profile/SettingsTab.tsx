@@ -5,9 +5,11 @@ import {
   Globe,
   Calendar,
   Clock,
+  Bell,
   Check,
 } from 'lucide-react';
 import { useUIStore } from '../../store/uiStore';
+import { usePlanningSettingsStore } from '../../store/planningSettingsStore';
 
 /* ───── Option Card Component ───── */
 interface OptionCardProps {
@@ -85,6 +87,8 @@ export const SettingsTab: React.FC = () => {
     setDateFormat,
     setTimeFormat,
   } = useUIStore();
+
+  const notifSettings = usePlanningSettingsStore();
 
   return (
     <div className="flex flex-col gap-5 max-h-[calc(90vh-12rem)] overflow-y-auto pr-1">
@@ -292,7 +296,100 @@ export const SettingsTab: React.FC = () => {
         </div>
       </div>
 
+      {/* ── Notificações ── */}
+      <div
+        className="flex flex-col gap-3 p-5"
+        style={{
+          background: 'var(--bg-surface)',
+          border: '1px solid var(--border-color)',
+          borderRadius: '8px',
+        }}
+      >
+        <SectionTitle
+          icon={<Bell className="h-4 w-4" style={{ color: '#F43F5E' }} />}
+          label="Notificações"
+        />
+        <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+          Controle quais notificações você deseja receber
+        </p>
+        <div className="flex flex-col">
+          <ToggleRow
+            icon="📅"
+            label="Eventos da Agenda"
+            description="Notificar sobre eventos programados para hoje"
+            checked={notifSettings.notifyEvents}
+            onChange={notifSettings.setNotifyEvents}
+            isFirst
+          />
+          <ToggleRow
+            icon="🎯"
+            label="Metas Próximas do Prazo"
+            description="Notificar quando metas estiverem perto do vencimento"
+            checked={notifSettings.notifyGoals}
+            onChange={notifSettings.setNotifyGoals}
+          />
+          <ToggleRow
+            icon="🍅"
+            label="Pomodoro Concluído"
+            description="Notificar ao finalizar uma sessão de foco"
+            checked={notifSettings.notifyPomodoro}
+            onChange={notifSettings.setNotifyPomodoro}
+          />
+          <ToggleRow
+            icon="🖥️"
+            label="Notificações no Navegador"
+            description="Exibir notificações nativas mesmo com o app em segundo plano"
+            checked={notifSettings.notifyBrowser}
+            onChange={notifSettings.setNotifyBrowser}
+          />
+        </div>
+      </div>
+
       <div className="pb-2" />
+    </div>
+  );
+};
+
+/* ───── Toggle Row ───── */
+interface ToggleRowProps {
+  icon: string;
+  label: string;
+  description: string;
+  checked: boolean;
+  onChange: (value: boolean) => void;
+  isFirst?: boolean;
+}
+
+const ToggleRow: React.FC<ToggleRowProps> = ({ icon, label, description, checked, onChange, isFirst }) => {
+  return (
+    <div
+      className="flex items-center gap-3 py-3.5"
+      style={{
+        borderTop: isFirst ? 'none' : '1px solid var(--border-color)',
+      }}
+    >
+      <span className="text-lg flex-shrink-0">{icon}</span>
+      <div className="flex-grow min-w-0">
+        <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{label}</p>
+        <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>{description}</p>
+      </div>
+      <button
+        type="button"
+        onClick={() => onChange(!checked)}
+        className="relative w-11 h-6 rounded-full transition-all duration-200 cursor-pointer flex-shrink-0"
+        style={{
+          background: checked ? '#8b5cf6' : 'var(--border-color)',
+        }}
+        role="switch"
+        aria-checked={checked}
+      >
+        <span
+          className="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform duration-200"
+          style={{
+            transform: checked ? 'translateX(20px)' : 'translateX(0)',
+          }}
+        />
+      </button>
     </div>
   );
 };

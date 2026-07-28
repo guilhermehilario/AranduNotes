@@ -3,7 +3,6 @@ import { PageContainer } from '../../../components/ui/PageContainer.tsx';
 import {
   Palette,
   Timer,
-  Bell,
   Check,
   RotateCcw,
 } from 'lucide-react';
@@ -155,98 +154,8 @@ export const PlanningSettingsView: React.FC = () => {
         </div>
       </section>
 
-      {/* ── Notificações ── */}
-      <section className="flex flex-col gap-4">
-        <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-lg bg-rose-50 dark:bg-rose-950/20 flex items-center justify-center text-rose-500">
-            <Bell className="h-5 w-5" />
-          </div>
-          <div>
-            <h3 className="text-sm font-heading font-bold text-slate-800 dark:text-dark-100">
-              Notificações
-            </h3>
-            <p className="text-xs text-slate-500 dark:text-dark-350">
-              Controle quais notificações você deseja receber
-            </p>
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-dark-900 border border-slate-200 dark:border-dark-800 rounded-2xl overflow-hidden divide-y divide-slate-100 dark:divide-dark-800">
-          {/* Eventos */}
-          <ToggleRow
-            icon="📅"
-            label="Eventos da Agenda"
-            description="Notificar sobre eventos programados para hoje"
-            checked={settings.notifyEvents}
-            onChange={settings.setNotifyEvents}
-          />
-
-          {/* Metas */}
-          <ToggleRow
-            icon="🎯"
-            label="Metas Próximas do Prazo"
-            description="Notificar quando metas estiverem perto do vencimento"
-            checked={settings.notifyGoals}
-            onChange={settings.setNotifyGoals}
-          />
-
-          {/* Pomodoro */}
-          <ToggleRow
-            icon="🍅"
-            label="Pomodoro Concluído"
-            description="Notificar ao finalizar uma sessão de foco"
-            checked={settings.notifyPomodoro}
-            onChange={settings.setNotifyPomodoro}
-          />
-
-          {/* Navegador */}
-          <ToggleRow
-            icon="🖥️"
-            label="Notificações no Navegador"
-            description="Exibir notificações nativas mesmo com o app em segundo plano"
-            checked={settings.notifyBrowser}
-            onChange={settings.setNotifyBrowser}
-          />
-        </div>
-      </section>
-
       <div className="pb-8" />
     </PageContainer>
-  );
-};
-
-interface ToggleRowProps {
-  icon: string;
-  label: string;
-  description: string;
-  checked: boolean;
-  onChange: (value: boolean) => void;
-}
-
-const ToggleRow: React.FC<ToggleRowProps> = ({ icon, label, description, checked, onChange }) => {
-  return (
-    <div className="flex items-center gap-3 px-5 py-4">
-      <span className="text-lg flex-shrink-0">{icon}</span>
-      <div className="flex-grow min-w-0">
-        <p className="text-sm font-semibold text-slate-800 dark:text-dark-100">{label}</p>
-        <p className="text-xs text-slate-500 dark:text-dark-350">{description}</p>
-      </div>
-      <button
-        type="button"
-        onClick={() => onChange(!checked)}
-        className={`relative w-11 h-6 rounded-full transition-all duration-200 cursor-pointer flex-shrink-0 ${
-          checked ? 'bg-violet-500' : 'bg-slate-300 dark:bg-dark-700'
-        }`}
-        role="switch"
-        aria-checked={checked}
-      >
-        <span
-          className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform duration-200 ${
-            checked ? 'translate-x-5' : 'translate-x-0'
-          }`}
-        />
-      </button>
-    </div>
   );
 };
 
