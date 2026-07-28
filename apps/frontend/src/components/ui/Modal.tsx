@@ -60,7 +60,7 @@ export const Modal: React.FC<ModalProps> = ({
 
       {/* Content Container */}
       <div
-        className={`relative w-full rounded-3xl flex flex-col max-h-[90vh] overflow-hidden animate-in fade-in-50 zoom-in-95 duration-200 ${sizeClasses[size]}`}
+        className={`relative w-full rounded-3xl flex flex-col max-h-[90vh] animate-in fade-in-50 zoom-in-95 duration-200 ${sizeClasses[size]}`}
         style={{
           background: 'var(--bg-surface)',
           border: '1px solid var(--border-color)',

@@ -1,10 +1,5 @@
 import React from "react";
-import {
-  Brain,
-  BookCheck,
-  Target,
-  BarChart3,
-} from "lucide-react";
+import { Brain, BookCheck, Target, BarChart3 } from "lucide-react";
 import { useStudyStats } from "../hooks/useStudyStats";
 import { Card } from "../../../components/ui/Card.tsx";
 import { EmptyState } from "../../../components/ui/EmptyState.tsx";
@@ -84,16 +79,31 @@ export const StudyProgressSummary: React.FC = () => {
           content="Quanto maior a taxa de acerto, melhor o momento da revisão. Acima de 80% é o ideal — significa que o SM-2 está espaçando corretamente."
           position="top"
         >
-          <div className="flex items-center gap-3.5 p-4 bg-white dark:bg-dark-900 rounded-2xl border border-slate-100 dark:border-dark-800 shadow-sm transition-all duration-200 hover:shadow-md hover:border-slate-200 dark:hover:border-dark-700 cursor-help">
+          <div
+            className="flex items-center gap-3.5 p-4 rounded-2xl"
+            style={{
+              background: "var(--bg-surface)",
+              border: "1px solid var(--border-color)",
+            }}
+          >
             <MiniProgressRing value={stats.accuracyRate} />
             <div className="min-w-0 flex-1">
-              <p className="text-xs font-medium text-slate-400 dark:text-dark-400 uppercase tracking-wide truncate">
+              <p
+                className="text-xs font-medium uppercase tracking-wide truncate"
+                style={{ color: "var(--text-secondary)" }}
+              >
                 Taxa de Acerto
               </p>
-              <p className="text-xl font-heading font-extrabold text-slate-800 dark:text-dark-50 mt-0.5">
+              <p
+                className="text-xl font-heading font-extrabold mt-0.5"
+                style={{ color: "var(--text-primary)" }}
+              >
                 {stats.accuracyRate}%
               </p>
-              <p className="text-[11px] text-slate-400 dark:text-dark-500 mt-0.5 truncate">
+              <p
+                className="text-[11px] mt-0.5 truncate"
+                style={{ color: "var(--text-secondary)" }}
+              >
                 Baseado no algoritmo SM-2
               </p>
             </div>
@@ -112,7 +122,11 @@ export const StudyProgressSummary: React.FC = () => {
               return (
                 <div
                   key={nb.notebookId}
-                  className="flex items-center gap-3 p-3 bg-white dark:bg-dark-900 rounded-xl border border-slate-100 dark:border-dark-800 hover:border-slate-200 dark:hover:border-dark-700 transition-all"
+                  className="flex items-center gap-3 p-3 rounded-xl w-full"
+                  style={{
+                    background: "var(--bg-surface)",
+                    border: "1px solid var(--border-color)",
+                  }}
                 >
                   <div
                     className="w-3 h-3 rounded-full flex-shrink-0"

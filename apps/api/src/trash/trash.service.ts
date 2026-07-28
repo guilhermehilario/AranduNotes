@@ -7,7 +7,7 @@ export class TrashService {
 
   // ── Listar itens na lixeira ──
   async findAll(userId: string) {
-    const [notebooks, leaves] = await Promise.all([
+    const [notebooks, leaves, flashcards] = await Promise.all([
       this.prisma.withConnection(() =>
         this.prisma.notebook.findMany({
           where: { userId, deletedAt: { not: null } },
@@ -27,6 +27,19 @@ export class TrashService {
           include: {
             notebook: { select: { title: true, color: true } },
             _count: { select: { flashcards: true } },
+          },
+        }),
+      ),
+      this.prisma.withConnection(() =>
+        this.prisma.flashcard.findMany({
+          where: {
+            notebook: { userId },
+            deletedAt: { not: null },
+          },
+          orderBy: { deletedAt: 'desc' },
+          include: {
+            notebook: { select: { title: true, color: true } },
+            leaf: { select: { title: true } },
           },
         }),
       ),
@@ -52,7 +65,39 @@ export class TrashService {
         notebookColor: leaf.notebook.color,
         flashcardsCount: leaf._count.flashcards,
       })),
+      flashcards: flashcards.map((fc) => ({
+        id: fc.id,
+        title: fc.front,
+        type: 'flashcard' as const,
+        deletedAt: fc.deletedAt!,
+        front: fc.front,
+        back: fc.back,
+        notebookTitle: fc.notebook.title,
+        leafTitle: fc.leaf?.title || null,
+      })),
     };
+  }
+
+  // ── Mover flashcard para lixeira (soft-delete) ──
+  async softDeleteFlashcard(cardId: string, userId: string) {
+    const card = await this.prisma.withConnection(() =>
+      this.prisma.flashcard.findUnique({
+        where: { id: cardId },
+        include: { notebook: true },
+      }),
+    );
+    if (!card || !card.notebook) throw new NotFoundException('Flashcard não encontrado');
+    if (card.notebook.userId !== userId) throw new NotFoundException('Acesso negado');
+
+    const now = new Date();
+    await this.prisma.withConnection(() =>
+      this.prisma.flashcard.update({
+        where: { id: cardId },
+        data: { deletedAt: now },
+      }),
+    );
+
+    return { message: 'Flashcard movido para lixeira', deletedAt: now };
   }
 
   // ── Mover notebook para lixeira (soft-delete) ──
@@ -103,6 +148,46 @@ export class TrashService {
     );
 
     return { message: 'Folha movida para lixeira', deletedAt: now };
+  }
+
+  // ── Restaurar flashcard da lixeira ──
+  async restoreFlashcard(cardId: string, userId: string) {
+    const card = await this.prisma.withConnection(() =>
+      this.prisma.flashcard.findUnique({
+        where: { id: cardId },
+        include: { notebook: true },
+      }),
+    );
+    if (!card || !card.notebook) throw new NotFoundException('Flashcard não encontrado');
+    if (card.notebook.userId !== userId) throw new NotFoundException('Acesso negado');
+    if (!card.deletedAt) throw new NotFoundException('Flashcard não está na lixeira');
+
+    await this.prisma.withConnection(() =>
+      this.prisma.flashcard.update({
+        where: { id: cardId },
+        data: { deletedAt: null },
+      }),
+    );
+
+    return { message: 'Flashcard restaurado da lixeira' };
+  }
+
+  // ── Excluir flashcard permanentemente ──
+  async permanentDeleteFlashcard(cardId: string, userId: string) {
+    const card = await this.prisma.withConnection(() =>
+      this.prisma.flashcard.findUnique({
+        where: { id: cardId },
+        include: { notebook: true },
+      }),
+    );
+    if (!card || !card.notebook) throw new NotFoundException('Flashcard não encontrado');
+    if (card.notebook.userId !== userId) throw new NotFoundException('Acesso negado');
+    if (!card.deletedAt) throw new NotFoundException('Flashcard não está na lixeira');
+
+    await this.prisma.withConnection(() =>
+      this.prisma.flashcard.delete({ where: { id: cardId } }),
+    );
+    return { message: 'Flashcard excluído permanentemente' };
   }
 
   // ── Restaurar notebook da lixeira ──

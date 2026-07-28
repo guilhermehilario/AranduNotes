@@ -5,10 +5,12 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { CreateNotebookSchema } from "../types";
 import type { CreateNotebookInput, Notebook } from "../types";
 import studyService from "../../study/services/studyService";
+import trashService from "../../trash/services/trashService";
 import { NOTEBOOK_COLORS } from "../constants";
 import { useToastStore } from "../../../store/toastStore";
 import { extractApiError } from "../../../utils/api-errors";
 import type { UseMutateAsyncFunction } from "@tanstack/react-query";
+import type { Flashcard } from "../../study/types";
 
 interface UseNotebookActionsParams {
   notebookId: string;
@@ -42,10 +44,19 @@ interface UseNotebookActionsReturn {
   resetFc: () => void;
   fcErrors: ReturnType<typeof useForm<{ front: string; back: string }>>["formState"]["errors"];
   createFlashcardMutation: { isPending: boolean; mutateAsync: UseMutateAsyncFunction<unknown, Error, { leafId: string; notebookId: string; front: string; back: string }> };
+  editFlashcardMutation: { isPending: boolean; mutateAsync: UseMutateAsyncFunction<unknown, Error, { cardId: string; data: { front?: string; back?: string } }> };
+  deleteFlashcardMutation: { isPending: boolean; mutateAsync: UseMutateAsyncFunction<unknown, Error, string> };
+  isEditFlashcardModalOpen: boolean;
+  setIsEditFlashcardModalOpen: (open: boolean) => void;
+  editingFlashcard: Flashcard | null;
+  setEditingFlashcard: (card: Flashcard | null) => void;
   handleOpenEditModal: () => void;
   onEditSubmit: (data: CreateNotebookInput) => Promise<void>;
   handleDeleteNotebookConfirm: () => Promise<void>;
   onFlashcardSubmit: (data: { front: string; back: string }) => Promise<void>;
+  onEditFlashcard: (card: Flashcard) => void;
+  onDeleteFlashcard: (cardId: string) => Promise<void>;
+  onEditFlashcardSave: (cardId: string, data: { front: string; back: string }) => Promise<void>;
 }
 
 export function useNotebookActions({
@@ -62,6 +73,8 @@ export function useNotebookActions({
   const [selectedLeafId, setSelectedLeafId] = useState("");
   const [actionError, setActionError] = useState<string | null>(null);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [isEditFlashcardModalOpen, setIsEditFlashcardModalOpen] = useState(false);
+  const [editingFlashcard, setEditingFlashcard] = useState<Flashcard | null>(null);
 
   // ── Edit form ──
   const {
@@ -81,6 +94,61 @@ export function useNotebookActions({
     formState: { errors: fcErrors },
   } = useForm<{ front: string; back: string }>();
 
+  const editFlashcardMutation = useMutation({
+    mutationFn: ({
+      cardId,
+      data,
+    }: {
+      cardId: string;
+      data: { front?: string; back?: string };
+    }) => studyService.updateFlashcard(cardId, data),
+    onSuccess: (updatedCard) => {
+      // ⚡ Atualiza o cache imediatamente
+      queryClient.setQueryData<Flashcard[]>(
+        ["notebook-flashcards", notebookId],
+        (old) =>
+          old?.map((card) =>
+            card.id === updatedCard.id ? updatedCard : card,
+          ) ?? old,
+      );
+      useToastStore
+        .getState()
+        .addToast("Flashcard atualizado com sucesso.", "success");
+      setIsEditFlashcardModalOpen(false);
+      setEditingFlashcard(null);
+    },
+    onError: (err) => {
+      useToastStore.getState().addToast(
+        extractApiError(err, "Erro ao atualizar flashcard."),
+        "error",
+      );
+    },
+  });
+
+  const deleteFlashcardMutation = useMutation({
+    mutationFn: (cardId: string) => trashService.softDeleteFlashcard(cardId),
+    onSuccess: (_, cardId) => {
+      // ⚡ Remove o flashcard do cache imediatamente
+      queryClient.setQueryData<Flashcard[]>(
+        ["notebook-flashcards", notebookId],
+        (old) => old?.filter((fc) => fc.id !== cardId) ?? old,
+      );
+      // ✅ Invalida as estatísticas do Dashboard
+      queryClient.invalidateQueries({ queryKey: ["study-stats"] });
+      useToastStore
+        .getState()
+        .addToast("Flashcard movido para lixeira.", "success");
+      setIsEditFlashcardModalOpen(false);
+      setEditingFlashcard(null);
+    },
+    onError: (err) => {
+      useToastStore.getState().addToast(
+        extractApiError(err, "Erro ao excluir flashcard."),
+        "error",
+      );
+    },
+  });
+
   const createFlashcardMutation = useMutation({
     mutationFn: (data: {
       leafId: string;
@@ -88,10 +156,12 @@ export function useNotebookActions({
       front: string;
       back: string;
     }) => studyService.createFlashcard(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["notebook-flashcards", notebookId],
-      });
+    onSuccess: (newFlashcard) => {
+      // ✅ Adiciona o novo flashcard ao cache imediatamente — sem precisar recarregar
+      queryClient.setQueryData<Flashcard[]>(
+        ["notebook-flashcards", notebookId],
+        (old) => [...(old || []), newFlashcard],
+      );
       // ✅ Invalida as estatísticas para refletir novos cards no Dashboard
       queryClient.invalidateQueries({ queryKey: ["study-stats"] });
       setIsFlashcardModalOpen(false);
@@ -177,6 +247,33 @@ export function useNotebookActions({
     [notebookId, selectedLeafId, createFlashcardMutation],
   );
 
+  const onEditFlashcard = useCallback((card: Flashcard) => {
+    setEditingFlashcard(card);
+    setIsEditFlashcardModalOpen(true);
+  }, []);
+
+  const onDeleteFlashcard = useCallback(
+    async (cardId: string) => {
+      try {
+        await deleteFlashcardMutation.mutateAsync(cardId);
+      } catch (error) {
+        // Toast já exibido no onError da mutation
+      }
+    },
+    [deleteFlashcardMutation],
+  );
+
+  const onEditFlashcardSave = useCallback(
+    async (cardId: string, data: { front: string; back: string }) => {
+      try {
+        await editFlashcardMutation.mutateAsync({ cardId, data });
+      } catch (error) {
+        // Toast já exibido no onError da mutation
+      }
+    },
+    [editFlashcardMutation],
+  );
+
   return {
     isEditModalOpen,
     setIsEditModalOpen,
@@ -200,7 +297,22 @@ export function useNotebookActions({
       isPending: createFlashcardMutation.isPending,
       mutateAsync: createFlashcardMutation.mutateAsync,
     },
+    editFlashcardMutation: {
+      isPending: editFlashcardMutation.isPending,
+      mutateAsync: editFlashcardMutation.mutateAsync,
+    },
+    deleteFlashcardMutation: {
+      isPending: deleteFlashcardMutation.isPending,
+      mutateAsync: deleteFlashcardMutation.mutateAsync,
+    },
+    isEditFlashcardModalOpen,
+    setIsEditFlashcardModalOpen,
+    editingFlashcard,
+    setEditingFlashcard,
     handleOpenEditModal,
+    onEditFlashcard,
+    onDeleteFlashcard,
+    onEditFlashcardSave,
     onEditSubmit,
     handleDeleteNotebookConfirm,
     onFlashcardSubmit,

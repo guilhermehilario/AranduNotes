@@ -1,5 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import trashService from '../services/trashService';
+import { useToastStore } from '../../../store/toastStore';
+import { extractApiError } from '../../../utils/api-errors';
 import type { Leaf } from '../../leaves/types';
 
 export function useTrash() {
@@ -17,6 +19,13 @@ export function useSoftDeleteNotebook() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notebooks'] });
       queryClient.invalidateQueries({ queryKey: ['trash'] });
+      useToastStore.getState().addToast("Caderno movido para lixeira.", "success");
+    },
+    onError: (err) => {
+      useToastStore.getState().addToast(
+        extractApiError(err, "Erro ao mover caderno para lixeira."),
+        "error",
+      );
     },
   });
 }
@@ -59,6 +68,33 @@ export function useSoftDeleteLeaf() {
         queryClient.removeQueries({ queryKey: ["leaves", leafId, "summary"] });
       }
 
+      queryClient.invalidateQueries({ queryKey: ['trash'] });
+      useToastStore.getState().addToast("Folha movida para lixeira.", "success");
+    },
+    onError: (err) => {
+      useToastStore.getState().addToast(
+        extractApiError(err, "Erro ao mover folha para lixeira."),
+        "error",
+      );
+    },
+  });
+}
+
+export function useRestoreFlashcard() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (cardId: string) => trashService.restoreFlashcard(cardId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['trash'] });
+    },
+  });
+}
+
+export function usePermanentDeleteFlashcard() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (cardId: string) => trashService.permanentDeleteFlashcard(cardId),
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['trash'] });
     },
   });

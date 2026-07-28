@@ -109,7 +109,7 @@ export class FlashcardsService {
 
     return this.prisma.withConnection(() =>
       this.prisma.flashcard.findMany({
-        where: { notebookId },
+        where: { notebookId, deletedAt: null },
         orderBy: { createdAt: 'desc' },
       }),
     );

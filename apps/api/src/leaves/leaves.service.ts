@@ -273,7 +273,7 @@ export class LeavesService {
 
     return this.prisma.withConnection(() =>
       this.prisma.flashcard.findMany({
-        where: { leafId },
+        where: { leafId, deletedAt: null },
         orderBy: { createdAt: 'desc' },
       }),
     );

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sparkles, Lightbulb, Loader2 } from 'lucide-react';
+import { Sparkles, Lightbulb, Loader2, Pencil, Trash2 } from 'lucide-react';
 import { Card } from '../../../components/ui/Card.tsx';
 import { Button } from '../../../components/ui/Button.tsx';
 import { EmptyState } from '../../../components/ui/EmptyState.tsx';
@@ -9,12 +9,18 @@ interface FlashcardsSectionProps {
   flashcards: Flashcard[];
   isLoading: boolean;
   onOpenCreateModal: () => void;
+  onEditFlashcard: (card: Flashcard) => void;
+  onDeleteFlashcard: (cardId: string) => void;
+  isDeletingFlashcard?: boolean;
 }
 
 export const FlashcardsSection: React.FC<FlashcardsSectionProps> = ({
   flashcards,
   isLoading,
   onOpenCreateModal,
+  onEditFlashcard,
+  onDeleteFlashcard,
+  isDeletingFlashcard,
 }) => {
 
   return (
@@ -50,9 +56,27 @@ export const FlashcardsSection: React.FC<FlashcardsSectionProps> = ({
           {flashcards.slice(0, 10).map((card) => (
             <Card
               key={card.id}
-              className="flex flex-col gap-2 p-4 border border-slate-100 dark:border-dark-800"
+              className="flex flex-col gap-2 p-4 border border-slate-100 dark:border-dark-800 relative group"
             >
-              <p className="text-sm font-semibold text-slate-800 dark:text-dark-50 line-clamp-2">
+              {/* Action buttons */}
+              <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200">
+                <button
+                  onClick={() => onEditFlashcard(card)}
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-brand-500 hover:bg-brand-50 dark:hover:bg-brand-950/30 transition-all duration-150"
+                  title="Editar flashcard"
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  onClick={() => onDeleteFlashcard(card.id)}
+                  disabled={isDeletingFlashcard}
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Mover para lixeira"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              </div>
+              <p className="text-sm font-semibold text-slate-800 dark:text-dark-50 line-clamp-2 pr-14">
                 <span className="text-xs font-bold text-brand-500 mr-1.5">Q:</span>
                 {card.front}
               </p>

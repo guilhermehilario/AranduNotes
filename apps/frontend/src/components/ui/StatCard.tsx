@@ -27,11 +27,10 @@ export const StatCard: React.FC<StatCardProps> = ({
 }) => {
   const card = (
     <div
-      className="flex items-center gap-3.5 p-4 rounded-2xl transition-all duration-150 hover:-translate-y-0.5 clickable"
+      className="flex items-center gap-3.5 p-4 rounded-2xl"
       style={{
         background: 'var(--bg-surface)',
         border: '1px solid var(--border-color)',
-        boxShadow: tooltip ? '0 4px 20px rgba(0,0,0,0.35)' : '0 1px 3px rgba(0,0,0,0.1)',
       }}
     >
       <div className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ${iconBgClass}`}>

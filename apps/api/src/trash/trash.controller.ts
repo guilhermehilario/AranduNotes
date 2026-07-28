@@ -24,6 +24,14 @@ export class TrashController {
 
   // ── Soft-delete (mover para lixeira) ──
 
+  @Post('trash/flashcards/:cardId')
+  softDeleteFlashcard(
+    @Param('cardId') cardId: string,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.trashService.softDeleteFlashcard(cardId, userId);
+  }
+
   @Post('trash/notebooks/:notebookId')
   softDeleteNotebook(
     @Param('notebookId') notebookId: string,
@@ -42,6 +50,14 @@ export class TrashController {
 
   // ── Restore ──
 
+  @Post('trash/flashcards/:cardId/restore')
+  restoreFlashcard(
+    @Param('cardId') cardId: string,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.trashService.restoreFlashcard(cardId, userId);
+  }
+
   @Post('trash/notebooks/:notebookId/restore')
   restoreNotebook(
     @Param('notebookId') notebookId: string,
@@ -59,6 +75,15 @@ export class TrashController {
   }
 
   // ── Permanent delete ──
+
+  @Delete('trash/flashcards/:cardId')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  permanentDeleteFlashcard(
+    @Param('cardId') cardId: string,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.trashService.permanentDeleteFlashcard(cardId, userId);
+  }
 
   @Delete('trash/notebooks/:notebookId')
   @HttpCode(HttpStatus.NO_CONTENT)

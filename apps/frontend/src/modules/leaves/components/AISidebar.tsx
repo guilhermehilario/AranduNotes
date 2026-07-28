@@ -7,6 +7,8 @@ import {
   Play,
   Plus,
   Upload,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 import { AnnotationSidebar } from "./AnnotationSidebar";
 import { Card } from "../../../components/ui/Card.tsx";
@@ -24,6 +26,9 @@ interface AISidebarProps {
   onCreateManualFlashcard: () => void;
   onGenerateSummary: () => void;
   onGenerateFlashcards: () => void;
+  onEditFlashcard: (card: Flashcard) => void;
+  onDeleteFlashcard: (cardId: string) => void;
+  isDeletingFlashcard?: boolean;
 }
 
 const AI_TABS = [
@@ -45,6 +50,9 @@ const AISidebarComponent: React.FC<AISidebarProps> = ({
   onCreateManualFlashcard,
   onGenerateSummary,
   onGenerateFlashcards,
+  onEditFlashcard,
+  onDeleteFlashcard,
+  isDeletingFlashcard,
 }) => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<AiTab>("summary");
@@ -166,12 +174,30 @@ const AISidebarComponent: React.FC<AISidebarProps> = ({
                   {flashcards.map((card) => (
                     <Card
                       key={card.id}
-                      className="p-4 bg-slate-50/50 dark:bg-dark-950/30 border border-slate-100 dark:border-dark-800 flex flex-col gap-2.5"
+                      className="p-4 bg-slate-50/50 dark:bg-dark-950/30 border border-slate-100 dark:border-dark-800 flex flex-col gap-2.5 relative group"
                     >
+                      {/* Action buttons */}
+                      <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200">
+                        <button
+                          onClick={() => onEditFlashcard(card)}
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-brand-500 hover:bg-brand-50 dark:hover:bg-brand-950/30 transition-all duration-150"
+                          title="Editar flashcard"
+                        >
+                          <Pencil className="h-3 w-3" />
+                        </button>
+                        <button
+                          onClick={() => onDeleteFlashcard(card.id)}
+                          disabled={isDeletingFlashcard}
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
+                          title="Mover para lixeira"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </button>
+                      </div>
                       <div className="text-xs font-bold text-brand-500 tracking-wide uppercase">
                         Pergunta:
                       </div>
-                      <p className="text-xs font-semibold text-slate-800 dark:text-dark-100">
+                      <p className="text-xs font-semibold text-slate-800 dark:text-dark-100 pr-10">
                         {card.front}
                       </p>
                       <div className="border-t border-dashed border-slate-200 dark:border-dark-800 pt-2 text-xs font-bold text-slate-400 dark:text-dark-450 tracking-wide uppercase">

@@ -34,6 +34,7 @@ task.md
 
 !.docs/*
 /docs
+<<<<<<< HEAD
 
 CHANGELOG_RECENTE.md
 CHANGE_SEND_EMAIL.md
@@ -44,3 +45,5 @@ FLY_DEPLOY.md
 DIAGNOSTICO_VERIFICACAO_EMAIL.md
 ANALISE_COMPLETA_PROJETO.md
 TESTING_REPORT.md
+=======
+>>>>>>> refactor/text-area

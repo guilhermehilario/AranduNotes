@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useBookmarks, useCreateBookmark, useDeleteBookmark } from './useBookmarks';
+import { useToastStore } from '../../../store/toastStore';
 
 interface UseToggleBookmarkOptions {
   /** 'leaf' para bookmark em folha, 'notebook' para bookmark em caderno */
@@ -86,6 +87,12 @@ export function useToggleBookmark({
     }
 
     queryClient.invalidateQueries({ queryKey: ['bookmarks'] });
+    useToastStore
+      .getState()
+      .addToast(
+        isBookmarked ? "Marcador removido." : "Marcador adicionado.",
+        "success",
+      );
   }, [type, id, title, path, isBookmarked, allBookmarks, createBookmark, deleteBookmark, queryClient]);
 
   return { isBookmarked, toggleBookmark };
