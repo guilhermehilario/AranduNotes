@@ -7,54 +7,69 @@ export class StudiesService {
 
   async getAllStudyContent(userId: string, notebookId?: string) {
     const notebookFilter = notebookId ? { notebookId } : {};
-
-    // Busca flashcards com revisão pendente
     const now = new Date();
-    const flashcards = await this.prisma.withConnection(() =>
-      this.prisma.flashcard.findMany({
-        where: {
-          ...notebookFilter,
-          notebook: { userId },
-          nextReviewDate: { lte: now },
-        },
-        orderBy: { nextReviewDate: 'asc' },
-        include: {
-          notebook: { select: { title: true, color: true } },
-        },
-      }),
-    );
 
-    // Busca todas as questões
-    const questions = await this.prisma.withConnection(() =>
-      this.prisma.question.findMany({
-        where: {
-          ...notebookFilter,
-          userId,
-        },
-        orderBy: { createdAt: 'desc' },
-        include: {
-          notebook: { select: { title: true, color: true } },
-        },
-      }),
-    );
+    const [totalFlashcards, flashcardsDue, questions, mockExams] =
+      await Promise.all([
+        // Total de flashcards (exclui soft-delete)
+        this.prisma.withConnection(() =>
+          this.prisma.flashcard.count({
+            where: {
+              ...notebookFilter,
+              notebook: { userId },
+              deletedAt: null,
+            },
+          }),
+        ),
 
-    // Busca simulados
-    const mockExams = await this.prisma.withConnection(() =>
-      this.prisma.mockExam.findMany({
-        where: {
-          ...(notebookId ? { notebookId } : { userId }),
-        },
-        orderBy: { createdAt: 'desc' },
-        include: {
-          notebook: { select: { title: true, color: true } },
-          _count: { select: { questions: true } },
-        },
-      }),
-    );
+        // Flashcards com revisão pendente
+        this.prisma.withConnection(() =>
+          this.prisma.flashcard.findMany({
+            where: {
+              ...notebookFilter,
+              notebook: { userId },
+              nextReviewDate: { lte: now },
+              deletedAt: null,
+            },
+            orderBy: { nextReviewDate: 'asc' },
+            include: {
+              notebook: { select: { title: true, color: true } },
+            },
+          }),
+        ),
+
+        // Todas as questões
+        this.prisma.withConnection(() =>
+          this.prisma.question.findMany({
+            where: {
+              ...notebookFilter,
+              userId,
+            },
+            orderBy: { createdAt: 'desc' },
+            include: {
+              notebook: { select: { title: true, color: true } },
+            },
+          }),
+        ),
+
+        // Simulados
+        this.prisma.withConnection(() =>
+          this.prisma.mockExam.findMany({
+            where: {
+              ...(notebookId ? { notebookId } : { userId }),
+            },
+            orderBy: { createdAt: 'desc' },
+            include: {
+              notebook: { select: { title: true, color: true } },
+              _count: { select: { questions: true } },
+            },
+          }),
+        ),
+      ]);
 
     return {
-      flashcardsDue: flashcards,
-      totalFlashcards: flashcards.length,
+      flashcardsDue,
+      totalFlashcards,
       questions,
       totalQuestions: questions.length,
       mockExams,
@@ -70,7 +85,7 @@ export class StudiesService {
     ] = await Promise.all([
       this.prisma.withConnection(() =>
         this.prisma.flashcard.count({
-          where: { notebook: { userId } },
+          where: { notebook: { userId }, deletedAt: null },
         }),
       ),
       this.prisma.withConnection(() =>
@@ -87,6 +102,7 @@ export class StudiesService {
         where: {
           notebook: { userId },
           nextReviewDate: { lte: now },
+          deletedAt: null,
         },
       }),
     );
