@@ -17,7 +17,6 @@ import {
   Timeline,
   Target,
   Timer,
-  Settings,
   GraduationCap,
 } from "lucide-react";
 
@@ -36,7 +35,6 @@ const PLANNING_SUB_ITEMS = [
   { path: "/planning/cronograma", label: "Cronograma", icon: Timeline },
   { path: "/planning/metas", label: "Metas", icon: Target },
   { path: "/planning/pomodoro", label: "Pomodoro", icon: Timer },
-  { path: "/planning/settings", label: "Configurações", icon: Settings },
 ] as const;
 
 export const Sidebar: React.FC = () => {

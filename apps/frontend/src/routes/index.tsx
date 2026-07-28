@@ -18,7 +18,6 @@ import TrashView from '../modules/trash/views/TrashView.tsx';
 import ArchivedLeavesView from '../modules/leaves/views/ArchivedLeavesView.tsx';
 import TodoListView from '../modules/todos/views/TodoListView.tsx';
 import PlanningView from '../modules/planning/views/PlanningView.tsx';
-import PlanningSettingsView from '../modules/planning/views/PlanningSettingsView.tsx';
 import EstudosView from '../modules/study/views/EstudosView.tsx';
 import FlashcardsStudyView from '../modules/study/views/FlashcardsStudyView.tsx';
 import QuestionsStudyView from '../modules/study/views/QuestionsStudyView.tsx';
@@ -113,10 +112,6 @@ const TodoListPage = memo(function TodoListPage() {
 
 const PlanningPage = memo(function PlanningPage() {
   return <PlanningView />;
-});
-
-const PlanningSettingsPage = memo(function PlanningSettingsPage() {
-  return <PlanningSettingsView />;
 });
 
 const EstudosPage = memo(function EstudosPage() {
@@ -217,10 +212,6 @@ const router = createBrowserRouter([
       {
         path: 'planning',
         element: <Navigate to="/planning/agenda" replace />,
-      },
-      {
-        path: 'planning/settings',
-        element: <PlanningSettingsPage />,
       },
       {
         path: 'planning/:tab',
