@@ -8,6 +8,8 @@ import {
   Underline,
   Strikethrough,
   Code,
+  Code2,
+  RemoveFormatting,
   TextQuote,
   SeparatorHorizontal,
   List,
@@ -250,6 +252,23 @@ const EditorToolbarComponent: React.FC<EditorToolbarProps> = ({ editor, annotati
         <Divider />
 
         <AnnotationPopover editor={editor} variant="toolbar" editTrigger={annotationTrigger} />
+
+        <Divider />
+
+        <ToolbarButton
+          onClick={() => editor.chain().focus().toggleCodeBlock().run()}
+          isActive={editor.isActive('codeBlock')}
+          title="Bloco de código"
+        >
+          <Code2 className="h-4 w-4" />
+        </ToolbarButton>
+
+        <ToolbarButton
+          onClick={() => editor.chain().focus().clearNodes().unsetAllMarks().run()}
+          title="Limpar formatação"
+        >
+          <RemoveFormatting className="h-4 w-4" />
+        </ToolbarButton>
       </div>
     </div>
   );
