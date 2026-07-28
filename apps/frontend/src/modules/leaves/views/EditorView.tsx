@@ -18,6 +18,7 @@ import { EditorSkeleton } from "../components/EditorSkeleton";
 import { EditorHeader } from "../components/EditorHeader";
 import { SubLeavesSection } from "../components/SubLeavesSection";
 import { ManualFlashcardModal } from "../components/ManualFlashcardModal";
+import { ManualSummaryModal } from "../components/ManualSummaryModal";
 import { EditFlashcardModal } from "../../notebooks/components/EditFlashcardModal"
 import { ConfirmDialog } from "../../../components/ui/ConfirmDialog.tsx";
 
@@ -44,6 +45,7 @@ export const EditorView: React.FC = () => {
 
   // ── Flashcard Edit/Delete ──
   const [editingFlashcard, setEditingFlashcard] = useState<Flashcard | null>(null);
+  const [isSummaryModalOpen, setIsSummaryModalOpen] = useState(false);
   const [isEditFlashcardModalOpen, setIsEditFlashcardModalOpen] = useState(false);
   const updateFlashcardMutation = useUpdateFlashcard(notebookId || undefined, leafId || undefined);
   const deleteFlashcardMutation = useDeleteFlashcard(notebookId || undefined, leafId || undefined);
@@ -188,6 +190,7 @@ export const EditorView: React.FC = () => {
             isGeneratingSummary={isGeneratingSummary}
             isGeneratingFlashcards={isGeneratingFlashcards}
             onCreateManualFlashcard={() => setIsFlashcardModalOpen(true)}
+            onCreateManualSummary={() => setIsSummaryModalOpen(true)}
             onGenerateSummary={handleGenerateSummary}
             onGenerateFlashcards={handleGenerateFlashcards}
             onEditFlashcard={(card) => {
@@ -229,6 +232,14 @@ export const EditorView: React.FC = () => {
         }}
         isSaving={updateFlashcardMutation.isPending}
         isDeleting={deleteFlashcardMutation.isPending}
+      />
+
+      {/* Modal: Criar/Editar Resumo Manual */}
+      <ManualSummaryModal
+        isOpen={isSummaryModalOpen}
+        onClose={() => setIsSummaryModalOpen(false)}
+        leafId={leafId || ""}
+        currentSummary={leaf?.summary}
       />
 
       {/* Modal: Criar Flashcard Manual */}

@@ -24,6 +24,7 @@ interface AISidebarProps {
   isGeneratingSummary: boolean;
   isGeneratingFlashcards: boolean;
   onCreateManualFlashcard: () => void;
+  onCreateManualSummary: () => void;
   onGenerateSummary: () => void;
   onGenerateFlashcards: () => void;
   onEditFlashcard: (card: Flashcard) => void;
@@ -48,6 +49,7 @@ const AISidebarComponent: React.FC<AISidebarProps> = ({
   isGeneratingSummary,
   isGeneratingFlashcards,
   onCreateManualFlashcard,
+  onCreateManualSummary,
   onGenerateSummary,
   onGenerateFlashcards,
   onEditFlashcard,
@@ -89,6 +91,17 @@ const AISidebarComponent: React.FC<AISidebarProps> = ({
 
         {activeTab === "summary" && (
           <div className="flex flex-col h-full gap-4">
+            {/* Botão Criar Resumo Manual — sempre visível */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onCreateManualSummary}
+              leftIcon={<Plus className="h-3.5 w-3.5" />}
+              className="w-full"
+            >
+              {summary ? 'Editar Resumo Manual' : 'Criar Resumo Manual'}
+            </Button>
+
             {summary ? (
               <div className="flex flex-col gap-4">
                 <div className="ai-summary-block">
