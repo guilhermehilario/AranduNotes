@@ -86,12 +86,33 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
     return "adv-luna";
   });
   const [customAvatarUrl, setCustomAvatarUrl] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
-  const [saveMessage, setSaveMessage] = useState<string | null>(null);
+
+  // Profile save state
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [profileSaveMessage, setProfileSaveMessage] = useState<string | null>(null);
+
+  // Avatar save state
+  const [savingAvatar, setSavingAvatar] = useState(false);
+  const [avatarSaveMessage, setAvatarSaveMessage] = useState<string | null>(null);
 
   const handleSaveProfile = async () => {
-    setSaving(true);
-    setSaveMessage(null);
+    setSavingProfile(true);
+    setProfileSaveMessage(null);
+    try {
+      await api.put("/auth/profile", { name });
+      queryClient.invalidateQueries({ queryKey: ["profile"] });
+      setProfileSaveMessage("Perfil atualizado com sucesso!");
+      setTimeout(() => setProfileSaveMessage(null), 3000);
+    } catch {
+      setProfileSaveMessage("Erro ao atualizar perfil");
+    } finally {
+      setSavingProfile(false);
+    }
+  };
+
+  const handleSaveAvatar = async () => {
+    setSavingAvatar(true);
+    setAvatarSaveMessage(null);
     try {
       let avatarUrl: string;
       if (customAvatarUrl) {
@@ -108,14 +129,14 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
           currentVariant.seed,
         );
       }
-      await api.put("/auth/profile", { name, avatarUrl });
+      await api.put("/auth/profile", { avatarUrl });
       queryClient.invalidateQueries({ queryKey: ["profile"] });
-      setSaveMessage("Perfil atualizado com sucesso!");
-      setTimeout(() => setSaveMessage(null), 3000);
+      setAvatarSaveMessage("Avatar atualizado com sucesso!");
+      setTimeout(() => setAvatarSaveMessage(null), 3000);
     } catch {
-      setSaveMessage("Erro ao atualizar perfil");
+      setAvatarSaveMessage("Erro ao atualizar avatar");
     } finally {
-      setSaving(false);
+      setSavingAvatar(false);
     }
   };
 
@@ -255,22 +276,22 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
             />
 
             {/* Save message */}
-            {saveMessage && (
+            {profileSaveMessage && (
               <div
                 className={`p-3 rounded-xl text-sm font-medium border`}
                 style={{
-                  background: saveMessage.includes("sucesso") ? 'rgba(16,185,129,0.1)' : 'rgba(244,63,94,0.1)',
-                  borderColor: saveMessage.includes("sucesso") ? 'rgba(16,185,129,0.3)' : 'rgba(244,63,94,0.3)',
-                  color: saveMessage.includes("sucesso") ? '#34D399' : '#FB7185',
+                  background: profileSaveMessage.includes("sucesso") ? 'rgba(16,185,129,0.1)' : 'rgba(244,63,94,0.1)',
+                  borderColor: profileSaveMessage.includes("sucesso") ? 'rgba(16,185,129,0.3)' : 'rgba(244,63,94,0.3)',
+                  color: profileSaveMessage.includes("sucesso") ? '#34D399' : '#FB7185',
                 }}
               >
-                {saveMessage}
+                {profileSaveMessage}
               </div>
             )}
 
             <Button
               onClick={handleSaveProfile}
-              isLoading={saving}
+              isLoading={savingProfile}
               className="self-start"
             >
               Salvar Alterações
@@ -367,6 +388,28 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                 setCustomAvatarUrl(dataUrl || null);
               }}
             />
+
+            {/* Avatar save message */}
+            {avatarSaveMessage && (
+              <div
+                className={`p-3 rounded-xl text-sm font-medium border`}
+                style={{
+                  background: avatarSaveMessage.includes("sucesso") ? 'rgba(16,185,129,0.1)' : 'rgba(244,63,94,0.1)',
+                  borderColor: avatarSaveMessage.includes("sucesso") ? 'rgba(16,185,129,0.3)' : 'rgba(244,63,94,0.3)',
+                  color: avatarSaveMessage.includes("sucesso") ? '#34D399' : '#FB7185',
+                }}
+              >
+                {avatarSaveMessage}
+              </div>
+            )}
+
+            <Button
+              onClick={handleSaveAvatar}
+              isLoading={savingAvatar}
+              className="self-start"
+            >
+              Salvar Avatar
+            </Button>
           </div>
         )}
 
