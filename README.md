@@ -7,7 +7,7 @@
     <img src="https://img.shields.io/badge/Frontend-React-61DAFB?style=flat-square&logo=react" alt="React">
     <img src="https://img.shields.io/badge/ORM-Prisma-2D3748?style=flat-square&logo=prisma" alt="Prisma">
     <img src="https://img.shields.io/badge/Database-SQLite%2FTurso-003B57?style=flat-square&logo=sqlite" alt="Database">
-    <img src="https://img.shields.io/badge/Deploy-Render-46E3B7?style=flat-square&logo=render" alt="Render">
+    <img src="https://img.shields.io/badge/Deploy-Fly.io%20%2B%20Render-46E3B7?style=flat-square&logo=render" alt="Deploy">
   </p>
 </div>
 
@@ -25,17 +25,21 @@ técnicas como **Pomodoro** e **revisão espaçada** (algoritmo SM-2).
 
 ### Funcionalidades principais
 
-- 📝 **Editor de texto enriquecido** (TipTap) com suporte a anotações e destaque
+- 📝 **Editor de texto enriquecido** (TipTap) com toolbar multi-linha, pincel de formatação, blocos de código, listas de tarefas e muito mais
 - 🗂️ **Cadernos e folhas** hierárquicas com drag & drop
-- 🃏 **Flashcards** para revisão espaçada (algoritmo SM-2)
+- 🃏 **Flashcards** para revisão espaçada (algoritmo SM-2) — criação manual e por IA
 - ❓ **Questões de estudo** (múltipla escolha, verdadeiro/falso, resposta curta)
 - 📋 **Simulados** personalizáveis com limite de tempo
+- 📝 **Resumos** automáticos por IA ou criação manual
 - 🏷️ **Tags e bookmarks** para organização
-- ✅ **Lista de tarefas** (todo-list)
+- ✅ **Lista de tarefas** integrada (todo-list)
 - 📅 **Planejamento** com agenda, cronograma, metas e Pomodoro
+- 📋 **Histórico de cópia e cola** (gestor de clipboard) com busca, favoritos e drag & drop
+- 👤 **Avatar personalizável** com categorias visuais
+- 🔔 **Notificações e preferências** do sistema
 - 🗑️ **Lixeira e arquivamento** com soft-delete
 - 🔄 **Histórico de edições**
-- 👤 **Autenticação** JWT com refresh tokens e recuperação de senha
+- 👤 **Autenticação** JWT com refresh tokens, recuperação de senha e aceitação de termos
 
 ---
 
@@ -75,7 +79,7 @@ técnicas como **Pomodoro** e **revisão espaçada** (algoritmo SM-2).
 | **Estilos** | TailwindCSS | v4 |
 | **Editor Rich Text** | TipTap | v3 |
 | **Estado** | Zustand + TanStack Query | — |
-| **Deploy** | Render.com | — |
+| **Deploy** | Fly.io (API) + Render (Frontend) | — |
 
 ---
 
@@ -145,7 +149,8 @@ arandu-monorepo/
 │       └── package.json
 │
 ├── docs/
-│   └── RENDER_DEPLOY.md              # Guia de deploy no Render
+│   ├── RENDER_DEPLOY.md              # Guia de deploy no Render
+│   └── lista-de-tarefas.md           # Guia de uso da lista de tarefas
 │
 ├── package.json                      # Workspaces root + scripts globais
 ├── turbo.json                        # Configuração do Turborepo
@@ -243,6 +248,7 @@ A aplicação estará disponível em:
 | `yarn build` | Build de todos os apps |
 | `yarn lint` | Executa linters em todos os apps |
 | `yarn test` | Executa testes em todos os apps |
+| `yarn format` | Formata o código com Prettier |
 
 ### Filtrados por workspace (Turbo)
 
@@ -277,19 +283,24 @@ yarn workspace api test:e2e             # Testes e2e da API
 
 ## 🌐 Deploy
 
-O deploy automatizado é feito via **Render.com** utilizando a funcionalidade
-**Blueprint**, que lê o arquivo [`render.yaml`](./render.yaml) na raiz do projeto.
+O deploy é feito em dois ambientes:
+
+### API — Fly.io
+
+A API (NestJS) é deployada no **Fly.io** via `fly deploy`.
+
+Configurações relevantes:
+- [`fly.toml`](./fly.toml) — configuração do Fly.io
+- [`.github/workflows/fly-deploy.yml`](./.github/workflows/fly-deploy.yml) — CI/CD automático
+- Dockerfile multi-stage para build otimizado
+- Litestream para backup do banco SQLite
+
+### Frontend — Render.com
+
+O frontend (React + Vite) é deployado como **Static Site** no **Render.com**
+via Blueprint ([`render.yaml`](./render.yaml)).
 
 👉 **[Guia completo de deploy →](./docs/RENDER_DEPLOY.md)**
-
-### Resumo do deploy
-
-1. Conecte o repositório ao Render via Blueprint
-2. Configure as variáveis de ambiente (`DATABASE_URL`, `JWT_SECRET`, etc.)
-3. O Render cria automaticamente 2 serviços:
-   - **`arandu-api`** — Web Service (NestJS)
-   - **`arandu-frontend`** — Static Site (React + Vite)
-4. Após o deploy, execute as migrations do Prisma
 
 ---
 
