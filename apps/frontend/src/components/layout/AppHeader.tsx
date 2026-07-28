@@ -26,6 +26,7 @@ import {
 import { useNotificationStore } from '../../store/notificationStore.ts';
 import { NotificationPanel } from '../ui/NotificationPanel.tsx';
 import { ProfileModal } from '../../modules/profile/ProfileModal.tsx';
+import { Tooltip } from '../ui/Tooltip.tsx';
 import { ClipboardManager } from '../../modules/clipboard/components/ClipboardManager.tsx';
 import { useClipboardStore } from '../../store/clipboardStore.ts';
 
@@ -224,19 +225,20 @@ export const AppHeader: React.FC = () => {
 
         {/* Clipboard Manager */}
         <div className="relative" ref={clipboardRef}>
-          <button
-            type="button"
-            onClick={toggleClipboard}
-            className="relative p-2 rounded-xl text-slate-500 dark:text-dark-400 hover:bg-slate-100 dark:hover:bg-dark-800 transition-all cursor-pointer"
-            title="Histórico de cópia (Ctrl+Shift+V)"
-          >
-            <ClipboardList className="h-5 w-5" />
-            {clipboardItems.length > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-brand-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center shadow-sm animate-in zoom-in duration-200">
-                {clipboardItems.length > 9 ? '9+' : clipboardItems.length}
-              </span>
-            )}
-          </button>
+          <Tooltip content="Histórico de cópia (Ctrl+Shift+V)">
+            <button
+              type="button"
+              onClick={toggleClipboard}
+              className="relative p-2 rounded-xl text-slate-500 dark:text-dark-400 hover:bg-slate-100 dark:hover:bg-dark-800 transition-all cursor-pointer"
+            >
+              <ClipboardList className="h-5 w-5" />
+              {clipboardItems.length > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-brand-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center shadow-sm animate-in zoom-in duration-200">
+                  {clipboardItems.length > 9 ? '9+' : clipboardItems.length}
+                </span>
+              )}
+            </button>
+          </Tooltip>
 
           <ClipboardManager
             show={showClipboard}

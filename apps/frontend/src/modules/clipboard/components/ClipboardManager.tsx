@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { ClipboardList, Trash2, Pencil, Check, X, Copy, FileText } from 'lucide-react';
-import { useClipboardStore, ClipboardItem } from '../../../store/clipboardStore.ts';
+import { useClipboardStore, type ClipboardItem } from '../../../store/clipboardStore.ts';
 
 function formatTimeAgo(timestamp: number): string {
   const diff = Date.now() - timestamp;
@@ -92,6 +92,7 @@ const ClipboardItemRow: React.FC<ClipboardItemRowProps> = ({ item }) => {
   const [editText, setEditText] = useState(item.text);
   const inputRef = useRef<HTMLInputElement>(null);
   const [justCopied, setJustCopied] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
   useEffect(() => {
     if (isEditing && inputRef.current) {
@@ -142,18 +143,34 @@ const ClipboardItemRow: React.FC<ClipboardItemRowProps> = ({ item }) => {
     [item.text]
   );
 
+  const handleDragStart = useCallback(
+    (e: React.DragEvent) => {
+      e.dataTransfer.setData('text/plain', item.text);
+      e.dataTransfer.effectAllowed = 'copy';
+      setIsDragging(true);
+    },
+    [item.text]
+  );
+
+  const handleDragEnd = useCallback(() => {
+    setIsDragging(false);
+  }, []);
+
   return (
     <div
       role="button"
       tabIndex={0}
+      draggable={!isEditing}
       onClick={handleItemClick}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
           handleItemClick();
         }
       }}
-      className="group relative flex items-start gap-2 px-4 py-3 text-left cursor-pointer hover:bg-[var(--bg-surface-hover)] transition-colors border-b border-[var(--border-color)] last:border-b-0"
+      className={`group relative flex items-start gap-2 px-4 py-3 text-left cursor-${isDragging ? 'grabbing' : 'grab'} hover:bg-[var(--bg-surface-hover)] transition-colors border-b border-[var(--border-color)] last:border-b-0 ${isDragging ? 'opacity-50' : ''}`}
     >
       {/* Icon area */}
       <div className="flex-shrink-0 mt-1">
@@ -208,6 +225,9 @@ const ClipboardItemRow: React.FC<ClipboardItemRowProps> = ({ item }) => {
             </p>
             <p className="text-[10px] mt-1" style={{ color: 'var(--text-secondary)' }}>
               {formatTimeAgo(item.createdAt)}
+              {isDragging && (
+                <span className="ml-2 text-brand-500 font-medium">Arraste para um campo de texto</span>
+              )}
             </p>
           </>
         )}
@@ -336,7 +356,7 @@ export const ClipboardManager: React.FC<ClipboardManagerProps> = ({
             }}
           >
             <p className="text-[11px] text-center" style={{ color: 'var(--text-secondary)' }}>
-              Clique em um item para colar no campo ativo · {items.length} item{items.length !== 1 ? 'ns' : ''}
+              Clique para colar · Arraste para campos de texto · {items.length} item{items.length !== 1 ? 'ns' : ''}
             </p>
           </div>
         )}
