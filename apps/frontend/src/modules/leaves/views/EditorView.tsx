@@ -5,6 +5,7 @@ import { EditorContent } from "@tiptap/react";
 import { useLeaf } from "../hooks/useLeaves";
 import { useLeafFlashcards, useUpdateFlashcard, useDeleteFlashcard } from "../../study/hooks/useFlashcards";
 import type { Flashcard } from "../../study/types";
+import type { Leaf } from "../types";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToggleBookmark } from "../../bookmarks/hooks/useToggleBookmark";
 import { useSoftDeleteLeaf } from "../../trash/hooks/useTrash";
