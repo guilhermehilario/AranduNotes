@@ -93,28 +93,30 @@ export const DashboardView: React.FC = () => {
       </div>
 
       {/* Notebook Grid */}
-      {notebooks.length === 0 ? (
-        <EmptyState
-          icon={<BookOpen className="h-8 w-8" />}
-          title="Nenhum caderno criado"
-          description="Comece criando o seu primeiro caderno para separar suas disciplinas da faculdade."
-          action={
-            <Button
-              variant="outline"
-              onClick={() => setIsModalOpen(true)}
-              leftIcon={<Plus className="h-4 w-4" />}
-            >
-              Criar meu primeiro caderno
-            </Button>
-          }
-        />
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {notebooks.map((notebook) => (
-            <NotebookCard key={notebook.id} notebook={notebook} />
-          ))}
-        </div>
-      )}
+      <div className="mt-6">
+        {notebooks.length === 0 ? (
+          <EmptyState
+            icon={<BookOpen className="h-8 w-8" />}
+            title="Nenhum caderno criado"
+            description="Comece criando o seu primeiro caderno para separar suas disciplinas da faculdade."
+            action={
+              <Button
+                variant="outline"
+                onClick={() => setIsModalOpen(true)}
+                leftIcon={<Plus className="h-4 w-4" />}
+              >
+                Criar meu primeiro caderno
+              </Button>
+            }
+          />
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {notebooks.map((notebook) => (
+              <NotebookCard key={notebook.id} notebook={notebook} />
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* Creation Modal */}
       <Modal
