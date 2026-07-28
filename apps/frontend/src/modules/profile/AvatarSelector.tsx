@@ -232,7 +232,7 @@ export const AvatarSelector: React.FC<AvatarSelectorProps> = ({
             >
               <div
                 className={`w-10 h-10 rounded-lg overflow-hidden ${isSelected ? "ring-2" : ""}`}
-                style={isSelected ? { ringColor: 'var(--primary)' } : {}}
+                style={isSelected ? { outline: '2px solid var(--primary)' } : {}}
               >
                 <img
                   src={url}

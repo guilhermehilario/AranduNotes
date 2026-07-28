@@ -148,7 +148,7 @@ const EditorToolbarComponent: React.FC<EditorToolbarProps> = ({ editor, annotati
   // Animação de abertura/fechamento — mantém o componente montado durante exit
   const [showMenu, setShowMenu] = useState(false);
   const [animVisible, setAnimVisible] = useState(false);
-  const animTimerRef = useRef<ReturnType<typeof setTimeout>>();
+  const animTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const openMenu = useCallback(() => {
     clearTimeout(animTimerRef.current);

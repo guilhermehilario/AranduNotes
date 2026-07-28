@@ -254,7 +254,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                 />
                 <div
                   className="absolute inset-0 rounded-full ring-2"
-                  style={{ ringColor: 'var(--bg-surface)' }}
+                  style={{ outline: '2px solid var(--bg-surface)' }}
                 />
               </div>
               <div>

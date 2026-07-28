@@ -9,7 +9,6 @@ interface TooltipProps {
 export const Tooltip: React.FC<TooltipProps> = ({
   content,
   children,
-  position = "top",
 }) => {
   const [isVisible, setIsVisible] = useState(false);
   const [coords, setCoords] = useState({ top: 0, left: 0 });
