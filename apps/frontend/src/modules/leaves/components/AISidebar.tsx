@@ -26,6 +26,8 @@ interface AISidebarProps {
   onCreateManualFlashcard: () => void;
   onCreateManualSummary: () => void;
   onGenerateSummary: () => void;
+  onDeleteSummary: () => void;
+  isDeletingSummary?: boolean;
   onGenerateFlashcards: () => void;
   onEditFlashcard: (card: Flashcard) => void;
   onDeleteFlashcard: (cardId: string) => void;
@@ -51,6 +53,8 @@ const AISidebarComponent: React.FC<AISidebarProps> = ({
   onCreateManualFlashcard,
   onCreateManualSummary,
   onGenerateSummary,
+  onDeleteSummary,
+  isDeletingSummary,
   onGenerateFlashcards,
   onEditFlashcard,
   onDeleteFlashcard,
@@ -103,7 +107,18 @@ const AISidebarComponent: React.FC<AISidebarProps> = ({
             </Button>
 
             {summary ? (
-              <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-4 relative group">
+                {/* Delete button — aparece no hover, mesmo estilo do flashcard */}
+                <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200 z-10">
+                  <button
+                    onClick={onDeleteSummary}
+                    disabled={isDeletingSummary}
+                    className="p-1.5 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Excluir resumo"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </button>
+                </div>
                 <div className="ai-summary-block">
                   {summary}
                 </div>

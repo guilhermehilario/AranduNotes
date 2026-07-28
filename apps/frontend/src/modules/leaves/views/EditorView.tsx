@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useParams, useNavigate, Link as RouterLink } from "react-router-dom";
 import { EditorContent } from "@tiptap/react";
 import { useLeaf } from "../hooks/useLeaves";
@@ -21,6 +21,9 @@ import { ManualFlashcardModal } from "../components/ManualFlashcardModal";
 import { ManualSummaryModal } from "../components/ManualSummaryModal";
 import { EditFlashcardModal } from "../../notebooks/components/EditFlashcardModal"
 import { ConfirmDialog } from "../../../components/ui/ConfirmDialog.tsx";
+import { useToastStore } from "../../../store/toastStore";
+import { extractApiError } from "../../../utils/api-errors";
+import leafService from "../services/leafService";
 
 export const EditorView: React.FC = () => {
   const { notebookId, leafId } = useParams<{
@@ -57,6 +60,32 @@ export const EditorView: React.FC = () => {
   });
   const softDeleteLeaf = useSoftDeleteLeaf();
   const queryClient = useQueryClient();
+
+  // ── Excluir Resumo ──
+  const [isDeletingSummary, setIsDeletingSummary] = useState(false);
+  const handleDeleteSummary = useCallback(async () => {
+    if (!leafId) return;
+    setIsDeletingSummary(true);
+    try {
+      const updated = await leafService.updateLeaf(leafId, { summary: null });
+      queryClient.setQueryData<Leaf>(['leaves', leafId], (old) => {
+        if (!old) return updated as unknown as Leaf;
+        return { ...old, summary: null };
+      });
+      queryClient.setQueryData<{ summary?: string }>(
+        ['leaves', leafId, 'summary'],
+        { summary: undefined },
+      );
+      useToastStore.getState().addToast('Resumo excluído com sucesso.', 'success');
+    } catch (err) {
+      useToastStore.getState().addToast(
+        extractApiError(err, 'Erro ao excluir resumo.'),
+        'error',
+      );
+    } finally {
+      setIsDeletingSummary(false);
+    }
+  }, [leafId, queryClient]);
   const editorStatus = useEditorStatusStore();
 
   const isArchived = leaf?.archivedAt != null;
@@ -199,6 +228,8 @@ export const EditorView: React.FC = () => {
             }}
             onDeleteFlashcard={(cardId) => deleteFlashcardMutation.mutateAsync(cardId)}
             isDeletingFlashcard={deleteFlashcardMutation.isPending}
+            isDeletingSummary={isDeletingSummary}
+            onDeleteSummary={handleDeleteSummary}
           />
         )}
       </div>
