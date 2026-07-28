@@ -14,6 +14,7 @@ import {
   SeparatorHorizontal,
   List,
   ListOrdered,
+  ListChecks,
   AlignLeft,
   AlignCenter,
   AlignRight,
@@ -338,6 +339,14 @@ const EditorToolbarComponent: React.FC<EditorToolbarProps> = ({ editor, annotati
           title={`Lista numerada (${kbdShift('9')})`}
         >
           <ListOrdered className="h-4 w-4" />
+        </ToolbarButton>
+
+        <ToolbarButton
+          onClick={() => editor.chain().focus().toggleTaskList().run()}
+          isActive={editor.isActive('taskList')}
+          title="Lista de tarefas"
+        >
+          <ListChecks className="h-4 w-4" />
         </ToolbarButton>
 
         <Divider />

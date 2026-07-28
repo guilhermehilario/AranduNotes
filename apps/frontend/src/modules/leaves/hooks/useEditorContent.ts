@@ -9,6 +9,8 @@ import Placeholder from "@tiptap/extension-placeholder";
 import Underline from "@tiptap/extension-underline";
 import LinkExtension from "@tiptap/extension-link";
 import TextAlign from "@tiptap/extension-text-align";
+import TaskList from "@tiptap/extension-task-list";
+import TaskItem from "@tiptap/extension-task-item";
 import { Annotation } from "../extensions/Annotation";
 import { Indent } from "../extensions/Indent";
 import { useDebounce } from "../../../hooks/useDebounce";
@@ -91,6 +93,10 @@ export function useEditorContent({
         types: ["paragraph", "heading", "blockquote"],
         maxLevel: 4,
         indentStep: 1.5,
+      }),
+      TaskList,
+      TaskItem.configure({
+        nested: true,
       }),
       Annotation,
       Placeholder.configure({
