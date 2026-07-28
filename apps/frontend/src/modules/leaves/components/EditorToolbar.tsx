@@ -151,7 +151,7 @@ const EditorToolbarComponent: React.FC<EditorToolbarProps> = ({ editor, annotati
   const animTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const openMenu = useCallback(() => {
-    clearTimeout(animTimerRef.current);
+    clearTimeout(animTimerRef.current ?? undefined);
     setShowMenu(true);
     // Força o browser a registrar o mount antes de animar
     requestAnimationFrame(() => {
@@ -193,7 +193,7 @@ const EditorToolbarComponent: React.FC<EditorToolbarProps> = ({ editor, annotati
   useEffect(() => {
     if (prevOverflowRef.current !== overflowIndex && menuOpen) {
       setAnimVisible(false);
-      clearTimeout(animTimerRef.current);
+      clearTimeout(animTimerRef.current ?? undefined);
       animTimerRef.current = setTimeout(() => {
         setShowMenu(false);
         setMenuOpen(false);
@@ -204,7 +204,7 @@ const EditorToolbarComponent: React.FC<EditorToolbarProps> = ({ editor, annotati
 
   // Cleanup do timer
   useEffect(() => {
-    return () => clearTimeout(animTimerRef.current);
+    return () => clearTimeout(animTimerRef.current ?? undefined);
   }, []);
 
   // ── Itens do toolbar (mantidos como JSX para reatividade) ──
