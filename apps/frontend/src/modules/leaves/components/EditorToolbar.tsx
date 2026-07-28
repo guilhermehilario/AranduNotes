@@ -373,7 +373,7 @@ const EditorToolbarComponent: React.FC<EditorToolbarProps> = ({ editor, annotati
           onClick={handleWrapQuotes}
           title="Envolver em aspas"
         >
-          <span className="text-xs font-bold leading-none h-4 w-4 flex items-center justify-center">" "</span>
+          <span className="text-[10px] font-bold leading-none tracking-[1.5px]">“”</span>
         </ToolbarButton>
       </div>
     </div>
