@@ -122,7 +122,6 @@ const EditorToolbarComponent: React.FC<EditorToolbarProps> = ({ editor, annotati
       formatPainterMarksRef.current = {};
     } else {
       // Capture marks from current selection
-      const { from } = editor.state.selection;
       const marks: Record<string, Record<string, unknown>> = {};
 
       // Check each possible mark
@@ -185,6 +184,7 @@ const EditorToolbarComponent: React.FC<EditorToolbarProps> = ({ editor, annotati
   return (
     <div className="pb-2 mb-3 border-b border-slate-100 dark:border-dark-800/80 flex-shrink-0">
       <div className="flex flex-wrap items-center gap-y-0.5">
+        {/* ── Histórico ── */}
         <ToolbarButton
           onClick={() => editor.chain().focus().undo().run()}
           disabled={!canUndo}
@@ -203,6 +203,7 @@ const EditorToolbarComponent: React.FC<EditorToolbarProps> = ({ editor, annotati
 
         <Divider />
 
+        {/* ── Formatação de Texto ── */}
         <ToolbarButton
           onClick={() => editor.chain().focus().toggleBold().run()}
           isActive={editor.isActive('bold')}
@@ -243,16 +244,51 @@ const EditorToolbarComponent: React.FC<EditorToolbarProps> = ({ editor, annotati
           <Code className="h-4 w-4" />
         </ToolbarButton>
 
+        <ToolbarButton
+          onClick={() => editor.chain().focus().clearNodes().unsetAllMarks().run()}
+          title="Limpar formatação"
+        >
+          <RemoveFormatting className="h-4 w-4" />
+        </ToolbarButton>
+
         <Divider />
 
+        {/* ── Estilos de Bloco ── */}
         <HeadingSelector editor={editor} variant="toolbar" />
 
+        <ToolbarButton
+          onClick={() => editor.chain().focus().toggleBlockquote().run()}
+          isActive={editor.isActive('blockquote')}
+          title={`Citação (${kbdShift('B')})`}
+        >
+          <TextQuote className="h-4 w-4" />
+        </ToolbarButton>
+
+        <ToolbarButton
+          onClick={() => editor.chain().focus().toggleCodeBlock().run()}
+          isActive={editor.isActive('codeBlock')}
+          title="Bloco de código"
+        >
+          <Code2 className="h-4 w-4" />
+        </ToolbarButton>
+
+        <ToolbarButton
+          onClick={() => editor.chain().focus().setHorizontalRule().run()}
+          title={`Linha horizontal (${kbdShift('-')})`}
+        >
+          <SeparatorHorizontal className="h-4 w-4" />
+        </ToolbarButton>
+
+        <Divider />
+
+        {/* ── Cor e Links ── */}
         <HighlightPopover editor={editor} variant="toolbar" />
 
         <LinkPopover editor={editor} />
 
         <Divider />
 
+        {/* ── Alinhamento ── */}
         <ToolbarButton
           onClick={() => editor.chain().focus().setTextAlign('left').run()}
           isActive={editor.isActive({ textAlign: 'left' })}
@@ -287,6 +323,7 @@ const EditorToolbarComponent: React.FC<EditorToolbarProps> = ({ editor, annotati
 
         <Divider />
 
+        {/* ── Listas ── */}
         <ToolbarButton
           onClick={() => editor.chain().focus().toggleBulletList().run()}
           isActive={editor.isActive('bulletList')}
@@ -305,23 +342,7 @@ const EditorToolbarComponent: React.FC<EditorToolbarProps> = ({ editor, annotati
 
         <Divider />
 
-        <ToolbarButton
-          onClick={() => editor.chain().focus().toggleBlockquote().run()}
-          isActive={editor.isActive('blockquote')}
-          title={`Citação (${kbdShift('B')})`}
-        >
-          <TextQuote className="h-4 w-4" />
-        </ToolbarButton>
-
-        <ToolbarButton
-          onClick={() => editor.chain().focus().setHorizontalRule().run()}
-          title={`Linha horizontal (${kbdShift('-')})`}
-        >
-          <SeparatorHorizontal className="h-4 w-4" />
-        </ToolbarButton>
-
-        <Divider />
-
+        {/* ── Recuo ── */}
         <ToolbarButton
           onClick={() => editor.chain().focus().indent().run()}
           disabled={!editor.can().indent()}
@@ -340,27 +361,7 @@ const EditorToolbarComponent: React.FC<EditorToolbarProps> = ({ editor, annotati
 
         <Divider />
 
-        <AnnotationPopover editor={editor} variant="toolbar" editTrigger={annotationTrigger} />
-
-        <Divider />
-
-        <ToolbarButton
-          onClick={() => editor.chain().focus().toggleCodeBlock().run()}
-          isActive={editor.isActive('codeBlock')}
-          title="Bloco de código"
-        >
-          <Code2 className="h-4 w-4" />
-        </ToolbarButton>
-
-        <ToolbarButton
-          onClick={() => editor.chain().focus().clearNodes().unsetAllMarks().run()}
-          title="Limpar formatação"
-        >
-          <RemoveFormatting className="h-4 w-4" />
-        </ToolbarButton>
-
-        <Divider />
-
+        {/* ── Ferramentas ── */}
         <ToolbarButton
           onClick={handleFormatPainter}
           isActive={formatPainterActive}
@@ -375,6 +376,8 @@ const EditorToolbarComponent: React.FC<EditorToolbarProps> = ({ editor, annotati
         >
           <span className="text-[10px] font-bold leading-none tracking-[1.5px]">“”</span>
         </ToolbarButton>
+
+        <AnnotationPopover editor={editor} variant="toolbar" editTrigger={annotationTrigger} />
       </div>
     </div>
   );
