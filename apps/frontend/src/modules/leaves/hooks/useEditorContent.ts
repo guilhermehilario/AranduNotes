@@ -113,7 +113,12 @@ export function useEditorContent({
 
       setLocalContent(currentHtml);
       setLocalRawText(ed.getText());
-      useEditorStatusStore.getState().setSaveStatus("saving");
+
+      // ⚠️ NÃO definir saveStatus como "saving" aqui!
+      // O saveStatus só deve ser alterado quando uma requisição HTTP
+      // de salvamento REAL está em andamento (dentro de flushSave ou
+      // do auto-save com debounce). Caso contrário, o indicador trava
+      // em "saving" mesmo sem nenhum salvamento ocorrendo.
     },
     [], // 🔴 Não depende de editorStatus — acessa store diretamente
   );
