@@ -114,10 +114,10 @@ export const PomodoroTab: React.FC = () => {
     // Handle the session based on how long it actually ran
     if (!sessionId) return;
     if (elapsedSeconds >= 60) {
-      // Ran for 1+ minute → keep as cancelled session
+      // Ran for 1+ minute → keep as cancelled session with actual elapsed seconds
       updatePomodoro.mutate({
         id: sessionId,
-        input: { completed: false },
+        input: { completed: false, duration: elapsedSeconds },
       });
     } else {
       // Ran for less than 1 minute → remove entirely (including 0 seconds)
@@ -136,6 +136,13 @@ export const PomodoroTab: React.FC = () => {
   const progressPercent = timerMode === 'focus'
     ? ((pomodoroDuration * 60 - timeLeft) / (pomodoroDuration * 60)) * 100
     : ((breakDuration * 60 - timeLeft) / (breakDuration * 60)) * 100;
+
+  // Helper: format elapsed seconds as "Xmin Ys"
+  const formatElapsed = (seconds: number) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return s > 0 ? `${m}min ${s}s` : `${m}min`;
+  };
 
   const completedSessions = sessions.filter((s) => s.completed);
   const totalFocusMinutes = completedSessions.reduce((acc, s) => acc + s.duration, 0);
@@ -573,7 +580,7 @@ export const PomodoroTab: React.FC = () => {
                         {session.taskName || 'Sessão de foco'}
                       </p>
                       <p className="text-[11px]" style={{ color: 'var(--text-secondary)' }}>
-                        {session.duration}min • {session.createdAt ? new Date(session.createdAt).toLocaleDateString('pt-BR') : ''}
+                        {formatElapsed(session.duration)} focados • {session.createdAt ? new Date(session.createdAt).toLocaleDateString('pt-BR') : ''}
                       </p>
                     </div>
                     <button
