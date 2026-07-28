@@ -10,6 +10,7 @@ import {
   Clock,
   Bell,
   User as UserIcon,
+  ClipboardList,
 } from 'lucide-react';
 import { SaveStatusIndicator } from '../ui/SaveStatusIndicator.tsx';
 import {
@@ -25,6 +26,8 @@ import {
 import { useNotificationStore } from '../../store/notificationStore.ts';
 import { NotificationPanel } from '../ui/NotificationPanel.tsx';
 import { ProfileModal } from '../../modules/profile/ProfileModal.tsx';
+import { ClipboardManager } from '../../modules/clipboard/components/ClipboardManager.tsx';
+import { useClipboardStore } from '../../store/clipboardStore.ts';
 
 const PAGE_CONFIG: Record<string, { title: string; icon: React.ComponentType<{ className?: string }>; subtitle: string }> = {
   '/dashboard': { title: 'Cadernos', icon: BookOpen, subtitle: 'Gerencie seus materiais universitários e crie resumos de forma organizada' },
@@ -58,9 +61,14 @@ export const AppHeader: React.FC = () => {
   const editorStatus = useEditorStatusStore();
   const { user } = useAuth();
   const notificationCount = useNotificationStore((s) => s.count);
+  const clipboardItems = useClipboardStore((s) => s.items);
+  const showClipboard = useClipboardStore((s) => s.isOpen);
+  const setClipboardOpen = useClipboardStore((s) => s.setOpen);
+  const toggleClipboard = useClipboardStore((s) => s.toggleOpen);
   const [showNotifications, setShowNotifications] = React.useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = React.useState(false);
   const notifRef = React.useRef<HTMLDivElement>(null);
+  const clipboardRef = React.useRef<HTMLDivElement>(null);
 
   // Extrai IDs da rota para breadcrumbs
   const pathIds = useMemo(() => {
@@ -213,6 +221,28 @@ export const AppHeader: React.FC = () => {
             <SaveStatusIndicator status={editorStatus.saveStatus} />
           </div>
         )}
+
+        {/* Clipboard Manager */}
+        <div className="relative" ref={clipboardRef}>
+          <button
+            type="button"
+            onClick={toggleClipboard}
+            className="relative p-2 rounded-xl text-slate-500 dark:text-dark-400 hover:bg-slate-100 dark:hover:bg-dark-800 transition-all cursor-pointer"
+            title="Histórico de cópia (Ctrl+Shift+V)"
+          >
+            <ClipboardList className="h-5 w-5" />
+            {clipboardItems.length > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-brand-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center shadow-sm animate-in zoom-in duration-200">
+                {clipboardItems.length > 9 ? '9+' : clipboardItems.length}
+              </span>
+            )}
+          </button>
+
+          <ClipboardManager
+            show={showClipboard}
+            onClose={() => setClipboardOpen(false)}
+          />
+        </div>
 
         {/* Notification Bell */}
         <div className="relative" ref={notifRef}>

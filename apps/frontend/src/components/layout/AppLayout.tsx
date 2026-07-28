@@ -6,6 +6,7 @@ import { AppHeader } from './AppHeader.tsx';
 import { ToastContainer } from '../ui/Toast.tsx';
 import { PomodoroFloatingTimer } from '../../modules/planning/components/PomodoroFloatingTimer.tsx';
 import { usePlanningNotifications } from '../../modules/planning/hooks/usePlanningNotifications.ts';
+import { useClipboardCapture } from '../../modules/clipboard/hooks/useClipboardCapture.ts';
 
 export const AppLayout: React.FC = () => {
   const { theme } = useUIStore();
@@ -21,6 +22,9 @@ export const AppLayout: React.FC = () => {
 
   // Ativa notificações de planejamento (eventos, metas, pomodoro)
   usePlanningNotifications();
+
+  // Ativa captura global de eventos de cópia
+  useClipboardCapture();
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-slate-50 text-slate-900 dark:bg-dark-950 dark:text-dark-50 transition-colors duration-200">
