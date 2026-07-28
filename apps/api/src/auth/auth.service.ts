@@ -254,13 +254,17 @@ export class AuthService {
       if (user) {
         // Tenta comparacao com bcrypt (senhas ja hashadas — usuarios novos)
         isPasswordValid = await bcrypt.compare(password, user.password);
-        this.logger.debug(`Login attempt for ${sanitizedEmail}: password valid = ${isPasswordValid}`);
+        this.logger.debug(
+          `Login attempt for ${sanitizedEmail}: password valid = ${isPasswordValid}`,
+        );
         // Fallback para senhas em texto puro migradas do db.json antigo
         // O sistema antigo (Express) armazenava senhas sem hash.
         // Quando detectamos texto puro, comparamos diretamente e, se bater,
         // fazemos o re-hash imediato para bcrypt.
         if (!isPasswordValid && !user.password.startsWith("$2")) {
-          this.logger.debug(`Plain-text password migration check for ${user.email}`);
+          this.logger.debug(
+            `Plain-text password migration check for ${user.email}`,
+          );
           if (password === user.password) {
             const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
             await this.prisma.withConnection(() =>
@@ -278,7 +282,9 @@ export class AuthService {
       }
 
       if (!user || !isPasswordValid) {
-        this.logger.debug(`Login failed for ${sanitizedEmail}: valid=${isPasswordValid}`);
+        this.logger.debug(
+          `Login failed for ${sanitizedEmail}: valid=${isPasswordValid}`,
+        );
         // ── LOG DIAGNÓSTICO SEGURO ──
         // NÃO loga senha, hash, ou token.
         // Apenas identifica se o problema é usuário inexistente ou senha inválida.
@@ -402,8 +408,7 @@ export class AuthService {
         );
 
         return {
-          message:
-            "E-mail verificado com sucesso! Faça login para continuar.",
+          message: "E-mail verificado com sucesso! Faça login para continuar.",
         };
       }),
     );
@@ -414,7 +419,9 @@ export class AuthService {
   async resendVerification(email: string): Promise<{ message: string }> {
     const normalizedEmail = email.trim().toLowerCase();
 
-    this.logger.log(`Solicitação de reenvio de verificação para: ${normalizedEmail}`);
+    this.logger.log(
+      `Solicitação de reenvio de verificação para: ${normalizedEmail}`,
+    );
 
     const user = await this.prisma.withConnection(() =>
       this.prisma.user.findUnique({
@@ -508,14 +515,7 @@ export class AuthService {
           "E-mail não verificado. Por favor, confira sua caixa de entrada.",
         );
       }
-
-      const accessToken = this.jwtService.sign({ userId: user.id });
-      const newRefreshToken = this.jwtService.sign(
-        { userId: user.id },
-        { secret: this.refreshSecret, expiresIn: "7d" },
-      );
-
-      return { accessToken, refreshToken: newRefreshToken };
+      return this.generateTokens(user.id);
     } catch {
       throw new UnauthorizedException("Refresh token inválido ou expirado");
     }
@@ -583,7 +583,7 @@ export class AuthService {
         });
 
         this.logger.log(
-          `Perfil atualizado: ${user.email} (ID: ${user.id}) - name: ${data.name !== undefined ? 'alterado' : 'mantido'}, avatarUrl: ${data.avatarUrl !== undefined ? 'alterado' : 'mantido'}`,
+          `Perfil atualizado: ${user.email} (ID: ${user.id}) - name: ${data.name !== undefined ? "alterado" : "mantido"}, avatarUrl: ${data.avatarUrl !== undefined ? "alterado" : "mantido"}`,
         );
 
         return this.stripPassword(updated);
@@ -641,7 +641,9 @@ export class AuthService {
   async forgotPassword(email: string): Promise<{ message: string }> {
     const normalizedEmail = email.trim().toLowerCase();
 
-    this.logger.log(`Solicitação de recuperação de senha para: ${normalizedEmail}`);
+    this.logger.log(
+      `Solicitação de recuperação de senha para: ${normalizedEmail}`,
+    );
 
     const user = await this.prisma.withConnection(() =>
       this.prisma.user.findUnique({
@@ -680,9 +682,7 @@ export class AuthService {
       }),
     );
 
-    this.logger.log(
-      `Token de reset salvo para ${user.email} (ID: ${user.id})`,
-    );
+    this.logger.log(`Token de reset salvo para ${user.email} (ID: ${user.id})`);
 
     try {
       await this.emailService.sendPasswordResetEmail(
