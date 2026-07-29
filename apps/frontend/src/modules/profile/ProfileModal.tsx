@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "../../components/ui/Button.tsx";
 import { Modal } from "../../components/ui/Modal.tsx";
 import { useAuth } from "../auth/hooks/useAuth";
@@ -68,6 +69,8 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
       }
     }
   }, [user?.avatarUrl, isOpen]);
+
+  const queryClient = useQueryClient();
 
   const [customAvatarUrl, setCustomAvatarUrl] = useState<string | null>(null);
   const [savingAvatar, setSavingAvatar] = useState(false);
