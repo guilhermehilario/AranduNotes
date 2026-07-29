@@ -1,105 +1,76 @@
-# Revisa Aula 🚀
+# 🎨 Arandu — Frontend
 
-Plataforma inteligente para gerenciamento de estudos, criação de resumos e flashcards com repetição espaçada.
+Plataforma inteligente de anotações e estudos — módulo frontend (SPA React).
 
 ---
 
 ## 📖 Visão Geral
 
-O **Revisa Aula** é um aplicativo completo para estudantes organizarem cadernos acadêmicos, criar notas de aula (**Folhas / Leaves**), gerar resumos e flashcards com repetição espaçada (algoritmo SM-2), e planejar os estudos com agenda, cronograma, metas e pomodoro.
+O **Arandu** (que significa "saber" em Tupi Antigo) é uma plataforma completa para criação, organização e revisão de conteúdo de estudos. Este é o frontend da aplicação, uma SPA construída com React 19 + Vite.
 
 ---
 
 ## 🛠️ Stack
 
-### Frontend
-| Tecnologia | Versão |
-|-----------|--------|
-| React | 19 |
-| Vite | 8 |
-| TypeScript | ~5.7 |
-| Tailwind CSS | 4 (OKLCH) |
-| Zustand | 5 |
-| TanStack React Query | 5 |
-| React Router DOM | 7 |
-| React Hook Form + Zod | — |
-| TipTap | — |
-| @dnd-kit | — |
-| Lucide React | — |
-
-### Backend (NestJS)
-| Tecnologia | Versão |
-|-----------|--------|
-| NestJS | 11 |
-| TypeScript | ~5.7 |
-| Prisma ORM | 7 |
-| SQLite | — |
-| Passport JWT | — |
-| class-validator | — |
-| @nestjs/config | — |
+| Tecnologia | Versão | Uso |
+|-----------|--------|-----|
+| React | 19 | UI Library |
+| Vite | 8 | Build tool |
+| TypeScript | ~5.7 | Linguagem |
+| Tailwind CSS | 4 | Estilos utilitários |
+| Zustand | 5 | Estado global |
+| TanStack React Query | 5 | Server state & cache |
+| React Router DOM | 7 | Roteamento SPA |
+| React Hook Form + Zod | — | Formulários + validação |
+| TipTap | 3 | Editor rich text |
+| @dnd-kit | — | Drag & drop |
+| Lucide React | — | Ícones |
+| Axios | — | HTTP client |
 
 ---
 
 ## 📁 Estrutura
 
 ```
-revisa-aula/
-├── src/                           # Frontend React
-│   ├── components/                # Componentes reutilizáveis
-│   │   ├── layout/                # AppLayout (sidebar + header)
-│   │   └── ui/                    # Button, Card, Input, Modal, Skeleton, Toast, etc.
-│   ├── core/api/                  # Cliente HTTP (axios + interceptors)
-│   ├── modules/                   # Módulos funcionais
-│   │   ├── auth/                  # Login, registro, sessão
-│   │   ├── notebooks/             # Dashboard + CRUD cadernos (CreateLeafModal, EditNotebookModal)
-│   │   ├── leaves/                # Editor TipTap + anotações
-│   │   ├── study/                 # Flashcards + SM-2 + estatísticas
-│   │   ├── bookmarks/             # Marcadores
-│   │   ├── tags/                  # Gerenciamento de tags
-│   │   ├── trash/                 # Lixeira (soft-delete)
-│   │   ├── profile/               # Perfil + configurações
-│   │   ├── todos/                 # Tarefas
-│   │   ├── planning/              # Planejamento (agenda, calendário, cronograma, metas, pomodoro)
-│   │   ├── questions/             # Questões de estudo
-│   │   └── mock-exams/            # Simulados
-│   ├── routes/                    # React Router + guards
-│   ├── store/                     # Zustand stores (ui, toast, notification, pomodoro, planningSettings, editorStatus)
-│   ├── hooks/                     # Hooks globais (useDebounce)
-│   ├── App.tsx                    # Componente raiz
-│   ├── index.css                  # Tailwind + tema OKLCH
-│   └── main.tsx                   # Entry point
-├── server/                        # Backend NestJS + Prisma
-│   ├── src/
-│   │   ├── main.ts                # Bootstrap NestJS
-│   │   ├── app.module.ts          # Root module
-│   │   ├── app.controller.ts      # Health check
-│   │   ├── prisma/                # PrismaService (SQLite)
-│   │   ├── common/                # Guards, decorators, filters
-│   │   ├── auth/                  # JWT Passport
-│   │   ├── notebooks/             # CRUD cadernos
-│   │   ├── leaves/                # CRUD folhas + IA mock
-│   │   ├── flashcards/            # SM-2 + CRUD
-│   │   ├── study/                 # Sessões + estatísticas
-│   │   ├── bookmarks/             # Marcadores
-│   │   ├── tags/                  # Tags CRUD
-│   │   ├── trash/                 # Lixeira + EditHistoryService
-│   │   ├── planning/              # Eventos, Metas, Pomodoro (CRUD via API)
-│   │   ├── questions/             # Questões
-│   │   ├── mock-exams/            # Simulados
-│   │   ├── studies/               # Estudos
-│   │   └── todos/                 # Tarefas
-│   ├── prisma/
-│   │   ├── schema.prisma          → Modelos (User, Notebook, Leaf, Flashcard, Event, Goal, PomodoroSession, etc.)
-│   │   ├── seed.ts                → Migração db.json → SQLite
-│   │   └── migrations/            → Migrações
-│   ├── dev.db                     → SQLite
-│   └── .env
-├── AGENTS.md                      → Documentação técnica
-├── ANALISE_PROBLEMAS.md           → Débitos técnicos
-├── PADROES.md                     → Guia de padronização de código
-├── TESTES_POSSIVEIS.md            → Cenários de teste manual
-├── TASKS.md                       → Próximas tarefas
-├── start.sh / stop.sh             → Scripts de gerenciamento
+apps/frontend/
+├── public/
+│   ├── _redirects          # Fallback SPA (Netlify/Render)
+│   └── 404.html
+├── src/
+│   ├── components/
+│   │   ├── core/
+│   │   │   └── api/         # Axios client + interceptors
+│   │   ├── layout/          # AppLayout, Sidebar, AppHeader, Breadcrumb
+│   │   └── ui/              # Button, Card, Modal, Input, Toast, Skeleton, etc.
+│   ├── hooks/               # Hooks globais (useDebounce)
+│   ├── modules/             # Módulos funcionais
+│   │   ├── auth/            # Login, registro, recuperação de senha
+│   │   ├── bookmarks/       # Gerenciamento de favoritos
+│   │   ├── leaves/          # Editor TipTap + IA (resumo, flashcards)
+│   │   ├── notebooks/       # Dashboard + CRUD de cadernos
+│   │   ├── planning/        # Agenda, calendário, cronograma, metas, pomodoro
+│   │   ├── profile/         # Perfil, avatar personalizável, configurações
+│   │   ├── questions/       # Questões de estudo
+│   │   ├── mock-exams/      # Simulados
+│   │   ├── study/           # Flashcards SM-2, revisões, histórico, estatísticas
+│   │   ├── tags/            # Tags para classificação
+│   │   ├── todos/           # Lista de tarefas
+│   │   └── trash/           # Lixeira + arquivados
+│   ├── routes/              # React Router + guards (PrivateRoute, PublicRoute)
+│   ├── store/               # Zustand stores
+│   ├── styles/              # CSS do editor Tiptap, annotations, base
+│   ├── utils/               # api-errors, parse-options
+│   ├── test/                # Setup de testes
+│   ├── App.tsx              # Componente raiz
+│   ├── index.css            # Tailwind + tema (claro/escuro)
+│   └── main.tsx             # Entry point
+├── index.html
+├── vite.config.ts
+├── tsconfig.json
+├── tsconfig.app.json
+├── tsconfig.node.json
+├── eslint.config.js
+├── PADROES.md               # Guia de padronização de código
 └── package.json
 ```
 
@@ -107,77 +78,117 @@ revisa-aula/
 
 ## ⚙️ Funcionalidades
 
-1. **Autenticação** — JWT + refresh token em cookie HttpOnly, registro com avatar Dicebear
-2. **Cadernos** — Dashboard em grid, CRUD com cascade, contagem de folhas
-3. **Editor TipTap** — Rich text com autosave (debounce 1.5s), anotações coloridas, suporte a sub-folhas
-4. **Sub-folhas** — Hierarquia em árvore, reordenação drag & drop (`@dnd-kit`)
-5. **IA mockada** — Geração de resumos e flashcards (substituir por API real)
-6. **SM-2** — Repetição espaçada com scores 0-5 e CAP de 365 dias
-7. **Sessão persistente** — Estado da sessão de estudo salvo no backend
-8. **Estatísticas** — Progresso, taxa de acerto, breakdown por caderno
-9. **Tags + Bookmarks** — Classificação e favoritos
-10. **Lixeira** — Soft-delete com expiração de 15 dias
-11. **Modo escuro** — Tema claro/escuro com Tailwind v4
-12. **Planejamento** — Agenda, Calendário, Cronograma, Metas e Pomodoro com CRUD completo via API
-14. **Notificações** — Notificações nativas (Browser API) e in-app para eventos do dia, metas com prazo e pomodoros concluídos
-15. **Mini timer Pomodoro** — Timer flutuante no canto inferior direito visível em todas as páginas
-16. **Configurações do Planejamento** — Cores, durações do pomodoro e toggles de notificação
-17. **Resumo Semanal** — Cards no Dashboard com eventos, metas e pomodoros da semana
-18. **Scripts** — `start.sh` / `stop.sh` para gerenciamento
-19. **Código limpo** — Refatoração contínua: código morto removido, componentes extraídos, services unificados
+### 📝 Editor de Texto (TipTap)
+- Toolbar multi-linha com formatação completa (negrito, itálico, headings, listas, blocos de código, tasks)
+- Pincel de formatação
+- Anotações coloridas
+- Autosave com debounce (1.5s)
+- Suporte a links com tooltip
+- Bubble menu para formatação rápida
+
+### 🗂️ Cadernos e Folhas
+- Dashboard em grid com cards coloridos
+- CRUD completo com soft-delete
+- Folhas hierárquicas com drag & drop (`@dnd-kit`)
+- Sub-folhas em árvore
+- Reordenação por posição
+
+### 🃏 Flashcards (SM-2)
+- Repetição espaçada (algoritmo SM-2)
+- Scores 0-5 (esqueci → perfeito)
+- Geração automática por IA
+- Criação manual
+- Cache de 365 dias
+- Revisão com progresso persistente
+- **Histórico de revisões** com timeline diária
+
+### 🧠 Estudos
+- Modos: Flashcards, Questões, Simulados, Revisões
+- Sessão persistente (salva no backend)
+- Estatísticas de progresso (total, revisados hoje, pendentes, taxa de acerto)
+- Breakdown por caderno
+- **Histórico de 30 dias** com médias e timeline expansível
+
+### 📅 Planejamento
+- **Agenda:** Eventos diários com toggle de conclusão
+- **Calendário:** Visão mensal com indicadores de eventos
+- **Cronograma:** Timeline com marcos importantes
+- **Metas:** Metas de estudo com barra de progresso
+- **Pomodoro:** Timer foco/descanso com histórico e timer flutuante
+- **Resumo Semanal:** Cards no Dashboard
+
+### 👤 Perfil
+- Nome, email, avatar
+- **Avatar personalizável** com múltiplas categorias (DiceBear)
+- Alteração de senha
+- Exclusão de conta com confirmação por código
+- Preferências do sistema (tema, notificações)
+
+### 🔧 Outras
+- Autenticação JWT + refresh token em cookie HttpOnly
+- Tags e bookmarks
+- Lixeira com soft-delete (15 dias)
+- Lista de tarefas
+- Gestor de clipboard com busca e favoritos
+- Notificações in-app e nativas (Browser API)
+- Tema claro/escuro
+- Responsivo
 
 ---
 
-## 🚀 Como Executar
+## 🚀 Como Rodar
 
 ```bash
-# 1. Backend (NestJS)
-cd server
-npm install
-npm run dev          # http://localhost:3000
+# A partir da raiz do monorepo
+yarn install
 
-# 2. Frontend (Vite)
-cd ..
-npm install
-npm run dev          # http://localhost:5173
+# Configure as envs (veja README.md raiz)
+# apps/frontend/.env:
+# VITE_API_URL=http://localhost:3000/api
+
+# Inicie o frontend em modo dev
+yarn workspace frontend dev
+# ou (da raiz):
+yarn dev
 ```
 
-Ou usar o script unificado:
-```bash
-./start.sh           # Inicia ambos
-./start.sh --status  # Verifica status
-./stop.sh            # Para ambos
-```
+Acesse: [http://localhost:5173](http://localhost:5173)
 
----
-
-## 📋 Scripts
+### Scripts úteis
 
 | Comando | Descrição |
 |---------|-----------|
-| `./start.sh` | Inicia backend + frontend |
-| `./stop.sh` | Encerra serviços |
-| `npm run dev` (raiz) | Frontend Vite |
-| `npm run dev` (server) | Backend NestJS |
-| `npm run build` (raiz) | Build frontend |
-| `npm test` (server) | Testes backend |
-
-### Portas
-| Serviço | Porta |
-|---------|-------|
-| Backend | 3000 |
-| Frontend | 5173 |
-| Health | `/api/health` |
+| `yarn dev` | Dev server (Vite) |
+| `yarn build` | Build de produção |
+| `yarn lint` | ESLint |
+| `npx tsc --noEmit` | Typecheck |
 
 ---
 
 ## 🧪 Testes
 
 ```bash
-# Backend
-cd server && npm test        # Unitários
-cd server && npm run test:e2e  # E2E
+# Unitários (Vitest)
+yarn workspace frontend test
 
-# Frontend
-npm test
+# Com cobertura
+yarn workspace frontend test --coverage
+
+# Typecheck
+cd apps/frontend && npx tsc --noEmit
 ```
+
+---
+
+## 📐 Padrões de Código
+
+Consulte o arquivo [`PADROES.md`](./PADROES.md) para o guia completo de padronização, incluindo:
+
+- Estrutura de arquivos e nomenclatura
+- Regras de imports (type-only, extensões)
+- Componentes React e hooks
+- Zustand stores (regra do `getState()`)
+- React Query (mutations otimistas)
+- Tratamento de erros
+- Anti-padrões conhecidos
+- Checklist de code review

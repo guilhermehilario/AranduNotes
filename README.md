@@ -28,14 +28,15 @@ técnicas como **Pomodoro** e **revisão espaçada** (algoritmo SM-2).
 - 📝 **Editor de texto enriquecido** (TipTap) com toolbar multi-linha, pincel de formatação, blocos de código, listas de tarefas e muito mais
 - 🗂️ **Cadernos e folhas** hierárquicas com drag & drop
 - 🃏 **Flashcards** para revisão espaçada (algoritmo SM-2) — criação manual e por IA
+- 📊 **Histórico de revisões** dos flashcards com timeline diária, médias e breakdown por matéria
 - ❓ **Questões de estudo** (múltipla escolha, verdadeiro/falso, resposta curta)
 - 📋 **Simulados** personalizáveis com limite de tempo
 - 📝 **Resumos** automáticos por IA ou criação manual
 - 🏷️ **Tags e bookmarks** para organização
 - ✅ **Lista de tarefas** integrada (todo-list)
-- 📅 **Planejamento** com agenda, cronograma, metas e Pomodoro
+- 📅 **Planejamento** com agenda, calendário, cronograma, metas e Pomodoro
 - 📋 **Histórico de cópia e cola** (gestor de clipboard) com busca, favoritos e drag & drop
-- 👤 **Avatar personalizável** com categorias visuais
+- 👤 **Avatar personalizável** com múltiplas categorias visuais
 - 🔔 **Notificações e preferências** do sistema
 - 🗑️ **Lixeira e arquivamento** com soft-delete
 - 🔄 **Histórico de edições**
@@ -72,13 +73,15 @@ técnicas como **Pomodoro** e **revisão espaçada** (algoritmo SM-2).
 | **Monorepo** | Turborepo + Yarn Workspaces | v1 (Yarn) |
 | **Backend** | NestJS + TypeScript | v11 |
 | **ORM** | Prisma | v7 |
-| **Database** | SQLite (dev) / Turso LibSQL (prod) | — |
+| **Database** | SQLite (dev) | — |
 | **Autenticação** | JWT + Passport + bcryptjs | — |
 | **Frontend** | React | v19 |
 | **Build tool** | Vite | v8 |
 | **Estilos** | TailwindCSS | v4 |
 | **Editor Rich Text** | TipTap | v3 |
 | **Estado** | Zustand + TanStack Query | — |
+| **Validação** | Zod + class-validator | — |
+| **HTTP Client** | Axios | — |
 | **Deploy** | Fly.io (API) + Render (Frontend) | — |
 
 ---
