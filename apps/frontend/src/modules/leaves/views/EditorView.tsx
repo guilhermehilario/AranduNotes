@@ -1,30 +1,19 @@
-
-import { useState, useCallback } from "react";
 import { useParams, useNavigate, Link as RouterLink } from "react-router-dom";
-import { EditorContent } from "@tiptap/react";
-import { useLeaf } from "../hooks/useLeaves";
-import { useLeafFlashcards, useUpdateFlashcard, useDeleteFlashcard } from "../../study/hooks/useFlashcards";
-import type { Flashcard } from "../../study/types";
-import type { Leaf } from "../types";
 import { useQueryClient } from "@tanstack/react-query";
+import { useLeaf } from "../hooks/useLeaves";
+import { useLeafFlashcards } from "../../study/hooks/useFlashcards";
 import { useToggleBookmark } from "../../bookmarks/hooks/useToggleBookmark";
 import { useSoftDeleteLeaf } from "../../trash/hooks/useTrash";
 import { useEditorStatusStore } from "../../../store/editorStatusStore";
 import { useEditorContent } from "../hooks/useEditorContent";
 import { useEditorActions } from "../hooks/useEditorActions";
-import { EditorToolbar } from "../components/EditorToolbar";
-import { EditorBubbleMenu } from "../components/EditorBubbleMenu";
-import { AISidebar } from "../components/AISidebar";
+import { useFlashcardOperations } from "../hooks/useFlashcardOperations";
 import { EditorSkeleton } from "../components/EditorSkeleton";
 import { EditorHeader } from "../components/EditorHeader";
+import { EditorContentArea } from "../components/EditorContentArea";
+import { AISidebar } from "../components/AISidebar";
 import { SubLeavesSection } from "../components/SubLeavesSection";
-import { ManualFlashcardModal } from "../components/ManualFlashcardModal";
-import { ManualSummaryModal } from "../components/ManualSummaryModal";
-import { EditFlashcardModal } from "../../notebooks/components/EditFlashcardModal"
-import { ConfirmDialog } from "../../../components/ui/ConfirmDialog.tsx";
-import { useToastStore } from "../../../store/toastStore";
-import { extractApiError } from "../../../utils/api-errors";
-import leafService from "../services/leafService";
+import { EditorModals } from "../components/EditorModals";
 
 export const EditorView: React.FC = () => {
   const { notebookId, leafId } = useParams<{
@@ -46,13 +35,6 @@ export const EditorView: React.FC = () => {
   } = useLeaf(leafId || "");
 
   const { data: flashcards = [] } = useLeafFlashcards(leafId || "");
-
-  // ── Flashcard Edit/Delete ──
-  const [editingFlashcard, setEditingFlashcard] = useState<Flashcard | null>(null);
-  const [isSummaryModalOpen, setIsSummaryModalOpen] = useState(false);
-  const [isEditFlashcardModalOpen, setIsEditFlashcardModalOpen] = useState(false);
-  const updateFlashcardMutation = useUpdateFlashcard(notebookId || undefined, leafId || undefined);
-  const deleteFlashcardMutation = useDeleteFlashcard(notebookId || undefined, leafId || undefined);
   const { isBookmarked, toggleBookmark } = useToggleBookmark({
     type: "leaf",
     id: leafId || "",
@@ -60,59 +42,10 @@ export const EditorView: React.FC = () => {
     path: `/notebooks/${notebookId}/leaves/${leafId}`,
   });
   const softDeleteLeaf = useSoftDeleteLeaf();
-  const queryClient = useQueryClient();
-
-  // ── Excluir Resumo ──
-  const [confirmDeleteSummaryOpen, setConfirmDeleteSummaryOpen] = useState(false);
-  const [isDeletingSummary, setIsDeletingSummary] = useState(false);
-
-  const handleDeleteSummaryConfirm = useCallback(async () => {
-    if (!leafId) return;
-    setIsDeletingSummary(true);
-    setConfirmDeleteSummaryOpen(false);
-    try {
-      const updated = await leafService.updateLeaf(leafId, { summary: null });
-      queryClient.setQueryData<Leaf>(['leaves', leafId], (old) => {
-        if (!old) return updated as unknown as Leaf;
-        return { ...old, summary: null };
-      });
-      queryClient.setQueryData<{ summary?: string }>(
-        ['leaves', leafId, 'summary'],
-        { summary: undefined },
-      );
-      useToastStore.getState().addToast('Resumo excluído com sucesso.', 'success');
-    } catch (err) {
-      useToastStore.getState().addToast(
-        extractApiError(err, 'Erro ao excluir resumo.'),
-        'error',
-      );
-    } finally {
-      setIsDeletingSummary(false);
-    }
-  }, [leafId, queryClient]);
-
-  const handleDeleteSummaryClick = useCallback(() => {
-    setConfirmDeleteSummaryOpen(true);
-  }, []);
-
-  // ── Excluir Flashcard com confirmação ──
-  const [confirmDeleteFlashcardId, setConfirmDeleteFlashcardId] = useState<string | null>(null);
-
-  const handleDeleteFlashcardClick = useCallback((cardId: string) => {
-    setConfirmDeleteFlashcardId(cardId);
-  }, []);
-
-  const handleDeleteFlashcardConfirm = useCallback(async () => {
-    if (!confirmDeleteFlashcardId) return;
-    const id = confirmDeleteFlashcardId;
-    setConfirmDeleteFlashcardId(null);
-    await deleteFlashcardMutation.mutateAsync(id);
-  }, [confirmDeleteFlashcardId, deleteFlashcardMutation]);
   const editorStatus = useEditorStatusStore();
-
   const isArchived = leaf?.archivedAt != null;
 
-  // ── Hook: Editor + Autosave ──
+  // ── Hooks extraídos ──
   const {
     editor,
     localTitle,
@@ -125,7 +58,8 @@ export const EditorView: React.FC = () => {
     editorStatus,
   });
 
-  // ── Hook: Ações (archive, delete, AI, anotações, UI) ──
+  const queryClient = useQueryClient();
+
   const {
     aiSidebarOpen,
     setAiSidebarOpen,
@@ -145,13 +79,36 @@ export const EditorView: React.FC = () => {
     notebookId,
     navigate,
     queryClient,
+    softDeleteLeaf,
     isArchived,
     archiveLeaf,
     unarchiveLeaf,
-    softDeleteLeaf,
     generateAISummary,
     generateAIFlashcards,
     editor,
+  });
+
+  const {
+    editingFlashcard,
+    setEditingFlashcard,
+    isSummaryModalOpen,
+    setIsSummaryModalOpen,
+    isEditFlashcardModalOpen,
+    setIsEditFlashcardModalOpen,
+    confirmDeleteFlashcardId,
+    handleDeleteFlashcardClick,
+    handleDeleteFlashcardConfirm,
+    handleCloseDeleteFlashcard,
+    confirmDeleteSummaryOpen,
+    isDeletingSummary,
+    handleDeleteSummaryClick,
+    handleDeleteSummaryConfirm,
+    handleCloseDeleteSummary,
+    updateFlashcardMutation,
+    deleteFlashcardMutation,
+  } = useFlashcardOperations({
+    leafId: leafId || "",
+    notebookId,
   });
 
   // ── Renderização Condicional ──
@@ -196,40 +153,14 @@ export const EditorView: React.FC = () => {
       {/* Split Pane Editor / IA */}
       <div className="flex-1 flex flex-col lg:flex-row gap-6 min-h-[750px] lg:min-h-[90vh] min-w-0 overflow-hidden">
         {/* Lado Esquerdo - Editor */}
-        <div
-          className={`flex-1 flex flex-col bg-white dark:bg-dark-900 border border-slate-100 dark:border-dark-800 rounded-3xl p-6 min-w-0 overflow-hidden ${editorExpanded ? "lg:w-full" : ""}`}
-        >
-          <input
-            type="text"
-            value={localTitle}
-            onChange={(e) => {
-              setLocalTitle(e.target.value);
-              editorStatus.setSaveStatus("saving");
-            }}
-            placeholder="Título da folha..."
-            className="editor-title-input"
-          />
-
-          <EditorToolbar
-            editor={editor}
-            annotationTrigger={annotationTrigger}
-          />
-
-          <div className="tiptap-editor flex-1 overflow-x-hidden overflow-y-auto text-slate-750 dark:text-dark-100 relative min-h-[400px] min-w-0 w-full max-w-full pb-1.5">
-            <EditorBubbleMenu editor={editor} />
-            <EditorContent
-              editor={editor}
-              className="tiptap-content w-full h-full"
-              style={{
-                maxWidth: "100%",
-                overflowWrap: "break-word",
-                wordBreak: "break-word",
-                whiteSpace: "pre-wrap",
-                boxSizing: "border-box",
-              }}
-            />
-          </div>
-        </div>
+        <EditorContentArea
+          editor={editor}
+          localTitle={localTitle}
+          setLocalTitle={setLocalTitle}
+          setSaveStatus={editorStatus.setSaveStatus}
+          editorExpanded={editorExpanded}
+          annotationTrigger={annotationTrigger}
+        />
 
         {/* Lado Direito - Painel de IA */}
         {aiSidebarOpen && !editorExpanded && (
@@ -265,78 +196,44 @@ export const EditorView: React.FC = () => {
         />
       )}
 
-      {/* Modal: Editar Flashcard */}
-      <EditFlashcardModal
-        isOpen={isEditFlashcardModalOpen}
-        onClose={() => {
+      {/* Modais */}
+      <EditorModals
+        isEditFlashcardModalOpen={isEditFlashcardModalOpen}
+        onCloseEditFlashcard={() => {
           setIsEditFlashcardModalOpen(false);
           setEditingFlashcard(null);
         }}
-        flashcard={editingFlashcard}
-        onSave={async (cardId, data) => {
+        editingFlashcard={editingFlashcard}
+        onSaveFlashcard={async (cardId, data) => {
           await updateFlashcardMutation.mutateAsync({ cardId, data });
           setIsEditFlashcardModalOpen(false);
           setEditingFlashcard(null);
         }}
-        onDelete={async (cardId) => {
+        onDeleteFlashcardFromModal={async (cardId) => {
           await deleteFlashcardMutation.mutateAsync(cardId);
           setIsEditFlashcardModalOpen(false);
           setEditingFlashcard(null);
         }}
-        isSaving={updateFlashcardMutation.isPending}
-        isDeleting={deleteFlashcardMutation.isPending}
-      />
-
-      {/* Modal: Criar/Editar Resumo Manual */}
-      <ManualSummaryModal
-        isOpen={isSummaryModalOpen}
-        onClose={() => setIsSummaryModalOpen(false)}
+        isSavingFlashcard={updateFlashcardMutation.isPending}
+        isDeletingFlashcard={deleteFlashcardMutation.isPending}
+        isSummaryModalOpen={isSummaryModalOpen}
+        onCloseSummary={() => setIsSummaryModalOpen(false)}
         leafId={leafId || ""}
         currentSummary={leaf?.summary}
-      />
-
-      {/* Modal: Criar Flashcard Manual */}
-      <ManualFlashcardModal
-        isOpen={isFlashcardModalOpen}
-        onClose={() => setIsFlashcardModalOpen(false)}
-        leafId={leafId || ""}
+        isFlashcardModalOpen={isFlashcardModalOpen}
+        onCloseFlashcard={() => setIsFlashcardModalOpen(false)}
         notebookId={notebookId || ""}
-      />
-
-      {/* Confirmar exclusão do flashcard */}
-      <ConfirmDialog
-        isOpen={!!confirmDeleteFlashcardId}
-        onClose={() => setConfirmDeleteFlashcardId(null)}
-        onConfirm={handleDeleteFlashcardConfirm}
-        title="Excluir flashcard?"
-        message="Tem certeza que deseja excluir este flashcard? Ele será movido para a lixeira."
-        confirmLabel="Sim, excluir"
-        variant="danger"
-      />
-
-      {/* Confirmar exclusão do resumo */}
-      <ConfirmDialog
-        isOpen={confirmDeleteSummaryOpen}
-        onClose={() => setConfirmDeleteSummaryOpen(false)}
-        onConfirm={handleDeleteSummaryConfirm}
-        title="Excluir resumo?"
-        message="Tem certeza que deseja excluir este resumo? Esta ação não pode ser desfeita."
-        confirmLabel="Sim, excluir"
-        variant="danger"
-      />
-
-      {/* Confirmar exclusão da folha */}
-      <ConfirmDialog
-        isOpen={confirmDeleteOpen}
-        onClose={() => setConfirmDeleteOpen(false)}
-        onConfirm={handleDeleteConfirm}
-        title="Mover para lixeira?"
-        message={`Mover "${leaf?.title}" para a lixeira?`}
-        confirmLabel="Mover para Lixeira"
-        variant="danger"
+        confirmDeleteFlashcardId={confirmDeleteFlashcardId}
+        onCloseDeleteFlashcard={handleCloseDeleteFlashcard}
+        onConfirmDeleteFlashcard={handleDeleteFlashcardConfirm}
+        confirmDeleteSummaryOpen={confirmDeleteSummaryOpen}
+        onCloseDeleteSummary={handleCloseDeleteSummary}
+        onConfirmDeleteSummary={handleDeleteSummaryConfirm}
+        confirmDeleteOpen={confirmDeleteOpen}
+        onCloseDeleteLeaf={() => setConfirmDeleteOpen(false)}
+        onConfirmDeleteLeaf={handleDeleteConfirm}
+        leafTitle={leaf?.title || ""}
       />
     </div>
   );
 };
-
-
