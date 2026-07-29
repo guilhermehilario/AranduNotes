@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { Link, useLocation } from "react-router-dom";
 import { useUIStore } from "../../store/uiStore";
 import {
@@ -51,8 +52,64 @@ export const Sidebar: React.FC = () => {
   const isPlanningActive = location.pathname.startsWith("/planning");
   const [planningExpanded, setPlanningExpanded] = useState(isPlanningActive);
 
-  // Estado para o flyout do Planejamento no modo colapsado (apenas para clique/tap)
+  // Estado para o flyout do Planejamento no modo colapsado
   const [planningFlyoutOpen, setPlanningFlyoutOpen] = useState(false);
+  const [flyoutHover, setFlyoutHover] = useState(false);
+  const planningBtnRef = useRef<HTMLButtonElement>(null);
+  const flyoutRef = useRef<HTMLDivElement>(null);
+  const [flyoutStyle, setFlyoutStyle] = useState<React.CSSProperties>({});
+  const hideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const showFlyout = planningFlyoutOpen || flyoutHover;
+
+  // Atualiza a posição do flyout baseado no botão
+  const updateFlyoutPosition = useCallback(() => {
+    if (planningBtnRef.current) {
+      const rect = planningBtnRef.current.getBoundingClientRect();
+      setFlyoutStyle({
+        top: rect.top,
+        left: rect.right + 8,
+      });
+    }
+  }, []);
+
+  // Timeout para permitir que o mouse alcance o flyout antes de escondê-lo
+  const handlePlanningMouseLeave = useCallback(() => {
+    hideTimeoutRef.current = setTimeout(() => {
+      if (!planningFlyoutOpen) setFlyoutHover(false);
+    }, 180);
+  }, [planningFlyoutOpen]);
+
+  const handleFlyoutMouseEnter = useCallback(() => {
+    if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current);
+    setFlyoutHover(true);
+  }, []);
+
+  // Limpa timeout ao desmontar
+  useEffect(() => {
+    return () => {
+      if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current);
+    };
+  }, []);
+
+  // Fecha o flyout ao clicar fora
+  useEffect(() => {
+    if (!showFlyout) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        planningBtnRef.current &&
+        !planningBtnRef.current.contains(e.target as Node) &&
+        flyoutRef.current &&
+        !flyoutRef.current.contains(e.target as Node)
+      ) {
+        if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current);
+        setPlanningFlyoutOpen(false);
+        setFlyoutHover(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showFlyout]);
 
   // Auto-expand planning when navigating to a sub-item
   React.useEffect(() => {
@@ -166,11 +223,20 @@ export const Sidebar: React.FC = () => {
             )}
           </div>
         ) : (
-          /* Collapsed: CSS hover (group-hover) + click/tap toggle */
-          <div className="relative group">
+          /* Collapsed: botão que abre flyout via portal */
+          <div>
             <button
+              ref={planningBtnRef}
               type="button"
-              onClick={() => setPlanningFlyoutOpen(!planningFlyoutOpen)}
+              onClick={() => {
+                updateFlyoutPosition();
+                setPlanningFlyoutOpen((prev) => !prev);
+              }}
+              onMouseEnter={() => {
+                updateFlyoutPosition();
+                setFlyoutHover(true);
+              }}
+              onMouseLeave={handlePlanningMouseLeave}
               className={`flex items-center justify-center w-full px-3.5 py-3 rounded-xl font-medium transition-all duration-200 select-none cursor-pointer ${
                 isPlanningActive
                   ? "bg-brand-500 text-white shadow-md shadow-brand-500/10"
@@ -179,38 +245,48 @@ export const Sidebar: React.FC = () => {
             >
               <Calendar className="h-5 w-5 flex-shrink-0" />
             </button>
-            {/* Flyout: CSS group-hover para mouse + estado para clique/tap */}
-            <div
-              className={`absolute left-full top-0 ml-2 z-50 transition-all duration-200 ${
-                planningFlyoutOpen
-                  ? "opacity-100 visible pointer-events-auto"
-                  : "opacity-0 invisible pointer-events-none group-hover:opacity-100 group-hover:visible group-hover:pointer-events-auto"
-              }`}
-            >
-              <div className="bg-white dark:bg-dark-900 border border-slate-200 dark:border-dark-700 rounded-xl shadow-lg p-2 min-w-[180px]">
-                <div className="flex flex-col gap-0.5">
-                  {PLANNING_SUB_ITEMS.map((item) => {
-                    const SubIcon = item.icon;
-                    const isSubActive = location.pathname === item.path;
-                    return (
-                      <Link
-                        key={item.path}
-                        to={item.path}
-                        onClick={() => setPlanningFlyoutOpen(false)}
-                        className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 select-none ${
-                          isSubActive
-                            ? "bg-brand-100 dark:bg-brand-900/20 text-brand-600 dark:text-brand-400"
-                            : "text-slate-500 hover:text-slate-700 hover:bg-slate-50 dark:text-dark-400 dark:hover:text-dark-200 dark:hover:bg-dark-800/40"
-                        }`}
-                      >
-                        <SubIcon className="h-5 w-5 flex-shrink-0" />
-                        <span className="truncate">{item.label}</span>
-                      </Link>
-                    );
-                  })}
+
+            {/* Flyout renderizado via portal no body para não ser cortado pelo overflow */}
+            {showFlyout && createPortal(
+              <div
+                ref={flyoutRef}
+                className="fixed z-[100] transition-all duration-200"
+                style={flyoutStyle}
+                onMouseEnter={handleFlyoutMouseEnter}
+                onMouseLeave={() => {
+                  setFlyoutHover(false);
+                  if (!planningFlyoutOpen) setPlanningFlyoutOpen(false);
+                }}
+              >
+                <div className="bg-white dark:bg-dark-900 border border-slate-200 dark:border-dark-700 rounded-xl shadow-lg p-2 min-w-[180px]">
+                  <div className="flex flex-col gap-0.5">
+                    {PLANNING_SUB_ITEMS.map((item) => {
+                      const SubIcon = item.icon;
+                      const isSubActive = location.pathname === item.path;
+                      return (
+                        <Link
+                          key={item.path}
+                          to={item.path}
+                          onClick={() => {
+                            setPlanningFlyoutOpen(false);
+                            setFlyoutHover(false);
+                          }}
+                          className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 select-none ${
+                            isSubActive
+                              ? "bg-brand-100 dark:bg-brand-900/20 text-brand-600 dark:text-brand-400"
+                              : "text-slate-500 hover:text-slate-700 hover:bg-slate-50 dark:text-dark-400 dark:hover:text-dark-200 dark:hover:bg-dark-800/40"
+                          }`}
+                        >
+                          <SubIcon className="h-5 w-5 flex-shrink-0" />
+                          <span className="truncate">{item.label}</span>
+                        </Link>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-            </div>
+              </div>,
+              document.body
+            )}
           </div>
         )}
 
