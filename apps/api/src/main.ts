@@ -182,7 +182,11 @@ async function bootstrap() {
     console.log(divider);
   });
 }
-console.log("debug", process.env.DATABASE_URL);
+const safeDbUrl = process.env.DATABASE_URL?.replace(
+    /\?authToken=([^&]+)/i,
+    "?authToken=***",
+  );
+console.log("debug", safeDbUrl);
 
 bootstrap().catch((err) => {
   console.error("❌ Falha ao iniciar o servidor:", err);
