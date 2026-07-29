@@ -51,6 +51,9 @@ export const Sidebar: React.FC = () => {
   const isPlanningActive = location.pathname.startsWith("/planning");
   const [planningExpanded, setPlanningExpanded] = useState(isPlanningActive);
 
+  // Estado para o flyout do Planejamento no modo colapsado (apenas para clique/tap)
+  const [planningFlyoutOpen, setPlanningFlyoutOpen] = useState(false);
+
   // Auto-expand planning when navigating to a sub-item
   React.useEffect(() => {
     if (isPlanningActive) {
@@ -85,10 +88,12 @@ export const Sidebar: React.FC = () => {
             </span>
           )}
         </Link>
-        {/* Close button for mobile */}
+        {/* Close button for mobile — hidden when collapsed so it doesn't overlap the icon */}
         <button
           onClick={() => setMobileSidebarOpen(false)}
-          className="lg:hidden p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-dark-800 text-slate-500 dark:text-dark-300"
+          className={`p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-dark-800 text-slate-500 dark:text-dark-300 ${
+            sidebarCollapsed ? "hidden" : "lg:hidden"
+          }`}
         >
           <X className="h-5 w-5" />
         </button>
@@ -161,17 +166,52 @@ export const Sidebar: React.FC = () => {
             )}
           </div>
         ) : (
-          /* Collapsed: just show the icon, no sub-items */
-          <Link
-            to="/planning/agenda"
-            className={`flex items-center justify-center px-3.5 py-3 rounded-xl font-medium transition-all duration-200 select-none ${
-              isPlanningActive
-                ? "bg-brand-500 text-white shadow-md shadow-brand-500/10"
-                : "text-slate-650 hover:bg-slate-100 dark:text-dark-300 dark:hover:bg-dark-800/60"
-            }`}
-          >
-            <Calendar className="h-5 w-5 flex-shrink-0" />
-          </Link>
+          /* Collapsed: CSS hover (group-hover) + click/tap toggle */
+          <div className="relative group">
+            <button
+              type="button"
+              onClick={() => setPlanningFlyoutOpen(!planningFlyoutOpen)}
+              className={`flex items-center justify-center w-full px-3.5 py-3 rounded-xl font-medium transition-all duration-200 select-none cursor-pointer ${
+                isPlanningActive
+                  ? "bg-brand-500 text-white shadow-md shadow-brand-500/10"
+                  : "text-slate-650 hover:bg-slate-100 dark:text-dark-300 dark:hover:bg-dark-800/60"
+              }`}
+            >
+              <Calendar className="h-5 w-5 flex-shrink-0" />
+            </button>
+            {/* Flyout: CSS group-hover para mouse + estado para clique/tap */}
+            <div
+              className={`absolute left-full top-0 ml-2 z-50 transition-all duration-200 ${
+                planningFlyoutOpen
+                  ? "opacity-100 visible pointer-events-auto"
+                  : "opacity-0 invisible pointer-events-none group-hover:opacity-100 group-hover:visible group-hover:pointer-events-auto"
+              }`}
+            >
+              <div className="bg-white dark:bg-dark-900 border border-slate-200 dark:border-dark-700 rounded-xl shadow-lg p-2 min-w-[180px]">
+                <div className="flex flex-col gap-0.5">
+                  {PLANNING_SUB_ITEMS.map((item) => {
+                    const SubIcon = item.icon;
+                    const isSubActive = location.pathname === item.path;
+                    return (
+                      <Link
+                        key={item.path}
+                        to={item.path}
+                        onClick={() => setPlanningFlyoutOpen(false)}
+                        className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 select-none ${
+                          isSubActive
+                            ? "bg-brand-100 dark:bg-brand-900/20 text-brand-600 dark:text-brand-400"
+                            : "text-slate-500 hover:text-slate-700 hover:bg-slate-50 dark:text-dark-400 dark:hover:text-dark-200 dark:hover:bg-dark-800/40"
+                        }`}
+                      >
+                        <SubIcon className="h-5 w-5 flex-shrink-0" />
+                        <span className="truncate">{item.label}</span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
         )}
 
         {/* ── Estudos (ícone único) ── */}
