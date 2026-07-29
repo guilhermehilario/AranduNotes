@@ -256,7 +256,7 @@ export function useNotebookActions({
     async (cardId: string) => {
       try {
         await deleteFlashcardMutation.mutateAsync(cardId);
-      } catch (error) {
+      } catch {
         // Toast já exibido no onError da mutation
       }
     },
@@ -267,7 +267,7 @@ export function useNotebookActions({
     async (cardId: string, data: { front: string; back: string }) => {
       try {
         await editFlashcardMutation.mutateAsync({ cardId, data });
-      } catch (error) {
+      } catch {
         // Toast já exibido no onError da mutation
       }
     },

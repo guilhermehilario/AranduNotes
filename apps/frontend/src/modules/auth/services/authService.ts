@@ -11,7 +11,8 @@ export const authService = {
     data: RegisterInput,
   ): Promise<{ message: string; email: string }> {
     // confirmPassword é validação exclusiva do frontend — o backend não precisa
-    const { confirmPassword: _, ...payload } = data;
+    const { confirmPassword, ...payload } = data;
+    void confirmPassword; // validado no schema do frontend
     const response = await api.post<{ message: string; email: string }>(
       "/auth/register",
       payload,

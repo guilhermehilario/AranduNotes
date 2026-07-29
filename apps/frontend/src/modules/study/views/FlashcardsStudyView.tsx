@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useCallback } from "react";
 import { useSearchParams, useNavigate, Link } from "react-router-dom";
 import {
   ArrowLeft,
@@ -60,14 +60,17 @@ export const FlashcardsStudyView: React.FC = () => {
   const [shuffledCards, setShuffledCards] = useState<Flashcard[]>([]);
   const [sessionActive, setSessionActive] = useState(false);
 
-  // Shuffle and start session
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (!isLoading && allFlashcards.length > 0 && !sessionActive) {
       const shuffled = [...allFlashcards].sort(() => Math.random() - 0.5);
       setShuffledCards(shuffled);
       setSessionActive(true);
     }
-  }, [isLoading, allFlashcards, sessionActive]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoading, allFlashcards]);
+  /* eslint-enable react-hooks/set-state-in-effect */
+  // Note: sessionActive excluded from deps intentionally to prevent re-shuffle
 
   const cards = shuffledCards;
   const currentCard = cards[currentIndex];

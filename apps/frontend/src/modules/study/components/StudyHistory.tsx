@@ -1,4 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
+
+// Constantes de data computadas uma vez no carregamento do módulo
+const TODAY_STR = new Date().toISOString().split('T')[0];
+const YESTERDAY_STR = new Date(Date.now() - 86400000).toISOString().split('T')[0];
 import {
   Brain,
   ChevronDown,
@@ -226,33 +230,42 @@ export const StudyHistory: React.FC = () => {
     refetchOnWindowFocus: false,
   });
 
-  const [expandedDays, setExpandedDays] = useState<Set<string>>(new Set());
+  const todayStr = TODAY_STR;
+  const yesterdayStr = YESTERDAY_STR;
 
-  // Auto-expand today and yesterday
-  useEffect(() => {
-    if (!history || history.length === 0) return;
-    const today = new Date().toISOString().split('T')[0];
-    const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
-    const newExpanded = new Set(expandedDays);
-    let changed = false;
-    for (const entry of history) {
-      if (entry.date === today || entry.date === yesterday) {
-        if (!newExpanded.has(entry.date)) {
-          newExpanded.add(entry.date);
-          changed = true;
-        }
+  // Dias expandidos pelo usuário (qualquer dia que não seja hoje/ontem)
+  const [expandedByUser, setExpandedByUser] = useState<Set<string>>(new Set());
+  // Dias que o usuário colapsou (sobrescreve auto-expand de hoje/ontem)
+  const [collapsedByUser, setCollapsedByUser] = useState<Set<string>>(new Set());
+
+  // Auto-expande hoje e ontem + mantém expandidos pelo usuário
+  const expandedDays = useMemo(() => {
+    if (!history) return new Set(expandedByUser);
+    const set = new Set(expandedByUser);
+    for (const { date } of history) {
+      if ((date === todayStr || date === yesterdayStr) && !collapsedByUser.has(date)) {
+        set.add(date);
       }
     }
-    if (changed) setExpandedDays(newExpanded);
-  }, [history]);
+    return set;
+  }, [history, collapsedByUser, expandedByUser, todayStr, yesterdayStr]);
 
   const toggleDay = (date: string) => {
-    setExpandedDays((prev) => {
-      const next = new Set(prev);
-      if (next.has(date)) next.delete(date);
-      else next.add(date);
-      return next;
-    });
+    if (expandedDays.has(date)) {
+      setCollapsedByUser((prev) => new Set(prev).add(date));
+      setExpandedByUser((prev) => {
+        const next = new Set(prev);
+        next.delete(date);
+        return next;
+      });
+    } else {
+      setCollapsedByUser((prev) => {
+        const next = new Set(prev);
+        next.delete(date);
+        return next;
+      });
+      setExpandedByUser((prev) => new Set(prev).add(date));
+    }
   };
 
   const totalReviews = history?.reduce((sum, d) => sum + d.totalReviews, 0) ?? 0;

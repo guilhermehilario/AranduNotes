@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "../../components/ui/Button.tsx";
 import { Modal } from "../../components/ui/Modal.tsx";
@@ -46,29 +46,6 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
     }
     return "adv-luna";
   });
-
-  // Reseta variantes de avatar ao abrir o modal (mantendo sincronia)
-  useEffect(() => {
-    if (isOpen && user?.avatarUrl) {
-      for (const cat of AVATAR_CATEGORIES) {
-        if (user.avatarUrl.includes(`/${cat.style}/`)) {
-          setSelectedCategory(cat.id);
-          break;
-        }
-      }
-      const match = user.avatarUrl.match(/seed=([^&]+)/);
-      if (match) {
-        const decodedSeed = decodeURIComponent(match[1]);
-        for (const cat of AVATAR_CATEGORIES) {
-          const found = cat.variants.find((v) => v.seed === decodedSeed);
-          if (found) {
-            setSelectedVariant(found.id);
-            break;
-          }
-        }
-      }
-    }
-  }, [user?.avatarUrl, isOpen]);
 
   const queryClient = useQueryClient();
 

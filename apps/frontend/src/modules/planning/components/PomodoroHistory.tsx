@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { Timer, Trash2, ChevronLeft, ChevronRight, XCircle } from 'lucide-react';
 import type { PomodoroSession } from '../types.ts';
 import { ConfirmDialog } from '../../../components/ui/ConfirmDialog.tsx';
@@ -47,11 +47,12 @@ export const PomodoroHistory: React.FC<PomodoroHistoryProps> = ({ sessions }) =>
   );
 
   // Reset page when switching to cancelled tab
-  useEffect(() => {
-    if (historyTab === 'cancelled') {
+  const handleTabChange = (tab: 'completed' | 'cancelled') => {
+    setHistoryTab(tab);
+    if (tab === 'cancelled') {
       setCancelledPage(0);
     }
-  }, [historyTab]);
+  };
 
   return (
     <div className="rounded-2xl p-5" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)' }}>
@@ -60,7 +61,7 @@ export const PomodoroHistory: React.FC<PomodoroHistoryProps> = ({ sessions }) =>
         <div className="flex items-center gap-1 p-0.5 rounded-lg" style={{ background: 'var(--bg-surface-hover)' }}>
           <button
             type="button"
-            onClick={() => setHistoryTab('completed')}
+            onClick={() => handleTabChange('completed')}
             className="px-3 py-1.5 text-[11px] font-bold rounded-md transition-all cursor-pointer"
             style={{
               background: historyTab === 'completed' ? 'var(--bg-surface)' : 'transparent',
@@ -72,7 +73,7 @@ export const PomodoroHistory: React.FC<PomodoroHistoryProps> = ({ sessions }) =>
           </button>
           <button
             type="button"
-            onClick={() => setHistoryTab('cancelled')}
+            onClick={() => handleTabChange('cancelled')}
             className="px-3 py-1.5 text-[11px] font-bold rounded-md transition-all cursor-pointer"
             style={{
               background: historyTab === 'cancelled' ? 'var(--bg-surface)' : 'transparent',

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Modal } from '../../../components/ui/Modal.tsx';
 import { Button } from '../../../components/ui/Button.tsx';
 import { Input } from '../../../components/ui/Input.tsx';
@@ -15,27 +15,16 @@ interface EditFlashcardModalProps {
   isDeleting: boolean;
 }
 
-export const EditFlashcardModal: React.FC<EditFlashcardModalProps> = ({
-  isOpen,
-  onClose,
-  flashcard,
-  onSave,
-  onDelete,
-  isSaving,
-  isDeleting,
-}) => {
-  const [front, setFront] = useState('');
-  const [back, setBack] = useState('');
-
-  useEffect(() => {
-    if (flashcard) {
-      setFront(flashcard.front);
-      setBack(flashcard.back);
-    } else {
-      setFront('');
-      setBack('');
-    }
-  }, [flashcard]);
+const FlashcardForm: React.FC<{
+  flashcard: Flashcard | null;
+  isSaving: boolean;
+  isDeleting: boolean;
+  onSave: (cardId: string, data: { front: string; back: string }) => Promise<void>;
+  onDelete: (cardId: string) => Promise<void>;
+  onClose: () => void;
+}> = ({ flashcard, onSave, onDelete, onClose, isSaving, isDeleting }) => {
+  const [front, setFront] = useState(flashcard?.front ?? '');
+  const [back, setBack] = useState(flashcard?.back ?? '');
 
   const handleSave = async () => {
     if (!flashcard || !front.trim() || !back.trim()) return;
@@ -47,42 +36,10 @@ export const EditFlashcardModal: React.FC<EditFlashcardModalProps> = ({
     await onDelete(flashcard.id);
   };
 
-  const handleClose = () => {
-    setFront('');
-    setBack('');
-    onClose();
-  };
-
   const isPending = isSaving || isDeleting;
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={handleClose}
-      title="Editar Flashcard"
-      footer={
-        <div className="flex gap-3 w-full justify-between">
-          <Button
-            variant="danger"
-            onClick={handleDelete}
-            disabled={isPending || !flashcard}
-          >
-            {isDeleting ? 'Excluindo...' : 'Excluir'}
-          </Button>
-          <div className="flex gap-3">
-            <Button variant="outline" onClick={handleClose} disabled={isPending}>
-              Cancelar
-            </Button>
-            <Button
-              onClick={handleSave}
-              disabled={!front.trim() || !back.trim() || isPending}
-            >
-              {isSaving ? 'Salvando...' : 'Salvar'}
-            </Button>
-          </div>
-        </div>
-      }
-    >
+    <>
       <div className="flex flex-col gap-4">
         <Input
           label="Pergunta (Frente)"
@@ -98,6 +55,56 @@ export const EditFlashcardModal: React.FC<EditFlashcardModalProps> = ({
           onChange={(e) => setBack(e.target.value)}
         />
       </div>
+      <div className="flex gap-3 w-full justify-between mt-4">
+        <Button
+          variant="danger"
+          onClick={handleDelete}
+          disabled={isPending || !flashcard}
+        >
+          {isDeleting ? 'Excluindo...' : 'Excluir'}
+        </Button>
+        <div className="flex gap-3">
+          <Button variant="outline" onClick={onClose} disabled={isPending}>
+            Cancelar
+          </Button>
+          <Button
+            onClick={handleSave}
+            disabled={!front.trim() || !back.trim() || isPending}
+          >
+            {isSaving ? 'Salvando...' : 'Salvar'}
+          </Button>
+        </div>
+      </div>
+    </>
+  );
+};
+
+export const EditFlashcardModal: React.FC<EditFlashcardModalProps> = ({
+  isOpen,
+  onClose,
+  flashcard,
+  onSave,
+  onDelete,
+  isSaving,
+  isDeleting,
+}) => {
+  return (
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Editar Flashcard"
+      footer={null}
+    >
+      {/* key força remount quando o flashcard muda entre aberturas */}
+      <FlashcardForm
+        key={`${isOpen}-${flashcard?.id ?? 'new'}`}
+        flashcard={flashcard}
+        isSaving={isSaving}
+        isDeleting={isDeleting}
+        onSave={onSave}
+        onDelete={onDelete}
+        onClose={onClose}
+      />
     </Modal>
   );
 };

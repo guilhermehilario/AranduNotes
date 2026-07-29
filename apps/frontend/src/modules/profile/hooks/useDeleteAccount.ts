@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { useAuth } from "../../auth/hooks/useAuth";
 import authService from "../../auth/services/authService";
 import { useToastStore } from "../../../store/toastStore";
@@ -46,12 +46,6 @@ export function useDeleteAccount(options?: UseDeleteAccountOptions): UseDeleteAc
   /** true quando a API devolveu o código diretamente (SMTP desligado) */
   const [isDevCode, setIsDevCode] = useState(false);
 
-  useEffect(() => {
-    if (deleteStep === 1) {
-      setConfirmationCode(generateCode());
-    }
-  }, [deleteStep]);
-
   const resetDeleteFlow = useCallback(() => {
     setDeleteStep(0);
     setTypedCode("");
@@ -65,6 +59,7 @@ export function useDeleteAccount(options?: UseDeleteAccountOptions): UseDeleteAc
 
   const startDeleteFlow = useCallback(() => {
     setTypedCode("");
+    setConfirmationCode(generateCode());
     setDeleteStep(1);
   }, []);
 

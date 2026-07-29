@@ -32,15 +32,13 @@ export const Sidebar: React.FC = () => {
 
   const isTrashActive = location.pathname.startsWith("/trash");
   const isPlanningActive = location.pathname.startsWith("/planning");
-  const [planningExpanded, setPlanningExpanded] = useState(isPlanningActive);
+
+  // null = auto (segue a rota), true = expandido, false = colapsado
+  const [planningExpandedByUser, setPlanningExpandedByUser] = useState<boolean | null>(null);
+  const planningExpanded = planningExpandedByUser ?? isPlanningActive;
 
   // Flyout para o modo colapsado
   const flyout = usePlanningFlyout();
-
-  // Auto-expand planning when navigating to a sub-item
-  React.useEffect(() => {
-    if (isPlanningActive) setPlanningExpanded(true);
-  }, [isPlanningActive]);
 
   // Close mobile sidebar on route change
   React.useEffect(() => {
@@ -86,7 +84,7 @@ export const Sidebar: React.FC = () => {
           <PlanningSection
             expanded={planningExpanded}
             isActive={isPlanningActive}
-            onToggle={() => setPlanningExpanded(!planningExpanded)}
+            onToggle={() => setPlanningExpandedByUser((prev) => prev === null ? !isPlanningActive : !prev)}
           />
         ) : (
           <>

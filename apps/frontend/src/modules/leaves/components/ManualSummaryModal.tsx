@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Modal } from '../../../components/ui/Modal.tsx';
 import { Button } from '../../../components/ui/Button.tsx';
@@ -15,80 +15,15 @@ interface ManualSummaryModalProps {
   currentSummary?: string | null;
 }
 
-export const ManualSummaryModal: React.FC<ManualSummaryModalProps> = ({
-  isOpen,
-  onClose,
-  leafId,
-  currentSummary,
-}) => {
+const SummaryForm: React.FC<{
+  currentSummary?: string | null;
+  onSave: (text: string) => Promise<void>;
+  onCancel: () => void;
+}> = ({ currentSummary, onSave, onCancel }) => {
   const [summaryText, setSummaryText] = useState(currentSummary ?? '');
-  const queryClient = useQueryClient();
-
-  useEffect(() => {
-    if (isOpen) {
-      setSummaryText(currentSummary ?? '');
-    }
-  }, [isOpen, currentSummary]);
-
-  const saveMutation = useMutation({
-    mutationFn: (text: string) =>
-      leafService.updateLeaf(leafId, { summary: text || null }),
-    onSuccess: (updatedLeaf) => {
-      // ⚡ Atualiza o cache individual da leaf com o novo sumário
-      queryClient.setQueryData<Leaf>(
-        ['leaves', leafId],
-        (old: Leaf | undefined) => {
-          if (!old) return updatedLeaf as unknown as Leaf;
-          return { ...old, summary: updatedLeaf.summary ?? old.summary };
-        },
-      );
-      // ⚡ Atualiza o cache do sumário (usado em useLeaf > summaryCache)
-      queryClient.setQueryData<{ summary?: string }>(
-        ['leaves', leafId, 'summary'],
-        { summary: updatedLeaf.summary ?? undefined },
-      );
-      useToastStore.getState().addToast('Resumo salvo com sucesso.', 'success');
-      handleClose();
-    },
-    onError: (err) => {
-      useToastStore
-        .getState()
-        .addToast(extractApiError(err, 'Erro ao salvar resumo.'), 'error');
-    },
-  });
-
-  const handleSave = async () => {
-    try {
-      await saveMutation.mutateAsync(summaryText);
-    } catch {
-      // Toast já exibido no onError
-    }
-  };
-
-  const handleClose = () => {
-    setSummaryText(currentSummary ?? '');
-    onClose();
-  };
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={handleClose}
-      title="Criar Resumo Manual"
-      footer={
-        <div className="flex gap-3">
-          <Button variant="outline" onClick={handleClose}>
-            Cancelar
-          </Button>
-          <Button
-            onClick={handleSave}
-            disabled={saveMutation.isPending}
-          >
-            {saveMutation.isPending ? 'Salvando...' : 'Salvar Resumo'}
-          </Button>
-        </div>
-      }
-    >
+    <>
       <div className="flex flex-col gap-4">
         <TextArea
           label="Resumo"
@@ -105,6 +40,74 @@ export const ManualSummaryModal: React.FC<ManualSummaryModalProps> = ({
           Markdown para formatação (negrito, itálico, listas, etc.).
         </p>
       </div>
+      <div className="flex gap-3 mt-4">
+        <Button variant="outline" onClick={onCancel}>
+          Cancelar
+        </Button>
+        <Button onClick={() => onSave(summaryText)}>
+          Salvar Resumo
+        </Button>
+      </div>
+    </>
+  );
+};
+
+export const ManualSummaryModal: React.FC<ManualSummaryModalProps> = ({
+  isOpen,
+  onClose,
+  leafId,
+  currentSummary,
+}) => {
+  const queryClient = useQueryClient();
+
+  const saveMutation = useMutation({
+    mutationFn: (text: string) =>
+      leafService.updateLeaf(leafId, { summary: text || null }),
+    onSuccess: (updatedLeaf) => {
+      queryClient.setQueryData<Leaf>(
+        ['leaves', leafId],
+        (old: Leaf | undefined) => {
+          if (!old) return updatedLeaf as unknown as Leaf;
+          return { ...old, summary: updatedLeaf.summary ?? old.summary };
+        },
+      );
+      queryClient.setQueryData<{ summary?: string }>(
+        ['leaves', leafId, 'summary'],
+        { summary: updatedLeaf.summary ?? undefined },
+      );
+      useToastStore.getState().addToast('Resumo salvo com sucesso.', 'success');
+      onClose();
+    },
+    onError: (err) => {
+      useToastStore
+        .getState()
+        .addToast(extractApiError(err, 'Erro ao salvar resumo.'), 'error');
+    },
+  });
+
+  const handleSave = async (text: string) => {
+    try {
+      await saveMutation.mutateAsync(text);
+    } catch {
+      // Toast já exibido no onError
+    }
+  };
+
+  return (
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Criar Resumo Manual"
+      footer={null}
+    >
+      {/* key força remount quando o modal abre com dados atualizados */}
+      <SummaryForm
+        key={`${isOpen}-${currentSummary ?? ''}`}
+        leafId={leafId}
+        currentSummary={currentSummary}
+        onSave={handleSave}
+        onCancel={onClose}
+      />
     </Modal>
   );
 };

@@ -12,7 +12,7 @@ export function useClipboardCapture() {
   const toggleOpen = useClipboardStore((s) => s.toggleOpen);
 
   useEffect(() => {
-    const handleCopy = (_e: ClipboardEvent) => {
+    const handleCopy = () => {
       // Give the browser time to write to the clipboard, then capture
       setTimeout(() => {
         const selection = window.getSelection();
@@ -23,7 +23,7 @@ export function useClipboardCapture() {
       }, 0);
     };
 
-    const handleCut = (_e: ClipboardEvent) => {
+    const handleCut = () => {
       setTimeout(() => {
         const selection = window.getSelection();
         const text = selection?.toString().trim();

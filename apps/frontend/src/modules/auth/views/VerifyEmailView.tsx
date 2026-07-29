@@ -36,37 +36,29 @@ export const VerifyEmailView: React.FC = () => {
   const [resendEmail, setResendEmail] = React.useState(emailFromRegister || "");
   const [resendMessage, setResendMessage] = React.useState<string | null>(null);
 
-  // Verifica o token na inicialização
+  // Trigger verification once when component mounts with a token
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     if (token && step === "verifying") {
-      verifyToken(token);
+      authService.verifyEmail(token).then((result) => {
+        setMessage(result.message);
+        setStep("success");
+      }).catch((error) => {
+        const errorMsg = extractApiError(error, "");
+        if (
+          errorMsg.toLowerCase().includes("expirado") ||
+          errorMsg.toLowerCase().includes("inválido")
+        ) {
+          setStep("expired");
+          setMessage(errorMsg);
+        } else {
+          setStep("error");
+          setApiError(errorMsg);
+        }
+      });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
-
-  useEffect(() => {
-    console.log("Tela verifyEmail montou");
-  }, []);
-
-  const verifyToken = async (verificationToken: string) => {
-    try {
-      const result = await authService.verifyEmail(verificationToken);
-      setMessage(result.message);
-      setStep("success");
-    } catch (error) {
-      const errorMsg = extractApiError(error, "");
-      if (
-        errorMsg.toLowerCase().includes("expirado") ||
-        errorMsg.toLowerCase().includes("inválido")
-      ) {
-        setStep("expired");
-        setMessage(errorMsg);
-      } else {
-        setStep("error");
-        setApiError(errorMsg);
-      }
-    }
-  };
 
   const handleResend = async () => {
     if (!resendEmail) return;
