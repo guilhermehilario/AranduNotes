@@ -151,7 +151,7 @@ export const EditorView: React.FC = () => {
       />
 
       {/* Split Pane Editor / IA */}
-      <div className="flex-1 flex flex-col lg:flex-row gap-6 min-h-[750px] lg:min-h-[90vh] min-w-0 overflow-hidden">
+      <div className="flex-1 flex flex-col lg:flex-row gap-4 lg:gap-6 min-h-[400px] lg:min-h-[90vh] min-w-0 overflow-hidden">
         {/* Lado Esquerdo - Editor */}
         <EditorContentArea
           editor={editor}

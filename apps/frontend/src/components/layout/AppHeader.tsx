@@ -7,7 +7,6 @@ import { useAuth } from '../../modules/auth/hooks/useAuth';
 import {
   Menu,
   ArrowLeft,
-  Clock,
   Bell,
   User as UserIcon,
   ClipboardList,
@@ -57,7 +56,7 @@ const DEFAULT_PAGE = { title: 'Cadernos', icon: BookOpen, subtitle: 'Gerencie se
 export const AppHeader: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { toggleSidebar } = useUIStore();
+  const { toggleMobileSidebar } = useUIStore();
   const queryClient = useQueryClient();
   const editorStatus = useEditorStatusStore();
   const { user } = useAuth();
@@ -123,7 +122,6 @@ export const AppHeader: React.FC = () => {
     if (path.includes('/archived')) parts.push({ label: 'Arquivados', path: '/archived' });
     if (path.includes('/todos')) parts.push({ label: 'Tarefas', path: '/todos' });
     if (path.includes('/planning')) {
-      // Extract tab name from URL like /planning/agenda
       const tabMatch = path.match(/\/planning\/(\w+)/);
       const tabLabel = tabMatch && PLANNING_TAB_LABELS[tabMatch[1]]
         ? PLANNING_TAB_LABELS[tabMatch[1]]
@@ -160,10 +158,11 @@ export const AppHeader: React.FC = () => {
   const PageIcon = pageConfig.icon;
 
   return (
-    <header className="h-16 bg-white dark:bg-dark-900 border-b border-slate-150 dark:border-dark-800/80 flex items-center justify-between px-6 flex-shrink-0">
-      <div className="flex items-center gap-4">
+    <header className="h-14 sm:h-16 bg-white dark:bg-dark-900 border-b border-slate-150 dark:border-dark-800/80 flex items-center justify-between px-3 sm:px-6 flex-shrink-0">
+      <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-shrink">
+        {/* Mobile hamburger - visible only on mobile */}
         <button
-          onClick={toggleSidebar}
+          onClick={toggleMobileSidebar}
           className="lg:hidden p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-dark-800 text-slate-600 dark:text-dark-200"
         >
           <Menu className="h-5 w-5" />
@@ -177,16 +176,16 @@ export const AppHeader: React.FC = () => {
             <ArrowLeft className="h-5 w-5" />
           </button>
         )}
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-brand-50 dark:bg-brand-950/20 flex items-center justify-center text-brand-500">
-            <PageIcon className="h-5 w-5" />
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-brand-50 dark:bg-brand-950/20 flex items-center justify-center text-brand-500 flex-shrink-0">
+            <PageIcon className="h-4 w-4 sm:h-5 sm:w-5" />
           </div>
-          <div>
-            <h2 className="text-xl font-heading font-bold text-slate-800 dark:text-dark-50 leading-tight">
+          <div className="min-w-0">
+            <h2 className="text-base sm:text-xl font-heading font-bold text-slate-800 dark:text-dark-50 leading-tight truncate max-w-[120px] sm:max-w-none">
               {pageConfig.title}
             </h2>
             {breadcrumbs.length > 0 ? (
-              <nav className="flex items-center gap-1.5 text-xs text-slate-400 dark:text-dark-400">
+              <nav className="hidden sm:flex items-center gap-1.5 text-xs text-slate-400 dark:text-dark-400">
                 {breadcrumbs.map((crumb, idx) => (
                   <React.Fragment key={crumb.path}>
                     {idx > 0 && <span className="text-slate-300 dark:text-dark-600">/</span>}
@@ -200,7 +199,7 @@ export const AppHeader: React.FC = () => {
                 ))}
               </nav>
             ) : (
-              <p className="text-xs text-slate-400 dark:text-dark-400 leading-tight hidden sm:block">
+              <p className="hidden sm:block text-xs text-slate-400 dark:text-dark-400 leading-tight">
                 {pageConfig.subtitle}
               </p>
             )}
@@ -208,14 +207,13 @@ export const AppHeader: React.FC = () => {
         </div>
       </div>
 
-      {/* Right section: lastUpdate - notifications - profile */}
-      <div className="flex items-center gap-2">
-        {/* Editor Status Info (última atualização) */}
+      {/* Right section: editor status - clipboard - notifications - profile */}
+      <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+        {/* Editor Status Info - hidden on mobile */}
         {editorStatus.visible && (
-          <div className="flex items-center gap-3 text-xs font-semibold mr-1">
+          <div className="hidden sm:flex items-center gap-3 text-xs font-semibold mr-1">
             {editorStatus.lastUpdate && (
               <span className="flex items-center gap-1.5 text-slate-400 dark:text-dark-400 whitespace-nowrap">
-                <Clock className="h-3.5 w-3.5" />
                 {new Date(editorStatus.lastUpdate).toLocaleString('pt-BR')}
               </span>
             )}
@@ -223,8 +221,15 @@ export const AppHeader: React.FC = () => {
           </div>
         )}
 
-        {/* Clipboard Manager */}
-        <div className="relative" ref={clipboardRef}>
+        {/* Editor Save Status (mobile only - just the dot) */}
+        {editorStatus.visible && (
+          <div className="sm:hidden">
+            <SaveStatusIndicator status={editorStatus.saveStatus} />
+          </div>
+        )}
+
+        {/* Clipboard Manager - hidden on mobile */}
+        <div className="hidden sm:relative sm:block" ref={clipboardRef}>
           <Tooltip content="Histórico de cópia (Ctrl+Shift+V)" position="bottom">
             <button
               type="button"
@@ -273,10 +278,10 @@ export const AppHeader: React.FC = () => {
         <button
           type="button"
           onClick={() => setIsProfileModalOpen(true)}
-          className="flex items-center gap-2 p-1.5 pl-2 pr-2.5 rounded-xl text-slate-500 dark:text-dark-400 hover:bg-slate-100 dark:hover:bg-dark-800 transition-all cursor-pointer group ml-1"
+          className="flex items-center gap-2 p-1.5 pl-2 pr-2.5 rounded-xl text-slate-500 dark:text-dark-400 hover:bg-slate-100 dark:hover:bg-dark-800 transition-all cursor-pointer group ml-0.5 sm:ml-1"
           title="Perfil"
         >
-          <div className="w-8 h-8 rounded-full bg-brand-100 dark:bg-brand-900/30 flex items-center justify-center text-brand-600 dark:text-brand-400 overflow-hidden flex-shrink-0 group-hover:ring-2 ring-brand-300 transition-all">
+          <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-brand-100 dark:bg-brand-900/30 flex items-center justify-center text-brand-600 dark:text-brand-400 overflow-hidden flex-shrink-0 group-hover:ring-2 ring-brand-300 transition-all">
             {user?.avatarUrl ? (
               <img
                 src={user.avatarUrl}
@@ -284,7 +289,7 @@ export const AppHeader: React.FC = () => {
                 className="w-full h-full rounded-full object-cover"
               />
             ) : (
-              <UserIcon className="h-4 w-4" />
+              <UserIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             )}
           </div>
         </button>

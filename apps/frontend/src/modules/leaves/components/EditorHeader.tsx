@@ -37,8 +37,8 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
   onToggleExpand,
 }) => {
   return (
-    <div className="flex items-center justify-between border-b border-slate-150 dark:border-dark-800 pb-3 flex-shrink-0">
-      <div className="flex items-center gap-2">
+    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-150 dark:border-dark-800 pb-3 flex-shrink-0">
+      <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
         {/* Tag Selector */}
         <TagSelector leafId={leafId} />
 
@@ -56,7 +56,7 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
           <BookmarkIcon
             className={`h-3.5 w-3.5 ${isBookmarked ? 'fill-amber-500' : ''}`}
           />
-          {isBookmarked ? 'Marcado' : 'Marcar'}
+          <span className="hidden sm:inline">{isBookmarked ? 'Marcado' : 'Marcar'}</span>
         </button>
 
         {/* Archive Button */}
@@ -75,7 +75,7 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
           ) : (
             <Archive className="h-3.5 w-3.5" />
           )}
-          {isArchived ? 'Arquivado' : 'Arquivar'}
+          <span className="hidden sm:inline">{isArchived ? 'Arquivado' : 'Arquivar'}</span>
         </button>
 
         {/* Delete Button */}
@@ -86,11 +86,11 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
           title="Mover para lixeira"
         >
           <Trash2 className="h-3.5 w-3.5" />
-          Excluir
+          <span className="hidden sm:inline">Excluir</span>
         </button>
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1.5 sm:gap-2">
         {/* Toggle AI Sidebar */}
         <button
           type="button"

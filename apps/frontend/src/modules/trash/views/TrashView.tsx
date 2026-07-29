@@ -87,18 +87,19 @@ export const TrashView: React.FC = () => {
 
   return (
     <PageContainer>
-      <div className="flex justify-between items-center">
-        <p className="text-slate-500 dark:text-dark-350">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+        <p className="text-xs sm:text-sm text-slate-500 dark:text-dark-350">
           Itens excluídos são mantidos por 15 dias antes da exclusão permanente
         </p>
         {allItems.length > 0 && (
           <Button
             variant="outline"
+            size="sm"
             onClick={() => setConfirmCleanOpen(true)}
             disabled={cleanTrash.isPending}
-            className="text-rose-500 border-rose-200 hover:bg-rose-50"
+            className="text-rose-500 border-rose-200 hover:bg-rose-50 self-start sm:self-auto"
           >
-            {cleanTrash.isPending ? 'Limpando...' : 'Limpar Lixeira (+15 dias)'}
+            {cleanTrash.isPending ? 'Limpando...' : 'Limpar Lixeira'}
           </Button>
         )}
       </div>

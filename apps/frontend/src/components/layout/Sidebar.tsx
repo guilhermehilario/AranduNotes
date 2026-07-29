@@ -18,6 +18,7 @@ import {
   Target,
   Timer,
   GraduationCap,
+  X,
 } from "lucide-react";
 
 const DASHBOARD_PATH = "/dashboard";
@@ -38,7 +39,12 @@ const PLANNING_SUB_ITEMS = [
 ] as const;
 
 export const Sidebar: React.FC = () => {
-  const { sidebarCollapsed, toggleSidebar } = useUIStore();
+  const {
+    sidebarCollapsed,
+    toggleSidebar,
+    mobileSidebarOpen,
+    setMobileSidebarOpen,
+  } = useUIStore();
   const location = useLocation();
 
   const isTrashActive = location.pathname.startsWith("/trash");
@@ -52,9 +58,14 @@ export const Sidebar: React.FC = () => {
     }
   }, [isPlanningActive]);
 
-  return (
+  // Close mobile sidebar on route change
+  React.useEffect(() => {
+    setMobileSidebarOpen(false);
+  }, [location.pathname, setMobileSidebarOpen]);
+
+  const sidebarContent = (
     <aside
-      className={`bg-white dark:bg-dark-900 border-r border-slate-100 dark:border-dark-800/80 flex flex-col flex-shrink-0 transition-all duration-300 relative z-20 ${
+      className={`bg-white dark:bg-dark-900 border-r border-slate-100 dark:border-dark-800/80 flex flex-col flex-shrink-0 transition-all duration-300 z-20 h-full ${
         sidebarCollapsed ? "w-20" : "w-64"
       }`}
     >
@@ -63,6 +74,7 @@ export const Sidebar: React.FC = () => {
         <Link
           to="/dashboard"
           className="flex items-center gap-3 overflow-hidden select-none"
+          onClick={() => setMobileSidebarOpen(false)}
         >
           <div className="w-10 h-10 rounded-xl bg-brand-500 flex items-center justify-center shadow-md shadow-brand-500/20 flex-shrink-0">
             <Brain className="h-6 w-6 text-white" />
@@ -73,6 +85,13 @@ export const Sidebar: React.FC = () => {
             </span>
           )}
         </Link>
+        {/* Close button for mobile */}
+        <button
+          onClick={() => setMobileSidebarOpen(false)}
+          className="lg:hidden p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-dark-800 text-slate-500 dark:text-dark-300"
+        >
+          <X className="h-5 w-5" />
+        </button>
       </div>
 
       {/* Links de Navegação */}
@@ -216,7 +235,7 @@ export const Sidebar: React.FC = () => {
       {/* Toggle Collapse Button */}
       <button
         onClick={toggleSidebar}
-        className="absolute bottom-20 right-[-14px] w-7 h-7 bg-white dark:bg-dark-800 border border-slate-200 dark:border-dark-700 rounded-full flex items-center justify-center hover:bg-slate-100 dark:hover:bg-dark-700 cursor-pointer shadow-sm text-slate-600 dark:text-dark-200"
+        className="absolute bottom-20 right-[-14px] w-7 h-7 bg-white dark:bg-dark-800 border border-slate-200 dark:border-dark-700 rounded-full flex items-center justify-center hover:bg-slate-100 dark:hover:bg-dark-700 cursor-pointer shadow-sm text-slate-600 dark:text-dark-200 hidden lg:flex"
       >
         {sidebarCollapsed ? (
           <ChevronLeft className="h-4 w-4 rotate-180" />
@@ -225,6 +244,33 @@ export const Sidebar: React.FC = () => {
         )}
       </button>
     </aside>
+  );
+
+  return (
+    <>
+      {/* Desktop sidebar - always visible */}
+      <div className="hidden lg:flex relative">{sidebarContent}</div>
+
+      {/* Mobile sidebar - overlay drawer */}
+      <div className="lg:hidden">
+        {/* Backdrop */}
+        {mobileSidebarOpen && (
+          <div
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-30 transition-all duration-300"
+            onClick={() => setMobileSidebarOpen(false)}
+          />
+        )}
+
+        {/* Drawer */}
+        <div
+          className={`fixed top-0 left-0 h-full z-40 transition-transform duration-300 ease-in-out ${
+            mobileSidebarOpen ? "translate-x-0" : "-translate-x-full"
+          }`}
+        >
+          {sidebarContent}
+        </div>
+      </div>
+    </>
   );
 };
 

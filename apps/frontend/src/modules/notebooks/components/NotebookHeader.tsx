@@ -22,23 +22,23 @@ export const NotebookHeader: React.FC<NotebookHeaderProps> = ({
   const navigate = useNavigate();
 
   return (
-    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 p-6 rounded-3xl relative overflow-hidden" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)' }}>
+    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 md:gap-6 p-4 sm:p-6 rounded-3xl relative overflow-hidden" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)' }}>
       {/* Faixa lateral colorida */}
       <div
-        className="absolute left-0 top-0 bottom-0 w-3.5"
+        className="absolute left-0 top-0 bottom-0 w-2.5 sm:w-3.5"
         style={{ backgroundColor: notebook.color }}
       />
 
-      <div className="flex flex-col gap-2 pl-4">
-        <h1 className="text-3xl font-heading font-extrabold m-0" style={{ color: 'var(--text-primary)' }}>
+      <div className="flex flex-col gap-2 pl-3 sm:pl-4 min-w-0">
+        <h1 className="text-xl sm:text-3xl font-heading font-extrabold m-0 truncate" style={{ color: 'var(--text-primary)' }}>
           {notebook.title}
         </h1>
-        <p className="text-sm max-w-xl" style={{ color: 'var(--text-secondary)' }}>
+        <p className="text-xs sm:text-sm max-w-xl line-clamp-2" style={{ color: 'var(--text-secondary)' }}>
           {notebook.description || 'Nenhuma descrição adicionada.'}
         </p>
       </div>
 
-      <div className="flex items-center gap-2 self-end md:self-auto flex-wrap justify-end">
+      <div className="flex items-center gap-1.5 sm:gap-2 self-stretch md:self-auto flex-wrap justify-end w-full md:w-auto">
         {/* Bookmark button */}
         <button
           type="button"

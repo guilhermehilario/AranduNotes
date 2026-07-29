@@ -31,11 +31,11 @@ export const AppLayout: React.FC = () => {
       <Sidebar />
 
       {/* Main Content Area */}
-      <div className="flex-grow flex flex-col h-full overflow-hidden">
+      <div className="flex-grow flex flex-col h-full overflow-hidden min-w-0">
         <AppHeader />
 
-        {/* Content Outlet */}
-        <main className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden relative p-6 md:p-8">
+        {/* Content Outlet - reduced padding on mobile */}
+        <main className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden relative p-4 sm:p-6 lg:p-8">
           <Outlet />
         </main>
       </div>

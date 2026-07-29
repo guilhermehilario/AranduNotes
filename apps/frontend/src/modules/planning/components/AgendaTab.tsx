@@ -139,14 +139,14 @@ export const AgendaTab: React.FC = () => {
             autoFocus
             onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
           />
-          <div className="flex items-center gap-3">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
             <div className="flex items-center gap-2 flex-1">
-              <CalendarIcon className="h-4 w-4" style={{ color: 'var(--text-secondary)' }} />
+              <CalendarIcon className="h-4 w-4 flex-shrink-0" style={{ color: 'var(--text-secondary)' }} />
               <input
                 type="date"
                 value={newDate}
                 onChange={(e) => setNewDate(e.target.value)}
-                className="flex-1 px-3 py-2 rounded-lg text-sm focus:outline-none"
+                className="flex-1 px-3 py-2 rounded-lg text-sm focus:outline-none min-w-0"
                 style={{
                   background: 'var(--bg-surface-hover)',
                   border: '1px solid var(--border-color)',
@@ -155,12 +155,12 @@ export const AgendaTab: React.FC = () => {
               />
             </div>
             <div className="flex items-center gap-2 flex-1">
-              <Clock className="h-4 w-4" style={{ color: 'var(--text-secondary)' }} />
+              <Clock className="h-4 w-4 flex-shrink-0" style={{ color: 'var(--text-secondary)' }} />
               <input
                 type="time"
                 value={newTime}
                 onChange={(e) => setNewTime(e.target.value)}
-                className="flex-1 px-3 py-2 rounded-lg text-sm focus:outline-none"
+                className="flex-1 px-3 py-2 rounded-lg text-sm focus:outline-none min-w-0"
                 style={{
                   background: 'var(--bg-surface-hover)',
                   border: '1px solid var(--border-color)',

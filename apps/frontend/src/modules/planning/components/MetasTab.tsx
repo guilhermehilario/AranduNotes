@@ -77,14 +77,14 @@ export const MetasTab: React.FC = () => {
   return (
     <div className="flex flex-col gap-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-slate-500 dark:text-dark-350">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <p className="text-xs sm:text-sm text-slate-500 dark:text-dark-350">
           Defina metas de estudo e acompanhe seu progresso
         </p>
         <button
           type="button"
           onClick={() => setShowForm(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-violet-500 hover:bg-violet-600 text-white rounded-xl text-sm font-semibold transition-all cursor-pointer shadow-md shadow-violet-500/10"
+          className="flex items-center gap-2 px-4 py-2 bg-violet-500 hover:bg-violet-600 text-white rounded-xl text-sm font-semibold transition-all cursor-pointer shadow-md shadow-violet-500/10 self-start sm:self-auto"
         >
           <Plus className="h-4 w-4" />
           Nova Meta

@@ -71,10 +71,10 @@ export const DashboardView: React.FC = () => {
 
       {/* Top Welcome Bar */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <p className="text-slate-500 dark:text-dark-350">
+        <p className="text-sm sm:text-base text-slate-500 dark:text-dark-350">
           Gerencie seus materiais universitários e crie resumos de forma organizada
         </p>
-        <div className="flex items-center gap-3 self-start md:self-auto">
+        <div className="flex items-center gap-2 sm:gap-3 self-start md:self-auto w-full sm:w-auto">
           <Button
             variant="outline"
             onClick={() => setIsProgressModalOpen(true)}

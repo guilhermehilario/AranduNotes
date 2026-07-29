@@ -4,12 +4,15 @@ import { persist } from 'zustand/middleware';
 interface UIState {
   theme: 'light' | 'dark';
   sidebarCollapsed: boolean;
+  mobileSidebarOpen: boolean;
   language: string;
   dateFormat: string;
   timeFormat: '24h' | '12h';
   toggleTheme: () => void;
   toggleSidebar: () => void;
   setSidebarCollapsed: (collapsed: boolean) => void;
+  setMobileSidebarOpen: (open: boolean) => void;
+  toggleMobileSidebar: () => void;
   setLanguage: (lang: string) => void;
   setDateFormat: (format: string) => void;
   setTimeFormat: (format: '24h' | '12h') => void;
@@ -20,6 +23,7 @@ export const useUIStore = create<UIState>()(
     (set) => ({
       theme: 'light',
       sidebarCollapsed: false,
+      mobileSidebarOpen: false,
       language: 'pt-BR',
       dateFormat: 'dd/MM/yyyy',
       timeFormat: '24h',
@@ -36,6 +40,9 @@ export const useUIStore = create<UIState>()(
       toggleSidebar: () =>
         set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed })),
       setSidebarCollapsed: (collapsed) => set({ sidebarCollapsed: collapsed }),
+      setMobileSidebarOpen: (open) => set({ mobileSidebarOpen: open }),
+      toggleMobileSidebar: () =>
+        set((state) => ({ mobileSidebarOpen: !state.mobileSidebarOpen })),
       setLanguage: (language) => set({ language }),
       setDateFormat: (dateFormat) => set({ dateFormat }),
       setTimeFormat: (timeFormat) => set({ timeFormat }),

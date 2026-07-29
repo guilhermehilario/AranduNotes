@@ -23,7 +23,7 @@ export const EditorContentArea: React.FC<EditorContentAreaProps> = ({
 }) => {
   return (
     <div
-      className={`flex-1 flex flex-col bg-white dark:bg-dark-900 border border-slate-100 dark:border-dark-800 rounded-3xl p-6 min-w-0 overflow-hidden ${editorExpanded ? "lg:w-full" : ""}`}
+      className={`flex-1 flex flex-col bg-white dark:bg-dark-900 border border-slate-100 dark:border-dark-800 rounded-3xl p-4 sm:p-6 min-w-0 overflow-hidden ${editorExpanded ? "lg:w-full" : ""}`}
     >
       <input
         type="text"

@@ -127,11 +127,11 @@ export const NotebookView: React.FC = () => {
 
       {/* Listagem de Folhas */}
       <div className="flex flex-col gap-4 mt-4">
-        <div className="flex justify-between items-center">
-          <h2 className="text-xl font-heading font-bold text-slate-800 dark:text-dark-100 m-0">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+          <h2 className="text-lg sm:text-xl font-heading font-bold text-slate-800 dark:text-dark-100 m-0">
             Folhas de Anotação ({leaves.length})
           </h2>
-          <div className="flex gap-2">
+          <div className="flex gap-2 self-end sm:self-auto">
             <Button
               variant="outline"
               size="sm"

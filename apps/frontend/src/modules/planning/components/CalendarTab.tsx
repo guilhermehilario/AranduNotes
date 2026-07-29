@@ -91,8 +91,8 @@ export const CalendarTab: React.FC = () => {
   return (
     <div className="flex flex-col lg:flex-row gap-6">
       {/* Calendar Grid */}
-      <div className="lg:w-2/3">
-        <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)' }}>
+      <div className="lg:w-2/3 overflow-x-auto">
+        <div className="min-w-[320px] rounded-2xl overflow-hidden" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)' }}>
           {/* Month Header */}
           <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid var(--border-color)' }}>
             <button
@@ -133,7 +133,7 @@ export const CalendarTab: React.FC = () => {
           <div className="grid grid-cols-7" style={{ borderTop: '1px solid var(--border-color)' }}>
             {calendarDays.map((day, idx) => {
               if (day === null) {
-                return <div key={`empty-${idx}`} className="min-h-[80px] border-r" style={{ borderBottom: '1px solid var(--border-color)', borderRight: '1px solid var(--border-color)' }} />;
+                return <div key={`empty-${idx}`} className="min-h-[60px] sm:min-h-[80px]" style={{ borderBottom: '1px solid var(--border-color)', borderRight: '1px solid var(--border-color)' }} />;
               }
 
               const dateStr = `${year}-${pad(month + 1)}-${pad(day)}`;
@@ -146,7 +146,7 @@ export const CalendarTab: React.FC = () => {
                   key={dateStr}
                   type="button"
                   onClick={() => setSelectedDate(dateStr)}
-                  className="min-h-[80px] p-1.5 text-left transition-all cursor-pointer"
+                  className="min-h-[60px] sm:min-h-[80px] p-1 sm:p-1.5 text-left transition-all cursor-pointer"
                   style={{
                     borderBottom: '1px solid var(--border-color)',
                     borderRight: '1px solid var(--border-color)',
