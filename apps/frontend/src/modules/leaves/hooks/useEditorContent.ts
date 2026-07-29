@@ -133,6 +133,21 @@ export function useEditorContent({
         style:
           "overflow-wrap: break-word; word-break: break-word; overflow-wrap: anywhere; white-space: pre-wrap; width: 100%; max-width: 100%; box-sizing: border-box;",
       },
+      handleClick: (view, pos, event) => {
+        // Ctrl+Click ou Cmd+Click abre o link em nova aba
+        if (!(event.ctrlKey || event.metaKey)) return false;
+
+        const { state } = view;
+        const $pos = state.doc.resolve(pos);
+        const linkMark = $pos.marks().find((m) => m.type.name === "link");
+
+        if (linkMark?.attrs.href) {
+          window.open(linkMark.attrs.href, "_blank", "noopener,noreferrer");
+          return true; // Consumiu o clique, impede ação padrão do editor
+        }
+
+        return false;
+      },
     },
   });
 
