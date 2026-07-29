@@ -7,14 +7,14 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { EditHistoryService } from '../trash/edit-history.service';
 import { buildTree } from '../prisma/utils/build-tree.util';
-import { AiMockService } from './utils/ai-mock.service';
+import { AiLeavesService } from './ai-leaves.service';
 
 @Injectable()
 export class LeavesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly editHistory: EditHistoryService,
-    private readonly aiMock: AiMockService,
+    private readonly aiLeaves: AiLeavesService,
   ) {}
 
   private async verifyLeafOwnership(leafId: string, userId: string) {
@@ -203,65 +203,11 @@ export class LeavesService {
   }
 
   async generateSummary(leafId: string, userId: string) {
-    const { leaf, error } = await this.verifyLeafOwnership(leafId, userId);
-    if (error) {
-      if (error === 'Acesso negado') throw new ForbiddenException(error);
-      throw new NotFoundException(error);
-    }
-
-    // ✨ Delega a geração do resumo para o AiMockService
-    const summaryText = this.aiMock.generateSummary(
-      leaf!.title,
-      leaf!.rawText || '',
-    );
-
-    const updated = await this.prisma.withConnection(() =>
-      this.prisma.leaf.update({
-        where: { id: leafId },
-        data: { summary: summaryText },
-      }),
-    );
-
-    await this.editHistory.record(userId, {
-      leafId,
-      notebookId: leaf!.notebookId,
-      action: 'updated',
-      fieldName: 'summary',
-      newValue: summaryText,
-    });
-
-    return { summary: updated.summary! };
+    return this.aiLeaves.generateSummary(leafId, userId);
   }
 
   async generateFlashcards(leafId: string, userId: string) {
-    const { leaf, error } = await this.verifyLeafOwnership(leafId, userId);
-    if (error) {
-      if (error === 'Acesso negado') throw new ForbiddenException(error);
-      throw new NotFoundException(error);
-    }
-
-    // ✨ Delega a geração dos flashcards para o AiMockService
-    const mockCards = this.aiMock.generateFlashcardTemplates(
-      leaf!.id,
-      leaf!.notebookId,
-      leaf!.title,
-    );
-
-    for (const card of mockCards) {
-      await this.prisma.withConnection(() =>
-        this.prisma.flashcard.create({ data: card }),
-      );
-    }
-
-    await this.editHistory.record(userId, {
-      leafId,
-      notebookId: leaf!.notebookId,
-      action: 'created',
-      fieldName: 'flashcards',
-      newValue: `${mockCards.length} flashcards gerados por IA`,
-    });
-
-    return mockCards;
+    return this.aiLeaves.generateFlashcards(leafId, userId);
   }
 
   async findFlashcards(leafId: string, userId: string) {
