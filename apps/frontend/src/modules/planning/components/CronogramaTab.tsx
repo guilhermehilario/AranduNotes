@@ -71,7 +71,7 @@ export const CronogramaTab: React.FC = () => {
   const completedEvents = sortedEvents.filter((e) => e.status === 'completed');
 
   const formatDate = (dateStr: string) => {
-    const d = new Date(dateStr + 'T12:00:00');
+    const d = new Date(dateStr);
     return d.toLocaleDateString('pt-BR', {
       day: 'numeric',
       month: 'long',
