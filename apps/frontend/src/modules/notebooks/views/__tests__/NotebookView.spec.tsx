@@ -6,6 +6,9 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import type { ReactNode } from 'react';
 import { NotebookView } from '../NotebookView';
+import type { Notebook } from '../../types';
+import type { Flashcard } from '../../../study/types';
+import type { Leaf, CreateLeafInput } from '../../../leaves/types';
 
 // ── Mocks (paths relativos ao arquivo em src/modules/notebooks/views/__tests__/) ──
 
@@ -135,7 +138,7 @@ function setupMocks({
     notebook,
     isLoading: false,
     error: null,
-    updateNotebook: updateNotebook as any,
+    updateNotebook: updateNotebook as unknown as (data: Partial<Notebook>) => Promise<Notebook>,
     isUpdating: false,
   });
 
@@ -143,21 +146,21 @@ function setupMocks({
     leaves,
     isLoading: false,
     error: null,
-    createLeaf: vi.fn(),
+    createLeaf: vi.fn() as unknown as (data: CreateLeafInput) => Promise<Leaf>,
     isCreating: false,
-  } as any);
+  });
 
   vi.mocked(useNotebookFlashcards).mockReturnValue({
-    data: flashcards as any,
+    data: flashcards as Flashcard[],
     isLoading: false,
-  } as any);
+  } as unknown as ReturnType<typeof useNotebookFlashcards>);
 
   vi.mocked(useToggleBookmark).mockReturnValue({
     isBookmarked,
-    toggleBookmark,
-  } as any);
+    toggleBookmark: toggleBookmark as unknown as () => Promise<void>,
+  });
 
-  vi.mocked(useSoftDeleteNotebook).mockReturnValue(softDeleteMutation as any);
+  vi.mocked(useSoftDeleteNotebook).mockReturnValue(softDeleteMutation as unknown as { mutateAsync: (id: string) => Promise<void> });
 
   vi.mocked(useEditorStatusStore).mockReturnValue({
     show: vi.fn(),
