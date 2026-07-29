@@ -290,13 +290,17 @@ O deploy é feito em dois ambientes:
 
 ### API — Fly.io
 
-A API (NestJS) é deployada no **Fly.io** via `fly deploy`.
+A API (NestJS) é deployada no **Fly.io** via GitHub Actions com deploy automático
+a cada push na branch `main`.
 
 Configurações relevantes:
 - [`fly.toml`](./fly.toml) — configuração do Fly.io
 - [`.github/workflows/fly-deploy.yml`](./.github/workflows/fly-deploy.yml) — CI/CD automático
 - Dockerfile multi-stage para build otimizado
 - Litestream para backup do banco SQLite
+
+👉 **[Guia completo de CI/CD →](./docs/CI_CD.md)** — pipeline, Docker, entrypoint,
+  Litestream, secrets e troubleshooting
 
 ### Frontend — Render.com
 
