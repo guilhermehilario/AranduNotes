@@ -163,7 +163,7 @@ export class FlashcardsService {
 
     const sm2Result = this.computeSM2(card, score);
 
-    return this.prisma.withConnection(() =>
+    const updatedCard = await this.prisma.withConnection(() =>
       this.prisma.flashcard.update({
         where: { id: cardId },
         data: {
@@ -174,5 +174,24 @@ export class FlashcardsService {
         },
       }),
     );
+
+    // 🔍 Log do review para histórico
+    await this.prisma.withConnection(() =>
+      this.prisma.reviewLog.create({
+        data: {
+          flashcardId: cardId,
+          notebookId: card.notebookId,
+          userId,
+          score,
+          easeFactor: sm2Result.easeFactor,
+          interval: sm2Result.interval,
+        },
+      }),
+    ).catch((err) => {
+      // Falha no log não deve quebrar a experiência do usuário
+      console.error('Erro ao registrar log de review:', err);
+    });
+
+    return updatedCard;
   }
 }

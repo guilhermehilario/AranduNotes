@@ -54,4 +54,11 @@ export class StudyController {
   getStats(@CurrentUser('id') userId: string) {
     return this.studyService.getStats(userId);
   }
+
+  // ── History ──
+
+  @Get('study/history')
+  getHistory(@CurrentUser('id') userId: string) {
+    return this.studyService.getReviewHistory(userId);
+  }
 }

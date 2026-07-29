@@ -26,6 +26,7 @@ model User {
 
   notebooks        Notebook[]
   studySessions    StudySession[]
+  reviewLogs       ReviewLog[]
   tags             Tag[]
   bookmarks        Bookmark[]
   editHistory      EditHistory[]
@@ -51,6 +52,7 @@ model Notebook {
   user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   leaves        Leaf[]
   flashcards    Flashcard[]
+  reviewLogs    ReviewLog[]
   studySessions StudySession[]
   bookmarks     Bookmark[]
   editHistory   EditHistory[]
@@ -204,8 +206,9 @@ model Flashcard {
   updatedAt      DateTime  @updatedAt
   deletedAt      DateTime? // Soft-delete: nulo = ativo, preenchido = na lixeira
 
-  leaf     Leaf     @relation(fields: [leafId], references: [id], onDelete: Cascade)
-  notebook Notebook @relation(fields: [notebookId], references: [id], onDelete: Cascade)
+  leaf       Leaf        @relation(fields: [leafId], references: [id], onDelete: Cascade)
+  notebook   Notebook    @relation(fields: [notebookId], references: [id], onDelete: Cascade)
+  reviewLogs ReviewLog[]
 }
 
 /// Tarefas da lista de afazeres (todo-list)
@@ -263,6 +266,25 @@ model Todo {
   updatedAt DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+/// Histórico de revisões de flashcards (cada review vira um registro)
+model ReviewLog {
+  id         String   @id @default(uuid())
+  flashcardId String
+  notebookId String
+  userId     String
+  score      Int
+  easeFactor Float    @default(2.5)
+  interval   Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  flashcard Flashcard @relation(fields: [flashcardId], references: [id], onDelete: Cascade)
+  notebook  Notebook  @relation(fields: [notebookId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([notebookId, createdAt])
 }
 
 /// Sessões de estudo persistentes (progresso do usuário)

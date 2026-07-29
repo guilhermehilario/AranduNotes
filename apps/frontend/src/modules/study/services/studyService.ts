@@ -69,7 +69,34 @@ export const studyService = {
     const response = await api.get<StudyStats>('/study/stats');
     return response.data;
   },
+
+  // ── Histórico de Revisões ──
+
+  async getReviewHistory(): Promise<ReviewHistoryEntry[]> {
+    const response = await api.get<ReviewHistoryEntry[]>('/study/history');
+    return response.data;
+  },
 };
+
+// ── Tipos para histórico de revisões ──
+export interface ReviewHistoryEntry {
+  date: string;
+  totalReviews: number;
+  avgScore: number;
+  notebooks: Array<{
+    title: string;
+    color: string;
+    count: number;
+  }>;
+  reviews: Array<{
+    id: string;
+    cardFront: string;
+    score: number;
+    notebookTitle: string;
+    notebookColor: string;
+    time: string;
+  }>;
+}
 
 // ── Tipos para estatísticas de estudo ──
 export interface StudyStats {

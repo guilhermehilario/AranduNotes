@@ -146,6 +146,96 @@ export class StudyService {
     }
   }
 
+  // ── Histórico de Revisões ──
+
+  async getReviewHistory(userId: string) {
+    const days = 30; // Últimos 30 dias
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
+    startDate.setHours(0, 0, 0, 0);
+
+    const logs = await this.prisma.withConnection(() =>
+      this.prisma.reviewLog.findMany({
+        where: {
+          userId,
+          createdAt: { gte: startDate },
+        },
+        include: {
+          notebook: {
+            select: { id: true, title: true, color: true },
+          },
+          flashcard: {
+            select: { front: true },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+      }),
+    );
+
+    // Agrupa por dia
+    const byDate: Record<string, {
+      date: string;
+      totalReviews: number;
+      avgScore: number;
+      notebooks: Record<string, { title: string; color: string; count: number }>;
+      reviews: Array<{
+        id: string;
+        cardFront: string;
+        score: number;
+        notebookTitle: string;
+        notebookColor: string;
+        time: string;
+      }>;
+    }> = {};
+
+    for (const log of logs) {
+      const dateKey = log.createdAt.toISOString().split('T')[0];
+      if (!byDate[dateKey]) {
+        byDate[dateKey] = {
+          date: dateKey,
+          totalReviews: 0,
+          avgScore: 0,
+          notebooks: {},
+          reviews: [],
+        };
+      }
+
+      const entry = byDate[dateKey];
+      entry.totalReviews++;
+      entry.avgScore += log.score;
+
+      const nbId = log.notebook.id;
+      if (!entry.notebooks[nbId]) {
+        entry.notebooks[nbId] = {
+          title: log.notebook.title,
+          color: log.notebook.color,
+          count: 0,
+        };
+      }
+      entry.notebooks[nbId].count++;
+
+      entry.reviews.push({
+        id: log.id,
+        cardFront: log.flashcard.front.substring(0, 80),
+        score: log.score,
+        notebookTitle: log.notebook.title,
+        notebookColor: log.notebook.color,
+        time: log.createdAt.toISOString(),
+      });
+    }
+
+    // Calcula média e ordena
+    const result = Object.values(byDate)
+      .map((entry) => ({
+        ...entry,
+        avgScore: Math.round((entry.avgScore / entry.totalReviews) * 10) / 10,
+        notebooks: Object.values(entry.notebooks),
+      }))
+      .sort((a, b) => b.date.localeCompare(a.date));
+
+    return result;
+  }
+
   // ── Stats (cálculo robusto e confiável) ──
 
   async getStats(userId: string): Promise<StudyStats> {
