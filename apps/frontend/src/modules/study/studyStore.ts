@@ -56,6 +56,8 @@ interface StudySessionActions {
     completedCardIds: string[];
     scores: Record<string, number>;
   }) => void;
+  /** Substitui um flashcard na sessão após revisão (atualiza repetitions, etc.) */
+  updateFlashcardInSession: (notebookId: string, cardId: string, updatedCard: Flashcard) => void;
   /** Reseta APENAS a sessão do notebook informado */
   resetSession: (notebookId: string) => void;
 }
@@ -167,6 +169,23 @@ export const useStudyStore = create<StudySessionState & StudySessionActions>()(
           },
         },
       })),
+
+    updateFlashcardInSession: (notebookId, cardId, updatedCard) =>
+      set((state) => {
+        const session = state.sessions[notebookId];
+        if (!session) return state;
+        return {
+          sessions: {
+            ...state.sessions,
+            [notebookId]: {
+              ...session,
+              flashcards: session.flashcards.map((card) =>
+                card.id === cardId ? updatedCard : card,
+              ),
+            },
+          },
+        };
+      }),
 
     resetSession: (notebookId) =>
       set((state) => ({

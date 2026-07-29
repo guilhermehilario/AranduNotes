@@ -131,6 +131,19 @@ export function useSubmitCardScore(leafId?: string, notebookId?: string) {
             old?.map((card) => (card.id === cardId ? updatedCard : card)) ??
             old,
         );
+        // 🔄 Atualiza também o cache do FlashcardsStudyView (all-flashcards)
+        queryClient.setQueryData<Flashcard[]>(
+          ["all-flashcards", notebookId],
+          (old) =>
+            old?.map((card) => (card.id === cardId ? updatedCard : card)) ??
+            old,
+        );
+        queryClient.setQueryData<Flashcard[]>(
+          ["all-flashcards", "all"],
+          (old) =>
+            old?.map((card) => (card.id === cardId ? updatedCard : card)) ??
+            old,
+        );
       }
 
       // ✅ Invalida as estatísticas para refletir o progresso no Dashboard

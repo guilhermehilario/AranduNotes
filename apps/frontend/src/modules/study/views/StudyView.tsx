@@ -42,6 +42,7 @@ export const StudyView: React.FC = () => {
   const setSessionActive = useStudyStore((s) => s.setSessionActive);
   const setSessionFlashcards = useStudyStore((s) => s.setSessionFlashcards);
   const markCardCompleted = useStudyStore((s) => s.markCardCompleted);
+  const updateFlashcardInSession = useStudyStore((s) => s.updateFlashcardInSession);
   const resetSession = useStudyStore((s) => s.resetSession);
 
   const currentIndex = sessionSlot?.currentIndex ?? 0;
@@ -116,7 +117,10 @@ export const StudyView: React.FC = () => {
       }
 
       try {
-        await submitScore({ cardId: cardIdToSubmit, score });
+        const updatedCard = await submitScore({ cardId: cardIdToSubmit, score });
+        if (updatedCard) {
+          updateFlashcardInSession(nbId, cardIdToSubmit, updatedCard);
+        }
         startTransition(() => {
           setSaveStatus("saved");
           if (saveStatusTimerRef.current !== null) {
