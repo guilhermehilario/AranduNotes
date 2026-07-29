@@ -14,7 +14,8 @@ div.tiptap-content {
   max-width: 100% !important;
   min-width: 0 !important;
   box-sizing: border-box !important;
-  overflow: hidden !important;
+  overflow-x: hidden !important;
+  overflow-y: visible;
 }
 
 /* Base ProseMirror — !important como última barreira contra conflitos de CSS */
