@@ -1,7 +1,6 @@
 import { NestFactory } from "@nestjs/core";
 import cookieParser from "cookie-parser";
 import helmet from "helmet";
-import { randomBytes } from "crypto";
 import { AppModule } from "./app.module";
 
 async function bootstrap() {
@@ -17,12 +16,8 @@ async function bootstrap() {
 
   if (!process.env.JWT_SECRET) {
     if (nodeEnv === "production") {
-      const generated = randomBytes(32).toString("hex");
-      process.env.JWT_SECRET = generated;
-      warnings.push(
-        "JWT_SECRET não definido. Um valor aleatório foi gerado e atribuído " +
-          "para esta execução. Para evitar que tokens sejam invalidados em " +
-          "restarts, defina JWT_SECRET como secret no Fly.io: " +
+      errors.push(
+        "JWT_SECRET é obrigatório em produção. Defina como secret no Fly.io: " +
           "fly secrets set JWT_SECRET=<valor>",
       );
     } else {
@@ -36,12 +31,8 @@ async function bootstrap() {
 
   if (!process.env.REFRESH_SECRET) {
     if (nodeEnv === "production") {
-      const generated = randomBytes(32).toString("hex");
-      process.env.REFRESH_SECRET = generated;
-      warnings.push(
-        "REFRESH_SECRET não definido. Um valor aleatório foi gerado e atribuído " +
-          "para esta execução. Para evitar que tokens sejam invalidados em " +
-          "restarts, defina REFRESH_SECRET como secret no Fly.io: " +
+      errors.push(
+        "REFRESH_SECRET é obrigatório em produção. Defina como secret no Fly.io: " +
           "fly secrets set REFRESH_SECRET=<valor>",
       );
     } else {
@@ -54,9 +45,8 @@ async function bootstrap() {
   }
 
   if (nodeEnv === "production" && !process.env.FRONTEND_URL) {
-    warnings.push(
-      "FRONTEND_URL não definida. Usando CORS permissivo (qualquer origem). " +
-        "Para segurança, defina FRONTEND_URL como secret no Fly.io: " +
+    errors.push(
+      "FRONTEND_URL é obrigatória em produção. Defina como secret no Fly.io: " +
         "fly secrets set FRONTEND_URL=https://seuapp.fly.dev",
     );
   }
@@ -92,8 +82,19 @@ async function bootstrap() {
   // ── Security Headers (Helmet) ──
   app.use(
     helmet({
-      contentSecurityPolicy:
-        process.env.NODE_ENV === "production" ? undefined : false,
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          scriptSrc: ["'self'"],
+          styleSrc: ["'self'", "'unsafe-inline'"],
+          imgSrc: ["'self'", "data:", "https://api.dicebear.com"],
+          connectSrc: ["'self'"],
+          fontSrc: ["'self'"],
+          objectSrc: ["'none'"],
+          frameAncestors: ["'none'"],
+          upgradeInsecureRequests: [],
+        },
+      },
       crossOriginEmbedderPolicy: false,
     }),
   );
@@ -107,10 +108,9 @@ async function bootstrap() {
     .map((s) => s.trim())
     .filter(Boolean);
 
-  // Se FRONTEND_URL não foi configurada (deploy inicial), permite todas as origens
-  // para não bloquear o acesso. Assim que FRONTEND_URL for definida, a lista
-  // restritiva entra em vigor.
-  const isCorsPermissive = allowedOrigins.length === 0;
+  // Em produção, FRONTEND_URL é obrigatória (validação acima garante que está definida).
+  // Fallback permissivo apenas em desenvolvimento para facilitar testes locais.
+  const isCorsPermissive = allowedOrigins.length === 0 && nodeEnv !== "production";
 
   app.enableCors({
     origin: isCorsPermissive
