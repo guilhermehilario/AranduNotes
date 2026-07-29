@@ -46,7 +46,7 @@ export const PlanningWeeklySummary: React.FC = () => {
   if (!hasData) return null;
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4 mb-6">
       {/* Section Header */}
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-heading font-extrabold text-slate-800 dark:text-dark-50 flex items-center gap-2">
