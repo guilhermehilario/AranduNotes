@@ -39,7 +39,7 @@ export class EventsService {
           userId,
           title: dto.title,
           description: dto.description ?? null,
-          date: new Date(dto.date),
+          date: new Date(dto.date + 'T12:00:00'),
           time: dto.time ?? null,
           type: dto.type ?? 'agenda',
           status: dto.status ?? 'pending',
@@ -62,7 +62,7 @@ export class EventsService {
         data: {
           ...(dto.title !== undefined && { title: dto.title }),
           ...(dto.description !== undefined && { description: dto.description }),
-          ...(dto.date !== undefined && { date: new Date(dto.date) }),
+          ...(dto.date !== undefined && { date: new Date(dto.date + 'T12:00:00') }),
           ...(dto.time !== undefined && { time: dto.time }),
           ...(dto.type !== undefined && { type: dto.type }),
           ...(dto.status !== undefined && { status: dto.status }),

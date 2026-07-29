@@ -76,9 +76,22 @@ export const AgendaTab: React.FC = () => {
 
   if (isLoading) return <LoadingScreen />;
 
-  const today = new Date().toISOString().split('T')[0];
-  const todayEvents = events.filter((e) => e.date.startsWith(today));
-  const upcomingEvents = events.filter((e) => e.date > today);
+  // Usa comparação com Date objects em vez de string para evitar
+  // problemas com timezone (a API retorna ISO strings com hora UTC)
+  const now = new Date();
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+
+  const todayEvents = events.filter((e) => {
+    const d = new Date(e.date);
+    return d >= todayStart && d <= todayEnd;
+  });
+
+  const upcomingEvents = events.filter((e) => new Date(e.date) > todayEnd);
+
+  const pastPendingEvents = events.filter(
+    (e) => new Date(e.date) < todayStart && e.status === 'pending',
+  );
 
   return (
     <div className="flex flex-col gap-6">
@@ -95,7 +108,7 @@ export const AgendaTab: React.FC = () => {
           }}
           onMouseEnter={(e) => {
             e.currentTarget.style.borderColor = '#A78BFA';
-            e.currentTarget.style.color = '#A78BFA';
+            e.currentTarget.style.borderColor = '#A78BFA';
           }}
           onMouseLeave={(e) => {
             e.currentTarget.style.borderColor = 'var(--border-color)';
@@ -229,22 +242,20 @@ export const AgendaTab: React.FC = () => {
       )}
 
       {/* Past pending events */}
-      {events.filter((e) => e.date < today && e.status === 'pending').length > 0 && (
+      {pastPendingEvents.length > 0 && (
         <div className="flex flex-col gap-2">
           <h3 className="text-xs font-bold uppercase tracking-wide px-1" style={{ color: 'var(--text-secondary)' }}>
             Eventos Passados
           </h3>
           <div className="flex flex-col gap-1.5">
-            {events
-              .filter((e) => e.date < today && e.status === 'pending')
-              .map((event) => (
-                <EventItem
-                  key={event.id}
-                  event={event}
-                  onToggleStatus={() => handleToggleStatus(event.id, event.status)}
-                  onDelete={() => setDeleteConfirmId(event.id)}
-                />
-              ))}
+            {pastPendingEvents.map((event) => (
+              <EventItem
+                key={event.id}
+                event={event}
+                onToggleStatus={() => handleToggleStatus(event.id, event.status)}
+                onDelete={() => setDeleteConfirmId(event.id)}
+              />
+            ))}
           </div>
         </div>
       )}
