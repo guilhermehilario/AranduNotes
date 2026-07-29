@@ -63,7 +63,7 @@ export const ScoreButtons: React.FC<ScoreButtonsProps> = ({ onScoreSelect }) => 
       <p className="text-xs font-bold text-center text-slate-400 dark:text-dark-400 uppercase tracking-wide">
         Como foi sua facilidade para lembrar do conteúdo?
       </p>
-      <div className="grid grid-cols-2 sm:grid-cols-6 gap-2">
+      <div className="grid grid-cols-2 max-[360px]:grid-cols-3 sm:grid-cols-6 gap-2">
         {SCORE_BUTTONS.map((btn) => (
           <button
             key={btn.score}
@@ -72,8 +72,8 @@ export const ScoreButtons: React.FC<ScoreButtonsProps> = ({ onScoreSelect }) => 
             className={`flex flex-col items-center justify-center py-2.5 px-2 rounded-xl border font-bold text-center text-sm transition-all duration-200 hover:scale-[1.04] cursor-pointer ${btn.color}`}
             title={btn.title}
           >
-            <span>{btn.label}</span>
-            <span className="text-[10px] font-medium opacity-80 truncate max-w-full">
+            <span className="text-sm">{btn.label}</span>
+            <span className="text-[10px] font-medium opacity-80 truncate max-w-full max-[360px]:hidden">
               {btn.title}
             </span>
           </button>

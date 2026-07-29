@@ -156,18 +156,19 @@ export const FlashcardsStudyView: React.FC = () => {
   return (
     <PageContainer>
       {/* Top Navigation */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2">
         <Link
           to="/studies"
-          className="flex items-center gap-2 text-sm font-semibold text-slate-500 dark:text-dark-300 hover:text-brand-500 transition-colors"
+          className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-semibold text-slate-500 dark:text-dark-300 hover:text-brand-500 transition-colors shrink min-w-0"
         >
-          <ArrowLeft className="h-4 w-4" /> Voltar aos Estudos
+          <ArrowLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
+          <span className="truncate">Voltar</span>
         </Link>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
           {selectedNotebook && (
             <span
-              className="text-xs font-medium px-2 py-0.5 rounded-md"
+              className="text-[10px] sm:text-xs font-medium px-1.5 sm:px-2 py-0.5 rounded-md truncate max-w-[80px] sm:max-w-[120px]"
               style={{
                 backgroundColor: `${selectedNotebook.color}15`,
                 color: selectedNotebook.color,
@@ -176,8 +177,8 @@ export const FlashcardsStudyView: React.FC = () => {
               {selectedNotebook.title}
             </span>
           )}
-          <span className="text-sm font-bold text-slate-450 dark:text-dark-400">
-            Card {currentIndex + 1} de {cards.length}
+          <span className="text-xs sm:text-sm font-bold text-slate-450 dark:text-dark-400 whitespace-nowrap">
+            {currentIndex + 1}/{cards.length}
           </span>
         </div>
       </div>
@@ -191,34 +192,34 @@ export const FlashcardsStudyView: React.FC = () => {
       </div>
 
       {/* Interactive Card */}
-      <Card className="min-h-[300px] flex flex-col items-center justify-center p-8 text-center bg-white dark:bg-dark-900 border border-slate-100 dark:border-dark-800 shadow-md relative overflow-hidden">
-        <div className="absolute right-4 bottom-4 text-slate-100 dark:text-dark-950 pointer-events-none">
-          <Brain className="h-28 w-28 opacity-10" />
+      <Card className="min-h-[250px] sm:min-h-[300px] flex flex-col items-center justify-center p-4 sm:p-6 lg:p-8 text-center bg-white dark:bg-dark-900 border border-slate-100 dark:border-dark-800 shadow-md relative overflow-hidden">
+        <div className="absolute right-2 bottom-2 sm:right-4 sm:bottom-4 text-slate-100 dark:text-dark-950 pointer-events-none">
+          <Brain className="h-16 w-16 sm:h-28 sm:w-28 opacity-10" />
         </div>
 
-        <div className="w-full max-w-lg flex flex-col gap-6 items-center">
+        <div className="w-full max-w-lg flex flex-col gap-4 sm:gap-6 items-center">
           {!showAnswer ? (
             <>
-              <div className="flex items-center gap-1.5 text-brand-500 text-xs font-bold tracking-wider uppercase">
-                <HelpCircle className="h-4 w-4" /> Pergunta de Revisão
+              <div className="flex items-center gap-1.5 text-brand-500 text-[10px] sm:text-xs font-bold tracking-wider uppercase">
+                <HelpCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> Pergunta de Revisão
               </div>
-              <p className="text-xl md:text-2xl font-heading font-semibold text-slate-800 dark:text-dark-50 leading-relaxed">
+              <p className="text-lg sm:text-xl md:text-2xl font-heading font-semibold text-slate-800 dark:text-dark-50 leading-relaxed">
                 {currentCard?.front}
               </p>
               <Button
                 onClick={() => setShowAnswer(true)}
                 leftIcon={<Eye className="h-4.5 w-4.5" />}
-                className="mt-6 shadow-md"
+                className="mt-4 sm:mt-6 shadow-md w-full sm:w-auto"
               >
                 Revelar Resposta
               </Button>
             </>
           ) : (
             <>
-              <div className="flex items-center gap-1.5 text-emerald-500 text-xs font-bold tracking-wider uppercase animate-fade-in">
-                <CheckCircle className="h-4 w-4" /> Resposta Correta
+              <div className="flex items-center gap-1.5 text-emerald-500 text-[10px] sm:text-xs font-bold tracking-wider uppercase animate-fade-in">
+                <CheckCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> Resposta Correta
               </div>
-              <p className="text-lg md:text-xl text-slate-700 dark:text-dark-100 leading-relaxed animate-fade-in">
+              <p className="text-base sm:text-lg md:text-xl text-slate-700 dark:text-dark-100 leading-relaxed animate-fade-in">
                 {currentCard?.back}
               </p>
             </>
