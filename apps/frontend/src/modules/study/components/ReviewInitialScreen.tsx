@@ -1,8 +1,8 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, BookOpen, Sparkles } from "lucide-react";
-import { Card } from "../../../../components/ui/Card";
-import { Button } from "../../../../components/ui/Button";
+import { Card } from "../../../components/ui/Card";
+import { Button } from "../../../components/ui/Button";
 import type { StudyContent } from "../types";
 
 interface ReviewInitialScreenProps {

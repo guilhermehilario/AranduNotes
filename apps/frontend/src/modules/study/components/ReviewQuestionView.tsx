@@ -1,7 +1,7 @@
 import React from "react";
-import { Card } from "../../../../components/ui/Card";
-import { Button } from "../../../../components/ui/Button";
-import { QuestionOption } from "../../../../components/ui/QuestionOption";
+import { Card } from "../../../components/ui/Card";
+import { Button } from "../../../components/ui/Button";
+import { QuestionOption } from "../../../components/ui/QuestionOption";
 import { ReviewSessionHeader } from "./ReviewSessionHeader";
 import type { ReviewItem } from "./studyReviewTypes";
 

@@ -1,7 +1,7 @@
 import React from "react";
 import { HelpCircle, Eye, CheckCircle } from "lucide-react";
-import { Card } from "../../../../components/ui/Card";
-import { Button } from "../../../../components/ui/Button";
+import { Card } from "../../../components/ui/Card";
+import { Button } from "../../../components/ui/Button";
 import { ScoreButtons } from "./ScoreButtons";
 import { ReviewSessionHeader } from "./ReviewSessionHeader";
 import type { ReviewItem } from "./studyReviewTypes";
