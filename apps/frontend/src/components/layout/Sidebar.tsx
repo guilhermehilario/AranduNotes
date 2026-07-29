@@ -1,121 +1,45 @@
-import React, { useState, useRef, useEffect, useCallback } from "react";
-import { createPortal } from "react-dom";
-import { Link, useLocation } from "react-router-dom";
-import { useUIStore } from "../../store/uiStore";
+import React, { useState } from "react";
+import { useLocation } from "react-router-dom";
 import {
-  Brain,
   BookOpen,
-  BookmarkIcon,
-  Archive,
-  ListChecks,
-  Tags,
-  Trash2,
-  ChevronLeft,
-  ChevronDown,
-  ChevronRight,
-  Calendar,
-  CalendarDays,
-  Timeline,
-  Target,
-  Timer,
   GraduationCap,
-  X,
+  ChevronLeft,
 } from "lucide-react";
+import { useUIStore } from "../../store/uiStore";
 
-const DASHBOARD_PATH = "/dashboard";
+import { DASHBOARD_PATH, NAV_ITEMS, PLANNING_SUB_ITEMS, TRASH_ITEM } from "./sidebar/sidebar.constants";
+import { usePlanningFlyout } from "./sidebar/hooks/usePlanningFlyout";
+import { SidebarBrand } from "./sidebar/components/SidebarBrand";
+import { SidebarNavLink } from "./sidebar/components/SidebarNavLink";
+import { PlanningSection } from "./sidebar/components/PlanningSection";
+import { PlanningCollapsedButton } from "./sidebar/components/PlanningCollapsedButton";
+import { PlanningFlyout } from "./sidebar/components/PlanningFlyout";
 
-const NAV_ITEMS = [
-  { path: "/todos", label: "Tarefas", icon: ListChecks },
-  { path: "/tags", label: "Tags", icon: Tags },
-  { path: "/bookmarks", label: "Marcadores", icon: BookmarkIcon },
-  { path: "/archived", label: "Arquivados", icon: Archive },
-] as const;
-
-const PLANNING_SUB_ITEMS = [
-  { path: "/planning/agenda", label: "Agenda", icon: ListChecks },
-  { path: "/planning/calendar", label: "Calendário", icon: CalendarDays },
-  { path: "/planning/cronograma", label: "Cronograma", icon: Timeline },
-  { path: "/planning/metas", label: "Metas", icon: Target },
-  { path: "/planning/pomodoro", label: "Pomodoro", icon: Timer },
-] as const;
+const isPathActive = (path: string, currentPath: string) =>
+  currentPath.startsWith(path);
 
 export const Sidebar: React.FC = () => {
   const {
-    sidebarCollapsed,
+    sidebarCollapsed: rawCollapsed,
     toggleSidebar,
     mobileSidebarOpen,
     setMobileSidebarOpen,
   } = useUIStore();
   const location = useLocation();
 
+  // No mobile drawer, a sidebar sempre abre expandida
+  const sidebarCollapsed = rawCollapsed && !mobileSidebarOpen;
+
   const isTrashActive = location.pathname.startsWith("/trash");
   const isPlanningActive = location.pathname.startsWith("/planning");
   const [planningExpanded, setPlanningExpanded] = useState(isPlanningActive);
 
-  // Estado para o flyout do Planejamento no modo colapsado
-  const [planningFlyoutOpen, setPlanningFlyoutOpen] = useState(false);
-  const [flyoutHover, setFlyoutHover] = useState(false);
-  const planningBtnRef = useRef<HTMLButtonElement>(null);
-  const flyoutRef = useRef<HTMLDivElement>(null);
-  const [flyoutStyle, setFlyoutStyle] = useState<React.CSSProperties>({});
-  const hideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const showFlyout = planningFlyoutOpen || flyoutHover;
-
-  // Atualiza a posição do flyout baseado no botão
-  const updateFlyoutPosition = useCallback(() => {
-    if (planningBtnRef.current) {
-      const rect = planningBtnRef.current.getBoundingClientRect();
-      setFlyoutStyle({
-        top: rect.top + 140,
-        left: rect.right + 80,
-      });
-    }
-  }, []);
-
-  // Timeout para permitir que o mouse alcance o flyout antes de escondê-lo
-  const handlePlanningMouseLeave = useCallback(() => {
-    hideTimeoutRef.current = setTimeout(() => {
-      if (!planningFlyoutOpen) setFlyoutHover(false);
-    }, 180);
-  }, [planningFlyoutOpen]);
-
-  const handleFlyoutMouseEnter = useCallback(() => {
-    if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current);
-    setFlyoutHover(true);
-  }, []);
-
-  // Limpa timeout ao desmontar
-  useEffect(() => {
-    return () => {
-      if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current);
-    };
-  }, []);
-
-  // Fecha o flyout ao clicar fora
-  useEffect(() => {
-    if (!showFlyout) return;
-    const handleClickOutside = (e: MouseEvent) => {
-      if (
-        planningBtnRef.current &&
-        !planningBtnRef.current.contains(e.target as Node) &&
-        flyoutRef.current &&
-        !flyoutRef.current.contains(e.target as Node)
-      ) {
-        if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current);
-        setPlanningFlyoutOpen(false);
-        setFlyoutHover(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [showFlyout]);
+  // Flyout para o modo colapsado
+  const flyout = usePlanningFlyout();
 
   // Auto-expand planning when navigating to a sub-item
   React.useEffect(() => {
-    if (isPlanningActive) {
-      setPlanningExpanded(true);
-    }
+    if (isPlanningActive) setPlanningExpanded(true);
   }, [isPlanningActive]);
 
   // Close mobile sidebar on route change
@@ -123,233 +47,115 @@ export const Sidebar: React.FC = () => {
     setMobileSidebarOpen(false);
   }, [location.pathname, setMobileSidebarOpen]);
 
+  // Callback para fechar o flyout e o drawer mobile
+  const closeAll = () => {
+    flyout.setPlanningFlyoutOpen(false);
+    flyout.setFlyoutHover(false);
+    setMobileSidebarOpen(false);
+  };
+
   const sidebarContent = (
     <aside
       className={`bg-white dark:bg-dark-900 border-r border-slate-100 dark:border-dark-800/80 flex flex-col flex-shrink-0 transition-all duration-300 z-20 h-full ${
         sidebarCollapsed ? "w-20" : "w-64"
       }`}
     >
-      {/* Header da Sidebar */}
-      <div className="h-16 flex items-center justify-between px-3 border-b border-slate-50 dark:border-dark-800/60">
-        <Link
-          to="/dashboard"
-          className="flex items-center gap-3 overflow-hidden select-none"
-          onClick={() => setMobileSidebarOpen(false)}
-        >
-          <div className="w-10 h-10 rounded-xl bg-brand-500 flex items-center justify-center shadow-md shadow-brand-500/20 flex-shrink-0">
-            <Brain className="h-6 w-6 text-white" />
-          </div>
-          {!sidebarCollapsed && (
-            <span className="font-heading font-extrabold text-lg tracking-tight whitespace-nowrap">
-              Arandu
-            </span>
-          )}
-        </Link>
-        {/* Close button for mobile — hidden when collapsed so it doesn't overlap the icon */}
-        <button
-          onClick={() => setMobileSidebarOpen(false)}
-          className={`p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-dark-800 text-slate-500 dark:text-dark-300 ${
-            sidebarCollapsed ? "hidden" : "lg:hidden"
-          }`}
-        >
-          <X className="h-5 w-5" />
-        </button>
-      </div>
+      {/* Header — logotipo + botão fechar */}
+      <SidebarBrand
+        collapsed={sidebarCollapsed}
+        onClose={() => setMobileSidebarOpen(false)}
+      />
 
       {/* Links de Navegação */}
       <nav className="flex-grow py-6 px-3 flex flex-col gap-2 overflow-y-auto">
-        {/* Dashboard (sempre no topo) */}
-        <Link
+        {/* Dashboard */}
+        <SidebarNavLink
           to={DASHBOARD_PATH}
-          className={`flex items-center gap-3.5 px-3.5 py-3 rounded-xl font-medium transition-all duration-200 select-none ${
-            sidebarCollapsed ? "justify-center" : ""
-          } ${
-            location.pathname === "/dashboard" ||
+          icon={BookOpen}
+          label="Cadernos"
+          isActive={
+            location.pathname === DASHBOARD_PATH ||
             location.pathname.startsWith("/notebooks/")
-              ? "bg-brand-500 text-white shadow-md shadow-brand-500/10"
-              : "text-slate-650 hover:bg-slate-100 dark:text-dark-300 dark:hover:bg-dark-800/60"
-          }`}
-        >
-          <BookOpen className="h-5 w-5 flex-shrink-0" />
-          {!sidebarCollapsed && <span className="truncate">Cadernos</span>}
-        </Link>
+          }
+          collapsed={sidebarCollapsed}
+          onClick={closeAll}
+        />
 
-        {/* ── Planejamento (expansível) ── */}
+        {/* ── Planejamento ── */}
         {!sidebarCollapsed ? (
-          <div className="flex flex-col gap-0.5">
-            {/* Planning Header Button */}
-            <button
-              type="button"
-              onClick={() => setPlanningExpanded(!planningExpanded)}
-              className={`flex items-center gap-3.5 px-3.5 py-3 rounded-xl font-medium transition-all duration-200 select-none w-full text-left cursor-pointer ${
-                sidebarCollapsed ? "justify-center" : ""
-              } ${
-                isPlanningActive
-                  ? "bg-brand-500 text-white shadow-md shadow-brand-500/10"
-                  : "text-slate-650 hover:bg-slate-100 dark:text-dark-300 dark:hover:bg-dark-800/60"
-              }`}
-            >
-              <Calendar className="h-5 w-5 flex-shrink-0" />
-              <span className="flex-1 truncate">Planejamento</span>
-              {planningExpanded ? (
-                <ChevronDown className="h-4 w-4 flex-shrink-0 opacity-60" />
-              ) : (
-                <ChevronRight className="h-4 w-4 flex-shrink-0 opacity-60" />
-              )}
-            </button>
-
-            {/* Sub-items */}
-            {planningExpanded && (
-              <div className="flex flex-col gap-0.5 ml-2 pl-3.5 border-l-2 border-slate-100 dark:border-dark-800">
-                {PLANNING_SUB_ITEMS.map((item) => {
-                  const SubIcon = item.icon;
-                  const isSubActive = location.pathname === item.path;
-                  return (
-                    <Link
-                      key={item.path}
-                      to={item.path}
-                      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 select-none ${
-                        isSubActive
-                          ? "bg-brand-100 dark:bg-brand-900/20 text-brand-600 dark:text-brand-400"
-                          : "text-slate-500 hover:text-slate-700 hover:bg-slate-50 dark:text-dark-400 dark:hover:text-dark-200 dark:hover:bg-dark-800/40"
-                      }`}
-                    >
-                      <SubIcon className="h-5 w-5 flex-shrink-0" />
-                      <span className="truncate">{item.label}</span>
-                    </Link>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+          <PlanningSection
+            expanded={planningExpanded}
+            isActive={isPlanningActive}
+            onToggle={() => setPlanningExpanded(!planningExpanded)}
+          />
         ) : (
-          /* Collapsed: botão que abre flyout via portal */
-          <div>
-            <button
-              ref={planningBtnRef}
-              type="button"
+          <>
+            <PlanningCollapsedButton
+              isActive={isPlanningActive}
               onClick={() => {
-                updateFlyoutPosition();
-                setPlanningFlyoutOpen((prev) => !prev);
+                flyout.updateFlyoutPosition();
+                flyout.setPlanningFlyoutOpen((prev) => !prev);
               }}
               onMouseEnter={() => {
-                updateFlyoutPosition();
-                setFlyoutHover(true);
+                flyout.updateFlyoutPosition();
+                flyout.setFlyoutHover(true);
               }}
-              onMouseLeave={handlePlanningMouseLeave}
-              className={`flex items-center justify-center w-full px-3.5 py-3 rounded-xl font-medium transition-all duration-200 select-none cursor-pointer ${
-                isPlanningActive
-                  ? "bg-brand-500 text-white shadow-md shadow-brand-500/10"
-                  : "text-slate-650 hover:bg-slate-100 dark:text-dark-300 dark:hover:bg-dark-800/60"
-              }`}
-            >
-              <Calendar className="h-5 w-5 flex-shrink-0" />
-            </button>
-
-            {/* Flyout renderizado via portal no body para não ser cortado pelo overflow */}
-            {showFlyout &&
-              createPortal(
-                <div
-                  ref={flyoutRef}
-                  className="fixed z-[100] transition-all duration-200"
-                  style={flyoutStyle}
-                  onMouseEnter={handleFlyoutMouseEnter}
-                  onMouseLeave={() => {
-                    setFlyoutHover(false);
-                    if (!planningFlyoutOpen) setPlanningFlyoutOpen(false);
-                  }}
-                >
-                  <div className="bg-white dark:bg-dark-900 border border-slate-200 dark:border-dark-700 rounded-xl shadow-lg p-2 min-w-[180px]">
-                    <div className="flex flex-col gap-0.5">
-                      {PLANNING_SUB_ITEMS.map((item) => {
-                        const SubIcon = item.icon;
-                        const isSubActive = location.pathname === item.path;
-                        return (
-                          <Link
-                            key={item.path}
-                            to={item.path}
-                            onClick={() => {
-                              setPlanningFlyoutOpen(false);
-                              setFlyoutHover(false);
-                            }}
-                            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 select-none ${
-                              isSubActive
-                                ? "bg-brand-100 dark:bg-brand-900/20 text-brand-600 dark:text-brand-400"
-                                : "text-slate-500 hover:text-slate-700 hover:bg-slate-50 dark:text-dark-400 dark:hover:text-dark-200 dark:hover:bg-dark-800/40"
-                            }`}
-                          >
-                            <SubIcon className="h-5 w-5 flex-shrink-0" />
-                            <span className="truncate">{item.label}</span>
-                          </Link>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>,
-                document.body,
-              )}
-          </div>
+              onMouseLeave={flyout.handlePlanningMouseLeave}
+              buttonRef={flyout.planningBtnRef}
+            />
+            <PlanningFlyout
+              isOpen={flyout.showFlyout}
+              flyoutStyle={flyout.flyoutStyle}
+              flyoutRef={flyout.flyoutRef}
+              subItems={PLANNING_SUB_ITEMS}
+              activePath={location.pathname}
+              onMouseEnter={flyout.handleFlyoutMouseEnter}
+              onMouseLeave={() => {
+                flyout.setFlyoutHover(false);
+                if (!flyout.planningFlyoutOpen) flyout.setPlanningFlyoutOpen(false);
+              }}
+              onItemClick={closeAll}
+            />
+          </>
         )}
 
-        {/* ── Estudos (ícone único) ── */}
-        <Link
+        {/* ── Estudos ── */}
+        <SidebarNavLink
           to="/studies"
-          className={`flex items-center gap-3.5 px-3.5 py-3 rounded-xl font-medium transition-all duration-200 select-none ${
-            sidebarCollapsed ? "justify-center" : ""
-          } ${
-            location.pathname.startsWith("/studies")
-              ? "bg-brand-500 text-white shadow-md shadow-brand-500/10"
-              : "text-slate-650 hover:bg-slate-100 dark:text-dark-300 dark:hover:bg-dark-800/60"
-          }`}
-        >
-          <GraduationCap className="h-5 w-5 flex-shrink-0" />
-          {!sidebarCollapsed && <span className="truncate">Estudos</span>}
-        </Link>
+          icon={GraduationCap}
+          label="Estudos"
+          isActive={location.pathname.startsWith("/studies")}
+          collapsed={sidebarCollapsed}
+          onClick={closeAll}
+        />
 
         {/* Demais itens (Tags, Marcadores, Arquivados, Tarefas) */}
-        {NAV_ITEMS.map((item) => {
-          const Icon = item.icon;
-          const isActive = location.pathname.startsWith(item.path);
-          return (
-            <Link
-              key={item.path}
-              to={item.path}
-              className={`flex items-center gap-3.5 px-3.5 py-3 rounded-xl font-medium transition-all duration-200 select-none ${
-                sidebarCollapsed ? "justify-center" : ""
-              } ${
-                isActive
-                  ? "bg-brand-500 text-white shadow-md shadow-brand-500/10"
-                  : "text-slate-650 hover:bg-slate-100 dark:text-dark-300 dark:hover:bg-dark-800/60"
-              }`}
-            >
-              <Icon className="h-5 w-5 flex-shrink-0" />
-              {!sidebarCollapsed && (
-                <span className="truncate">{item.label}</span>
-              )}
-            </Link>
-          );
-        })}
+        {NAV_ITEMS.map((item) => (
+          <SidebarNavLink
+            key={item.path}
+            to={item.path}
+            icon={item.icon}
+            label={item.label}
+            isActive={isPathActive(item.path, location.pathname)}
+            collapsed={sidebarCollapsed}
+            onClick={closeAll}
+          />
+        ))}
       </nav>
 
-      {/* Footer da Sidebar */}
+      {/* Footer — Lixeira */}
       <div className="p-3 border-t border-slate-50 dark:border-dark-800/60">
-        {/* Botão Lixeira */}
-        <Link
-          to="/trash"
-          className={`flex items-center gap-3.5 px-3.5 py-3 rounded-xl font-medium transition-all duration-200 select-none ${
-            sidebarCollapsed ? "justify-center" : ""
-          } ${
-            isTrashActive
-              ? "bg-brand-500 text-white shadow-md shadow-brand-500/10"
-              : "text-slate-650 hover:bg-slate-100 dark:text-dark-300 dark:hover:bg-dark-800/60"
-          }`}
-        >
-          <Trash2 className="h-5 w-5 flex-shrink-0" />
-          {!sidebarCollapsed && <span className="truncate">Lixeira</span>}
-        </Link>
+        <SidebarNavLink
+          to={TRASH_ITEM.path}
+          icon={TRASH_ITEM.icon}
+          label={TRASH_ITEM.label}
+          isActive={isTrashActive}
+          collapsed={sidebarCollapsed}
+          onClick={closeAll}
+        />
       </div>
 
-      {/* Toggle Collapse Button */}
+      {/* Toggle Collapse Button (apenas desktop) */}
       <button
         onClick={toggleSidebar}
         className="absolute bottom-20 right-[-14px] w-7 h-7 bg-white dark:bg-dark-800 border border-slate-200 dark:border-dark-700 rounded-full flex items-center justify-center hover:bg-slate-100 dark:hover:bg-dark-700 cursor-pointer shadow-sm text-slate-600 dark:text-dark-200 hidden lg:flex"
@@ -370,15 +176,12 @@ export const Sidebar: React.FC = () => {
 
       {/* Mobile sidebar - overlay drawer */}
       <div className="lg:hidden">
-        {/* Backdrop */}
         {mobileSidebarOpen && (
           <div
             className="fixed inset-0 bg-black/50 backdrop-blur-sm z-30 transition-all duration-300"
             onClick={() => setMobileSidebarOpen(false)}
           />
         )}
-
-        {/* Drawer */}
         <div
           className={`fixed top-0 left-0 h-full z-40 transition-transform duration-300 ease-in-out ${
             mobileSidebarOpen ? "translate-x-0" : "-translate-x-full"
