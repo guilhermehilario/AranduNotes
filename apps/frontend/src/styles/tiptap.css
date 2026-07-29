@@ -82,10 +82,30 @@ div.tiptap-content {
 /* Lists */
 .tiptap-content .ProseMirror ul {
   @apply pl-6;
+  list-style-type: disc;
 }
 
 .tiptap-content .ProseMirror ol {
   @apply pl-6;
+  list-style-type: decimal;
+}
+
+/* Nested unordered lists */
+.tiptap-content .ProseMirror ul ul {
+  list-style-type: circle;
+}
+
+.tiptap-content .ProseMirror ul ul ul {
+  list-style-type: square;
+}
+
+/* Nested ordered lists */
+.tiptap-content .ProseMirror ol ol {
+  list-style-type: lower-alpha;
+}
+
+.tiptap-content .ProseMirror ol ol ol {
+  list-style-type: lower-roman;
 }
 
 .tiptap-content .ProseMirror li {
@@ -94,4 +114,16 @@ div.tiptap-content {
 
 .tiptap-content .ProseMirror li p {
   @apply my-0;
+}
+
+/* Ensure list markers appear inline with text */
+.tiptap-content .ProseMirror ul,
+.tiptap-content .ProseMirror ol {
+  list-style-position: outside;
+}
+
+/* Dark mode — preserve colors for list markers */
+.dark .tiptap-content .ProseMirror ul,
+.dark .tiptap-content .ProseMirror ol {
+  color: var(--text-primary);
 }
