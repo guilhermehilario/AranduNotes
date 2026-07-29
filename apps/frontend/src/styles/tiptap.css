@@ -130,41 +130,14 @@ div.tiptap-content {
 
 /* ───── Links no editor ───── */
 
-/* Link normal — sem underline por padrão, mas com cor distinta */
+/* Link: cor brand, cursor pointer, sem underline por padrão */
 .tiptap-content .ProseMirror a {
-  @apply text-brand-600 dark:text-brand-400 cursor-pointer no-underline border-b border-transparent transition-all duration-150;
+  @apply text-brand-600 dark:text-brand-400 cursor-pointer no-underline;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.15s ease;
 }
 
-/* Hover: mostra underline + tooltip visual de que é clicável */
+/* Hover: mostra underline sutil indicando que é clicável */
 .tiptap-content .ProseMirror a:hover {
-  @apply border-brand-400/50 dark:border-brand-500/50;
-}
-
-/* Ícone de link externo sutil no hover */
-.tiptap-content .ProseMirror a::after {
-  content: "";
-  display: inline-block;
-  width: 0;
-  height: 0;
-  margin-left: 0;
-  vertical-align: middle;
-  transition: all 0.15s ease;
-  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'%3E%3C/path%3E%3Cpolyline points='15 3 21 3 21 9'%3E%3C/polyline%3E%3Cline x1='10' y1='14' x2='21' y2='3'%3E%3C/line%3E%3C/svg%3E");
-  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'%3E%3C/path%3E%3Cpolyline points='15 3 21 3 21 9'%3E%3C/polyline%3E%3Cline x1='10' y1='14' x2='21' y2='3'%3E%3C/line%3E%3C/svg%3E");
-  -webkit-mask-size: contain;
-  mask-size: contain;
-  -webkit-mask-repeat: no-repeat;
-  mask-repeat: no-repeat;
-  background-color: currentColor;
-}
-
-.tiptap-content .ProseMirror a:hover::after {
-  width: 12px;
-  height: 12px;
-  margin-left: 3px;
-}
-
-/* Dark mode: cor do ícone de link */
-.dark .tiptap-content .ProseMirror a::after {
-  background-color: var(--color-brand-400);
+  border-bottom-color: color-mix(in srgb, currentColor 40%, transparent);
 }

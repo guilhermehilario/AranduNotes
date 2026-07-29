@@ -21,6 +21,10 @@ import type { Leaf } from "../types";
 const DEBOUNCE_MS = 800;
 const SAVE_STATUS_IDLE_MS = 2000;
 
+const isMac = typeof navigator !== "undefined" && navigator.platform.toLowerCase().includes("mac");
+const MODIFIER_LABEL = isMac ? "Cmd" : "Ctrl";
+const LINK_TOOLTIP = `${MODIFIER_LABEL}+Click para abrir link`;
+
 interface UseEditorContentParams {
   leaf: Leaf | undefined;
   leafId: string;
@@ -82,6 +86,9 @@ export function useEditorContent({
       Underline,
       LinkExtension.configure({
         openOnClick: false,
+        HTMLAttributes: {
+          title: LINK_TOOLTIP,
+        },
       }),
       Highlight.configure({ multicolor: true }),
       TextAlign.configure({
