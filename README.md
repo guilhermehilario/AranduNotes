@@ -70,18 +70,20 @@ técnicas como **Pomodoro** e **revisão espaçada** (algoritmo SM-2).
 
 | Camada | Tecnologia | Versão |
 |---|---|---|
-| **Monorepo** | Turborepo + Yarn Workspaces | v1 (Yarn) |
+| **Monorepo** | Turborepo + Yarn Workspaces | v2 (Turbo) |
 | **Backend** | NestJS + TypeScript | v11 |
 | **ORM** | Prisma | v7 |
-| **Database** | SQLite (dev) | — |
+| **Database** | SQLite (dev) / LibSQL (Turso) | — |
 | **Autenticação** | JWT + Passport + bcryptjs | — |
 | **Frontend** | React | v19 |
 | **Build tool** | Vite | v8 |
 | **Estilos** | TailwindCSS | v4 |
-| **Editor Rich Text** | TipTap | v3 |
-| **Estado** | Zustand + TanStack Query | — |
-| **Validação** | Zod + class-validator | — |
+| **Editor Rich Text** | TipTap v3 + `@tiptap/pm` | v3 |
+| **Estado** | Zustand + TanStack Query | v5 |
+| **Validação** | Zod v4 + class-validator | — |
 | **HTTP Client** | Axios | — |
+| **Drag & Drop** | @dnd-kit | v6/core / v10/sortable |
+| **Ícones** | Lucide React | v1 |
 | **Deploy** | Fly.io (API) + Render (Frontend) | — |
 
 ---
@@ -94,14 +96,14 @@ arandu-monorepo/
 │   ├── api/                          # API NestJS
 │   │   ├── prisma/
 │   │   │   ├── schema.prisma         # Schema do banco de dados
-│   │   │   └── migrations/           # Migrations do Prisma
+│   │   │   ├── migrations/           # Migrations do Prisma
+│   │   │   └── seed.ts               # Seed de desenvolvimento
 │   │   ├── src/
-│   │   │   ├── auth/                 # Autenticação (JWT, registro, login)
+│   │   │   ├── auth/                 # Autenticação (JWT, registro, login, perfil)
 │   │   │   ├── bookmarks/            # Marcadores de páginas
-│   │   │   ├── common/               # Guards, decorators, filtros
-│   │   │   ├── database/             # Serviço de database (JSON fallback)
+│   │   │   ├── common/               # Guards, decorators, filtros, email
 │   │   │   ├── flashcards/           # Flashcards com algoritmo SM-2
-│   │   │   ├── leaves/               # Folhas de anotação
+│   │   │   ├── leaves/               # Folhas de anotação + IA (resumo, flashcards)
 │   │   │   ├── mock-exams/           # Simulados
 │   │   │   ├── notebooks/            # Cadernos de estudo
 │   │   │   ├── planning/             # Planejamento (eventos, metas, pomodoro)
@@ -115,49 +117,67 @@ arandu-monorepo/
 │   │   │   ├── app.controller.ts     # Health check + status
 │   │   │   ├── app.module.ts         # Módulo raiz
 │   │   │   └── main.ts               # Ponto de entrada
+│   │   ├── Dockerfile                # Docker multi-stage para Fly.io
+│   │   ├── docker-entrypoint.js      # Entrypoint com Prisma migrate + Litestream
+│   │   ├── litestream.yml            # Backup do SQLite para S3/R2
+│   │   ├── dbsetup.js                # Setup legacy do banco
 │   │   ├── prisma.config.ts          # Config do Prisma v7
+│   │   ├── nest-cli.json
 │   │   ├── tsconfig.json
 │   │   └── package.json
 │   │
 │   └── frontend/                     # SPA React
 │       ├── public/
-│       │   └── _redirects            # Fallback para SPA no Netlify
+│       │   ├── _redirects            # Fallback SPA (Netlify/Render)
+│       │   └── 404.html
 │       ├── src/
-│       │   ├── components/           # Componentes reutilizáveis
+│       │   ├── components/
 │       │   │   ├── core/
 │       │   │   │   └── api/          # Axios client + interceptors
-│       │   │   ├── layout/           # AppLayout, Sidebar, Header
-│       │   │   └── ui/               # Button, Card, Modal, Toast, etc.
-│       │   ├── hooks/                # Hooks globais
+│       │   │   ├── layout/           # AppLayout, Sidebar, AppHeader, Breadcrumb
+│       │   │   │   ├── sidebar/           # Sidebar com PlanningFlyout
+│       │   │   │   └── app-header/       # HeaderTitle, HeaderActions, hooks
+│       │   │   └── ui/               # Button, Card, Modal, Input, Toast, Skeleton, etc.
+│       │   ├── hooks/                # Hooks globais (useDebounce)
 │       │   ├── modules/              # Módulos funcionais
-│       │   │   ├── auth/             # Login, registro, recuperação
-│       │   │   ├── bookmarks/        # Gerenciamento de bookmarks
-│       │   │   ├── leaves/           # Editor de folhas + AISidebar
+│       │   │   ├── auth/             # Login, registro, recuperação de senha
+│       │   │   ├── bookmarks/        # Gerenciamento de favoritos
+│       │   │   ├── leaves/           # Editor TipTap + IA (resumo, flashcards)
 │       │   │   ├── notebooks/        # Dashboard + CRUD de cadernos
-│       │   │   ├── planning/         # Agenda, metas, pomodoro
-│       │   │   ├── profile/          # Configurações do perfil
-│       │   │   ├── study/            # Flashcards, questões, simulados
-│       │   │   ├── tags/             # Gerenciamento de tags
+│       │   │   ├── planning/         # Agenda, calendário, cronograma, metas, pomodoro
+│       │   │   ├── profile/          # Perfil, avatar personalizável, configurações
+│       │   │   ├── questions/        # Questões de estudo
+│       │   │   ├── mock-exams/       # Simulados
+│       │   │   ├── study/            # Flashcards SM-2, revisões, histórico, estatísticas
+│       │   │   ├── tags/             # Tags para classificação
 │       │   │   ├── todos/            # Lista de tarefas
 │       │   │   └── trash/            # Lixeira + arquivados
-│       │   ├── routes/               # Configuração do React Router
-│       │   ├── store/                # Stores Zustand
-│       │   ├── styles/               # CSS global + estilos do editor
-│       │   ├── utils/                # Utilitários
+│       │   ├── routes/               # React Router + guards (PrivateRoute, PublicRoute)
+│       │   ├── store/                # Zustand stores (ui, editor, toast, notification, pomodoro, clipboard, planning)
+│       │   ├── styles/               # CSS do editor Tiptap, annotations, base, components
+│       │   ├── utils/                # api-errors, parse-options
+│       │   ├── test/                 # Setup de testes (Vitest + jsdom)
 │       │   ├── App.tsx               # Componente raiz
+│       │   ├── index.css             # Tailwind + tema (claro/escuro)
 │       │   └── main.tsx              # Entry point
 │       ├── index.html
 │       ├── vite.config.ts
 │       ├── tsconfig.json
+│       ├── tsconfig.app.json
+│       ├── tsconfig.node.json
+│       ├── eslint.config.js
 │       └── package.json
 │
-├── docs/
-│   ├── RENDER_DEPLOY.md              # Guia de deploy no Render
-│   └── lista-de-tarefas.md           # Guia de uso da lista de tarefas
+├── .github/
+│   └── workflows/
+│       └── fly-deploy.yml            # CI/CD automático para Fly.io
 │
 ├── package.json                      # Workspaces root + scripts globais
 ├── turbo.json                        # Configuração do Turborepo
-├── render.yaml                       # Blueprint do Render
+├── render.yaml                       # Blueprint do Render (API + Frontend)
+├── fly.toml                          # Configuração do Fly.io
+├── CONTRIBUTING.md                   # Guia de contribuição
+├── README.md
 └── yarn.lock
 ```
 
@@ -165,7 +185,7 @@ arandu-monorepo/
 
 ## ⚙️ Pré-requisitos
 
-- **Node.js** `>= 18` (recomendado: versão LTS mais recente)
+- **Node.js** `>= 20` (recomendado: versão LTS mais recente; Dockerfile usa Node 22)
 - **Yarn v1** (Classic) — instalado globalmente:
   ```bash
   npm install -g yarn
@@ -251,7 +271,6 @@ A aplicação estará disponível em:
 | `yarn build` | Build de todos os apps |
 | `yarn lint` | Executa linters em todos os apps |
 | `yarn test` | Executa testes em todos os apps |
-| `yarn format` | Formata o código com Prettier |
 
 ### Filtrados por workspace (Turbo)
 
@@ -291,23 +310,37 @@ O deploy é feito em dois ambientes:
 ### API — Fly.io
 
 A API (NestJS) é deployada no **Fly.io** via GitHub Actions com deploy automático
-a cada push na branch `main`.
+a cada push na branch `main` (apenas quando há mudanças em `apps/api/**`).
 
-Configurações relevantes:
-- [`fly.toml`](./fly.toml) — configuração do Fly.io
-- [`.github/workflows/fly-deploy.yml`](./.github/workflows/fly-deploy.yml) — CI/CD automático
-- Dockerfile multi-stage para build otimizado
-- Litestream para backup do banco SQLite
+| Recurso | Arquivo | Descrição |
+|---------|---------|-----------|
+| **CI/CD** | [`.github/workflows/fly-deploy.yml`](./.github/workflows/fly-deploy.yml) | Workflow que executa `flyctl deploy --remote-only` |
+| **Docker** | [`apps/api/Dockerfile`](./apps/api/Dockerfile) | Multi-stage build com Node 22 slim + Litestream |
+| **Entrypoint** | [`apps/api/docker-entrypoint.js`](./apps/api/docker-entrypoint.js) | Roda `prisma migrate deploy`, inicia Litestream (se `BUCKET_NAME` configurado) e então sobe o servidor |
+| **Litestream** | [`apps/api/litestream.yml`](./apps/api/litestream.yml) | Réplica do SQLite para S3/R2 com sync a cada 5min e retenção de 72h |
+| **Fly config** | [`fly.toml`](./fly.toml) | App `arandu-api`, região `gru`, volume persistente `/data`, health check `/health` |
+| **Secrets** | `flyctl secrets set` | `JWT_SECRET`, `DATABASE_URL`, `SMTP_*`, `BUCKET_NAME`, credenciais S3 |
 
-👉 **[Guia completo de CI/CD →](./docs/CI_CD.md)** — pipeline, Docker, entrypoint,
-  Litestream, secrets e troubleshooting
+> ⚠️ **Banco de dados:** Em produção a API usa SQLite armazenado em volume persistente
+> do Fly.io, com backup automático via Litestream para bucket S3/R2.
+> Alternativamente, pode usar Turso (LibSQL distribuído) configurando `DATABASE_URL`.
 
 ### Frontend — Render.com
 
-O frontend (React + Vite) é deployado como **Static Site** no **Render.com**
-via Blueprint ([`render.yaml`](./render.yaml)).
+O frontend (React + Vite) é deployado como **Web Service** no **Render.com**
+via Blueprint ([`render.yaml`](./render.yaml)), que define automaticamente os
+dois serviços (API + Frontend).
 
-👉 **[Guia completo de deploy →](./docs/RENDER_DEPLOY.md)**
+| Recurso | Descrição |
+|---------|-----------|
+| **Build** | `yarn install && npx turbo run build --filter=frontend` |
+| **Publish** | `./apps/frontend/dist` |
+| **SPA Fallback** | Rota `/*` redirecionada para `/index.html` |
+| **Build Filters** | Só executa quando `apps/frontend/**` ou `package.json` mudam |
+| **Env** | `VITE_API_URL=https://arandu-api.fly.dev/api` |
+
+> ⚠️ **Plano Free:** O Render free tier bloqueia portas SMTP (25, 465, 587).
+> Para e-mails, use porta alternativa 2525 ou uma API HTTP (nunca bloqueada).
 
 ---
 

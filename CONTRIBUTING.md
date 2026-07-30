@@ -49,10 +49,10 @@ apps/
 
 | Aspecto | Padrão |
 |---------|--------|
-| **Linguagem** | TypeScript estrito |
+| **Linguagem** | TypeScript estrito (API ~5.7, Frontend ~6.0) |
 | **Estilo** | TailwindCSS v4 (`@import "tailwindcss"`) |
-| **Estado global** | Zustand |
-| **Server state** | TanStack Query |
+| **Estado global** | Zustand v5 |
+| **Server state** | TanStack Query v5 |
 | **Formatação** | Prettier (config na raiz) |
 | **Commits** | Conventional Commits (abaixo) |
 
@@ -125,6 +125,9 @@ yarn workspace frontend test --coverage
 - Atualize testes existentes ao **modificar comportamento**
 - Prefira testar **comportamento** em vez de implementação
 - Use mocks apenas para **fronteiras do sistema** (API, localStorage, etc.)
+- Frontend: Vitest com jsdom + Testing Library
+- API: Jest com ts-jest
+- Acesse `getByRole`, `getByText`, etc. em vez de seletores CSS
 
 ---
 
@@ -206,12 +209,12 @@ graph LR
 ### Checklist do PR
 
 - [ ] O build passa (`yarn build`)
-- [ ] Typecheck limpo (`npx tsc --noEmit`)
+- [ ] Typecheck limpo (`cd apps/frontend && npx tsc --noEmit --skipLibCheck`)
 - [ ] Testes passam (`yarn test`)
+- [ ] ESLint limpo (`yarn lint`)
 - [ ] Código segue as convenções do projeto
 - [ ] Commits estão no padrão Conventional Commits
 - [ ] Documentação atualizada (se aplicável)
-- [ ] CHANGELOG atualizado (se aplicável)
 
 ---
 

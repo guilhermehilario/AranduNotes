@@ -16,16 +16,18 @@ O **Arandu** (que significa "saber" em Tupi Antigo) é uma plataforma completa p
 |-----------|--------|-----|
 | React | 19 | UI Library |
 | Vite | 8 | Build tool |
-| TypeScript | ~5.7 | Linguagem |
+| TypeScript | ~6.0 | Linguagem |
 | Tailwind CSS | 4 | Estilos utilitários |
-| Zustand | 5 | Estado global |
+| Zustand | 5 | Estado global (persist + middleware) |
 | TanStack React Query | 5 | Server state & cache |
 | React Router DOM | 7 | Roteamento SPA |
-| React Hook Form + Zod | — | Formulários + validação |
+| React Hook Form + Zod | v4 | Formulários + validação |
 | TipTap | 3 | Editor rich text |
-| @dnd-kit | — | Drag & drop |
-| Lucide React | — | Ícones |
-| Axios | — | HTTP client |
+| @dnd-kit | v6/core, v10/sortable | Drag & drop |
+| Lucide React | v1 | Ícones |
+| Axios | v1 | HTTP client |
+| Vitest | v4 | Test runner |
+| Testing Library | — | Testes de componentes |
 
 ---
 
@@ -41,6 +43,8 @@ apps/frontend/
 │   │   ├── core/
 │   │   │   └── api/         # Axios client + interceptors
 │   │   ├── layout/          # AppLayout, Sidebar, AppHeader, Breadcrumb
+│   │   │   ├── sidebar/         # Sidebar com PlanningFlyout, hooks
+│   │   │   └── app-header/     # HeaderTitle, HeaderActions, hooks
 │   │   └── ui/              # Button, Card, Modal, Input, Toast, Skeleton, etc.
 │   ├── hooks/               # Hooks globais (useDebounce)
 │   ├── modules/             # Módulos funcionais
@@ -56,9 +60,9 @@ apps/frontend/
 │   │   ├── tags/            # Tags para classificação
 │   │   ├── todos/           # Lista de tarefas
 │   │   └── trash/           # Lixeira + arquivados
-│   ├── routes/              # React Router + guards (PrivateRoute, PublicRoute)
-│   ├── store/               # Zustand stores
-│   ├── styles/              # CSS do editor Tiptap, annotations, base
+│   ├── routes/              # React Router v7 + guards (PrivateRoute, PublicRoute)
+│   ├── store/               # Zustand stores (ui, editor, toast, notification, pomodoro, clipboard, planning)
+│   ├── styles/              # CSS do editor Tiptap, annotations, base, components
 │   ├── utils/               # api-errors, parse-options
 │   ├── test/                # Setup de testes
 │   ├── App.tsx              # Componente raiz
@@ -70,7 +74,6 @@ apps/frontend/
 ├── tsconfig.app.json
 ├── tsconfig.node.json
 ├── eslint.config.js
-├── PADROES.md               # Guia de padronização de código
 └── package.json
 ```
 
@@ -182,13 +185,58 @@ cd apps/frontend && npx tsc --noEmit
 
 ## 📐 Padrões de Código
 
-Consulte o arquivo [`PADROES.md`](./PADROES.md) para o guia completo de padronização, incluindo:
+### Estrutura de arquivos e nomenclatura
 
-- Estrutura de arquivos e nomenclatura
-- Regras de imports (type-only, extensões)
-- Componentes React e hooks
-- Zustand stores (regra do `getState()`)
-- React Query (mutations otimistas)
-- Tratamento de erros
-- Anti-padrões conhecidos
-- Checklist de code review
+- Arquivos de componentes usam **PascalCase**: `MeuComponente.tsx`
+- Arquivos de hooks usam **camelCase** prefixados com `use`: `useMeuHook.ts`
+- Arquivos de serviço/API usam **camelCase**: `meuService.ts`
+- Constantes e tipos em **PascalCase** para types/interfaces, **camelCase** para constantes
+
+### Regras de imports
+
+- Use **type-only imports** para tipos: `import type { MeuTipo } from './types'`
+- Sempre inclua a extensão `.ts` ou `.tsx` nos imports relativos (ex: `'./Componente.tsx'`)
+- Prefira imports absolutos com `@/` quando configurado, ou caminhos relativos
+
+### Componentes React e hooks
+
+- Componentes funcionais com TypeScript, tipando `props` explicitamente
+- Extraia hooks customizados para lógica reutilizável
+- Prefira composição sobre herança
+
+### Zustand stores (regra do `getState()`)
+
+- Use `get()` dentro de actions para ler estado atual
+- Use `getState()` fora do componente para acessar estado sem re-renderizar
+- Prefira `persist` middleware para dados que devem sobreviver ao refresh
+- `partialize` para controlar o que é persistido
+
+### React Query (mutations otimistas)
+
+- Use `useMutation` com `onMutate` para atualizações otimistas
+- Faça `queryClient.setQueryData` antes de confirmar no servidor
+- Use `onError` para reverter o cache em caso de falha
+- Use `onSettled` para invalidar queries e sincronizar
+
+### Tratamento de erros
+
+- Use o `ApiErrorAlert` para exibir erros da API no UI
+- Erros inesperados devem ser logados e mostrar toast de erro
+- Prefira tratamento local a propagar exceções sem contexto
+
+### Anti-padrões conhecidos
+
+- ❌ Mutar estado do Zustand diretamente fora de actions
+- ❌ Usar `useEffect` para sincronizar estado que pode ser derivado
+- ❌ Importar tipos sem `type` (gera bundle maior)
+- ❌ Espalhar lógica de API em componentes (use services separados)
+
+### Checklist de code review
+
+- [ ] TypeScript compila sem erros (`npx tsc --noEmit`)
+- [ ] Testes passam (`vitest run`)
+- [ ] ESLint limpo
+- [ ] Mutations têm tratamento de erro
+- [ ] Stores não vazam para fora do seu escopo
+- [ ] Imports têm extensão `.ts`/`.tsx`
+- [ ] Tipos são type-only imports
