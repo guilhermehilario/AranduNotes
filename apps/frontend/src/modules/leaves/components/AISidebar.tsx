@@ -109,7 +109,7 @@ const AISidebarComponent: React.FC<AISidebarProps> = ({
             {summary ? (
               <div className="flex flex-col gap-4 relative group">
                 {/* Delete button — aparece no hover, mesmo estilo do flashcard */}
-                <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200 z-10">
+                <div className="absolute top-2 right-2 flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-200 z-10">
                   <button
                     onClick={onDeleteSummary}
                     disabled={isDeletingSummary}
@@ -205,7 +205,7 @@ const AISidebarComponent: React.FC<AISidebarProps> = ({
                       className="p-4 bg-slate-50/50 dark:bg-dark-950/30 border border-slate-100 dark:border-dark-800 flex flex-col gap-2.5 relative group"
                     >
                       {/* Action buttons */}
-                      <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200">
+                      <div className="absolute top-2 right-2 flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-200">
                         <button
                           onClick={() => onEditFlashcard(card)}
                           className="p-1.5 rounded-lg text-slate-400 hover:text-brand-500 hover:bg-brand-50 dark:hover:bg-brand-950/30 transition-all duration-150"

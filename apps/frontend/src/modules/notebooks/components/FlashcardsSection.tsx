@@ -59,7 +59,7 @@ export const FlashcardsSection: React.FC<FlashcardsSectionProps> = ({
               className="flex flex-col gap-2 p-4 border border-slate-100 dark:border-dark-800 relative group"
             >
               {/* Action buttons */}
-              <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200">
+              <div              className="absolute top-2 right-2 flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-200">
                 <button
                   onClick={() => onEditFlashcard(card)}
                   className="p-1.5 rounded-lg text-slate-400 hover:text-brand-500 hover:bg-brand-50 dark:hover:bg-brand-950/30 transition-all duration-150"

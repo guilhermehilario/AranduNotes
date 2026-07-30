@@ -41,7 +41,7 @@ export const EditorContentArea: React.FC<EditorContentAreaProps> = ({
         annotationTrigger={annotationTrigger}
       />
 
-      <div className="tiptap-editor flex-1 overflow-x-hidden overflow-y-auto text-slate-750 dark:text-dark-100 relative min-h-[400px] min-w-0 w-full max-w-full pb-1.5">
+      <div className="tiptap-editor flex-1 overflow-x-hidden overflow-y-auto text-slate-750 dark:text-dark-100 relative min-h-[250px] sm:min-h-[400px] min-w-0 w-full max-w-full pb-1.5">
         <EditorBubbleMenu editor={editor} />
         <EditorContent
           editor={editor}
