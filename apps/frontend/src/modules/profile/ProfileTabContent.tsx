@@ -44,7 +44,7 @@ export const ProfileTabContent: React.FC<ProfileTabContentProps> = ({ onClose })
 
   return (
     <>
-      <div className="flex flex-col gap-5 sm:gap-7 tab-enter">
+      <div className="flex flex-col gap-5 sm:gap-7">
         {/* User info */}
         <div className="flex items-center gap-4">
           <div

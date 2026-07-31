@@ -10,6 +10,14 @@ export interface ModalProps {
   footer?: React.ReactNode;
   size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl';
   className?: string;
+  /**
+   * Quando false, o body vira `flex flex-col min-h-0` e o conteúdo assume o
+   * próprio scroll interno (ex.: AbasComScroll) — o `overflow-y: auto` fica
+   * apenas na área interna do conteúdo. O body mantém `overflow-y-auto` apenas
+   * como FALLBACK (não gera scrollbar duplo quando o scroll interno existe).
+   * Padrão: true.
+   */
+  scrollable?: boolean;
 }
 
 export const Modal: React.FC<ModalProps> = ({
@@ -19,6 +27,7 @@ export const Modal: React.FC<ModalProps> = ({
   children,
   footer,
   size = 'md',
+  scrollable = true,
 }) => {
   // ESC key listener to close modal
   useEffect(() => {
@@ -70,7 +79,10 @@ export const Modal: React.FC<ModalProps> = ({
         {/* Header */}
         <div
           className="flex items-center justify-between px-4 py-4 sm:px-6 sm:py-5 flex-shrink-0"
-          style={{ borderBottom: '1px solid var(--border-color)' }}
+          style={{
+            background: 'var(--bg-surface)',
+            borderBottom: '1px solid var(--border-color)',
+          }}
         >
           <h3 className="text-xl font-heading font-semibold" style={{ color: 'var(--text-primary)' }}>
             {title}
@@ -87,7 +99,14 @@ export const Modal: React.FC<ModalProps> = ({
         </div>
 
         {/* Body */}
-        <div className="px-4 py-5 sm:px-6 sm:py-6 overflow-y-auto overscroll-contain flex-grow" style={{ color: 'var(--text-primary)' }}>
+        <div
+          className={`px-4 py-5 sm:px-6 sm:py-6 flex-grow ${
+            scrollable
+              ? 'overflow-y-auto overscroll-contain'
+              : 'overflow-y-auto overscroll-contain flex flex-col min-h-0'
+          }`}
+          style={{ color: 'var(--text-primary)' }}
+        >
           {children}
         </div>
 

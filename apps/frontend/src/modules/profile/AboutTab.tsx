@@ -122,7 +122,7 @@ const RELEASE_NOTES: Array<{ version: string; date: string; latest?: boolean; hi
 
 export const AboutTab: React.FC = () => {
   return (
-    <div className="flex flex-col gap-5 sm:gap-7 tab-enter">
+    <div className="flex flex-col gap-5 sm:gap-7">
       {/* Projeto */}
       <SectionCard
         icon={<Info className="h-4.5 w-4.5" />}

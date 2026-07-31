@@ -1,14 +1,15 @@
 import React, { useState } from "react";
+import { User, Camera, Settings, Info } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "../../components/ui/Button.tsx";
 import { Modal } from "../../components/ui/Modal.tsx";
+import { AbasComScroll, type AbasComScrollTab } from "../../components/ui/AbasComScroll.tsx";
 import { useAuth } from "../auth/hooks/useAuth";
 import { api } from "../../core/api/client";
 import { AVATAR_CATEGORIES, getAvatarUrl } from "./avatarCategories";
 import { AvatarSelector } from "./AvatarSelector";
 import { SettingsTab } from "./SettingsTab";
 import { AboutTab } from "./AboutTab";
-import { ProfileTabBar } from "./ProfileTabBar.tsx";
 import { ProfileTabContent } from "./ProfileTabContent.tsx";
 
 interface ProfileModalProps {
@@ -17,6 +18,13 @@ interface ProfileModalProps {
 }
 
 type Tab = "profile" | "avatars" | "settings" | "about";
+
+const TABS: AbasComScrollTab<Tab>[] = [
+  { id: "profile", label: "Perfil", icon: User },
+  { id: "avatars", label: "Avatares", icon: Camera },
+  { id: "settings", label: "Configurações", icon: Settings },
+  { id: "about", label: "Sobre", icon: Info },
+];
 
 export const ProfileModal: React.FC<ProfileModalProps> = ({
   isOpen,
@@ -83,65 +91,53 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
 
   return (
     <>
-      <Modal isOpen={isOpen} onClose={onClose} title="" size="lg">
-        <style>{`
-          @keyframes tab-fade-slide {
-            from { opacity: 0; transform: translateY(12px); }
-            to { opacity: 1; transform: translateY(0); }
-          }
-          .tab-enter { animation: tab-fade-slide 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
-        `}</style>
-
-        <ProfileTabBar activeTab={activeTab} onTabChange={setActiveTab} />
-
-        {activeTab === "profile" && (
-          <div className="tab-enter">
+      <Modal isOpen={isOpen} onClose={onClose} title="" size="lg" scrollable={false}>
+        <AbasComScroll<Tab> tabs={TABS} activeTab={activeTab} onTabChange={setActiveTab}>
+          {activeTab === "profile" && (
             <ProfileTabContent onClose={onClose} />
-          </div>
-        )}
+          )}
 
-        {activeTab === "avatars" && (
-          <div className="flex flex-col gap-5 sm:gap-7 tab-enter">
-            <AvatarSelector
-              selectedCategory={selectedCategory}
-              selectedVariant={selectedVariant}
-              onSelect={(catId, variantId) => {
-                setSelectedCategory(catId);
-                setSelectedVariant(variantId);
-              }}
-              onCategoryChange={setSelectedCategory}
-              customAvatarUrl={customAvatarUrl}
-              onCustomUpload={(dataUrl) => setCustomAvatarUrl(dataUrl || null)}
-            />
-
-            {avatarSaveMessage && (
-              <div
-                className="p-3 rounded-xl text-sm font-medium border"
-                style={{
-                  background: avatarSaveMessage.includes("sucesso") ? 'rgba(16,185,129,0.1)' : 'rgba(244,63,94,0.1)',
-                  borderColor: avatarSaveMessage.includes("sucesso") ? 'rgba(16,185,129,0.3)' : 'rgba(244,63,94,0.3)',
-                  color: avatarSaveMessage.includes("sucesso") ? '#34D399' : '#FB7185',
+          {activeTab === "avatars" && (
+            <div className="flex flex-col gap-5 sm:gap-7">
+              <AvatarSelector
+                selectedCategory={selectedCategory}
+                selectedVariant={selectedVariant}
+                onSelect={(catId, variantId) => {
+                  setSelectedCategory(catId);
+                  setSelectedVariant(variantId);
                 }}
-              >
-                {avatarSaveMessage}
-              </div>
-            )}
+                onCategoryChange={setSelectedCategory}
+                customAvatarUrl={customAvatarUrl}
+                onCustomUpload={(dataUrl) => setCustomAvatarUrl(dataUrl || null)}
+              />
 
-            <Button onClick={handleSaveAvatar} isLoading={savingAvatar} className="self-start">
-              Salvar Avatar
-            </Button>
-          </div>
-        )}
+              {avatarSaveMessage && (
+                <div
+                  className="p-3 rounded-xl text-sm font-medium border"
+                  style={{
+                    background: avatarSaveMessage.includes("sucesso") ? 'rgba(16,185,129,0.1)' : 'rgba(244,63,94,0.1)',
+                    borderColor: avatarSaveMessage.includes("sucesso") ? 'rgba(16,185,129,0.3)' : 'rgba(244,63,94,0.3)',
+                    color: avatarSaveMessage.includes("sucesso") ? '#34D399' : '#FB7185',
+                  }}
+                >
+                  {avatarSaveMessage}
+                </div>
+              )}
 
-        {activeTab === "settings" && (
-          <div className="tab-enter">
+              <Button onClick={handleSaveAvatar} isLoading={savingAvatar} className="self-start">
+                Salvar Avatar
+              </Button>
+            </div>
+          )}
+
+          {activeTab === "settings" && (
             <SettingsTab />
-          </div>
-        )}
+          )}
 
-        {activeTab === "about" && (
-          <AboutTab />
-        )}
+          {activeTab === "about" && (
+            <AboutTab />
+          )}
+        </AbasComScroll>
       </Modal>
     </>
   );
