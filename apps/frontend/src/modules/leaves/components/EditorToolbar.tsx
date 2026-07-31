@@ -6,6 +6,7 @@ import { HistoryFormatSection } from './HistoryFormatSection.tsx';
 import { ColorAlignSection } from './ColorAlignSection.tsx';
 import { ListIndentSection } from './ListIndentSection.tsx';
 import { ToolSection } from './ToolSection.tsx';
+import { EditorToolbarDivider } from './EditorToolbarDivider.tsx';
 
 interface EditorToolbarProps {
   editor: Editor | null;
@@ -21,14 +22,17 @@ const EditorToolbarComponent: React.FC<EditorToolbarProps> = ({ editor, annotati
     handleWrapQuotes,
   } = useEditorToolbar(editor);
 
-  // ── Linha extra colapsável: mesmo comportamento do BubbleMenu ──
+  // ── Ferramentas extras colapsáveis (mesmo padrão do BubbleMenu) ──
   const [showExtra, setShowExtra] = useState(false);
 
   if (!editor) return null;
 
   return (
     <div className="pb-2 mb-3 border-b border-slate-100 dark:border-dark-800/80 flex-shrink-0">
-      {/* ── Linha 1: Essenciais (sempre visíveis) ── */}
+      {/* As ferramentas extras aparecem ACIMA do botão toggle, inseridas no fluxo
+          seguindo a sequência das ferramentas já visíveis — não em linha abaixo.
+          O grid colapsa altura (grid-template-rows 0fr/1fr) E largura
+          (max-width 0/100%) para não deixar espaço vazio quando recolhido. */}
       <div className="flex flex-wrap items-center gap-y-0.5">
         <HistoryFormatSection
           editor={editor}
@@ -47,7 +51,38 @@ const EditorToolbarComponent: React.FC<EditorToolbarProps> = ({ editor, annotati
           variant="main"
         />
 
-        {/* Botão toggle para linha extra */}
+        {/* Ferramentas extras — deslizam para dentro do fluxo, antes do botão */}
+        <div
+          className="grid overflow-hidden transition-[grid-template-rows,max-width] duration-200 ease-out"
+          style={{
+            gridTemplateRows: showExtra ? '1fr' : '0fr',
+            maxWidth: showExtra ? '100%' : '0',
+          }}
+        >
+          <div className="overflow-hidden min-h-0">
+            <div className="flex flex-wrap items-center gap-y-0.5">
+              <EditorToolbarDivider />
+              <HistoryFormatSection
+                editor={editor}
+                canUndo={canUndo}
+                canRedo={canRedo}
+                variant="extra"
+              />
+              <ColorAlignSection editor={editor} variant="extra" />
+              <ListIndentSection editor={editor} variant="extra" />
+              <ToolSection
+                editor={editor}
+                formatPainterActive={formatPainterActive}
+                onFormatPainter={handleFormatPainter}
+                onWrapQuotes={handleWrapQuotes}
+                annotationTrigger={annotationTrigger}
+                variant="extra"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Botão toggle — permanece no fim da sequência */}
         <button
           type="button"
           onClick={() => setShowExtra(!showExtra)}
@@ -65,35 +100,6 @@ const EditorToolbarComponent: React.FC<EditorToolbarProps> = ({ editor, annotati
             <ChevronDown className="h-4 w-4" />
           )}
         </button>
-      </div>
-
-      {/* ── Linha 2: Extras (colapsável) ── */}
-      <div
-        className="grid transition-[grid-template-rows] duration-200 ease-out"
-        style={{
-          gridTemplateRows: showExtra ? '1fr' : '0fr',
-        }}
-      >
-        <div className="overflow-hidden min-h-0">
-          <div className="flex flex-wrap items-center gap-y-0.5 pt-1.5 mt-1.5 border-t border-slate-100 dark:border-dark-800/80">
-            <HistoryFormatSection
-              editor={editor}
-              canUndo={canUndo}
-              canRedo={canRedo}
-              variant="extra"
-            />
-            <ColorAlignSection editor={editor} variant="extra" />
-            <ListIndentSection editor={editor} variant="extra" />
-            <ToolSection
-              editor={editor}
-              formatPainterActive={formatPainterActive}
-              onFormatPainter={handleFormatPainter}
-              onWrapQuotes={handleWrapQuotes}
-              annotationTrigger={annotationTrigger}
-              variant="extra"
-            />
-          </div>
-        </div>
       </div>
     </div>
   );
