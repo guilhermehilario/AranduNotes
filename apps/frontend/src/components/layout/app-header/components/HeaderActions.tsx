@@ -110,7 +110,14 @@ export const HeaderActions: React.FC<HeaderActionsProps> = ({ user }) => {
             aria-expanded={showMobileMenu}
             aria-haspopup="true"
           >
-            <Bell className="h-5 w-5" />
+            {/* Ícone mesclado: sino + prancheta — notificações e histórico de cópia juntos */}
+            <span className="relative inline-flex items-center justify-center">
+              <Bell className="h-5 w-5" />
+              <ClipboardList
+                className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 text-slate-400 dark:text-dark-400"
+                strokeWidth={2.5}
+              />
+            </span>
             {(notificationCount > 0 || clipboardItems.length > 0) && (
               <span
                 className={`absolute -top-0.5 -right-0.5 min-w-5 h-5 px-1 text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-sm animate-in zoom-in duration-200 ${
