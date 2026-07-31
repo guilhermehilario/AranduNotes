@@ -31,8 +31,10 @@ export default defineConfig([
     },
     rules: {
       // Impede que props declarados mas nunca usados (código morto) entrem no
-      // código. Funciona com interfaces TypeScript em React.FC/forwardRef e
-      // entende o padrão rest/spread (`...props`).
+      // código. Funciona com interfaces TypeScript em React.FC e funções
+      // tipadas, e entende o padrão rest/spread (`...props`).
+      // Nota: não cobre componentes tipados via forwardRef<El, Props>
+      // (ex.: Button, Input, TextArea) — limitação do plugin.
       'react/no-unused-prop-types': 'error',
     },
     // ── Nota: a regra no-restricted-imports foi removida propositalmente.
