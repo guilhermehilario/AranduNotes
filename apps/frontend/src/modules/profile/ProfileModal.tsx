@@ -7,6 +7,7 @@ import { api } from "../../core/api/client";
 import { AVATAR_CATEGORIES, getAvatarUrl } from "./avatarCategories";
 import { AvatarSelector } from "./AvatarSelector";
 import { SettingsTab } from "./SettingsTab";
+import { AboutTab } from "./AboutTab";
 import { ProfileTabBar } from "./ProfileTabBar.tsx";
 import { ProfileTabContent } from "./ProfileTabContent.tsx";
 
@@ -15,7 +16,7 @@ interface ProfileModalProps {
   onClose: () => void;
 }
 
-type Tab = "profile" | "avatars" | "settings";
+type Tab = "profile" | "avatars" | "settings" | "about";
 
 export const ProfileModal: React.FC<ProfileModalProps> = ({
   isOpen,
@@ -136,6 +137,10 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
           <div className="tab-enter">
             <SettingsTab />
           </div>
+        )}
+
+        {activeTab === "about" && (
+          <AboutTab />
         )}
       </Modal>
     </>

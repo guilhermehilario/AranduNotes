@@ -1,7 +1,7 @@
 import React from 'react';
-import { User, Camera, Settings } from 'lucide-react';
+import { User, Camera, Settings, Info } from 'lucide-react';
 
-type Tab = 'profile' | 'avatars' | 'settings';
+type Tab = 'profile' | 'avatars' | 'settings' | 'about';
 
 interface ProfileTabBarProps {
   activeTab: Tab;
@@ -12,6 +12,7 @@ const TABS: { id: Tab; label: string; icon: React.FC<{ className?: string }> }[]
   { id: 'profile', label: 'Perfil', icon: User },
   { id: 'avatars', label: 'Avatares', icon: Camera },
   { id: 'settings', label: 'Configurações', icon: Settings },
+  { id: 'about', label: 'Sobre', icon: Info },
 ];
 
 export const ProfileTabBar: React.FC<ProfileTabBarProps> = ({ activeTab, onTabChange }) => {
