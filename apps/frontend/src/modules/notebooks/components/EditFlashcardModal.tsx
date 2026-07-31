@@ -55,21 +55,23 @@ const FlashcardForm: React.FC<{
           onChange={(e) => setBack(e.target.value)}
         />
       </div>
-      <div className="flex gap-3 w-full justify-between mt-4">
+      <div className="flex flex-col sm:flex-row gap-3 w-full sm:justify-between mt-4">
         <Button
           variant="danger"
           onClick={handleDelete}
           disabled={isPending || !flashcard}
+          className="w-full sm:w-auto"
         >
           {isDeleting ? 'Excluindo...' : 'Excluir'}
         </Button>
-        <div className="flex gap-3">
-          <Button variant="outline" onClick={onClose} disabled={isPending}>
+        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+          <Button variant="outline" onClick={onClose} disabled={isPending} className="flex-1 sm:flex-none">
             Cancelar
           </Button>
           <Button
             onClick={handleSave}
             disabled={!front.trim() || !back.trim() || isPending}
+            className="flex-1 sm:flex-none"
           >
             {isSaving ? 'Salvando...' : 'Salvar'}
           </Button>

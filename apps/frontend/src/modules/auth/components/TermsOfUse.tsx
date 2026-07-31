@@ -18,9 +18,9 @@ export const TermsOfUse: React.FC<TermsOfUseProps> = ({ isOpen, onClose }) => {
       />
 
       {/* Modal */}
-      <div className="relative w-full max-w-2xl max-h-[85vh] flex flex-col bg-white dark:bg-dark-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-dark-700 overflow-hidden">
+      <div className="relative w-full max-w-2xl max-h-[calc(100dvh-2rem)] flex flex-col bg-white dark:bg-dark-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-dark-700 overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-dark-700 shrink-0">
+        <div className="flex items-center justify-between px-4 py-4 sm:px-6 border-b border-slate-200 dark:border-dark-700 shrink-0">
           <h2 className="text-lg font-bold text-slate-900 dark:text-dark-50">
             Termos de Uso e Responsabilidade
           </h2>
@@ -33,7 +33,7 @@ export const TermsOfUse: React.FC<TermsOfUseProps> = ({ isOpen, onClose }) => {
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5 text-sm text-slate-700 dark:text-dark-200 leading-relaxed">
+        <div className="flex-1 overflow-y-auto overscroll-contain px-4 py-5 sm:px-6 space-y-5 text-sm text-slate-700 dark:text-dark-200 leading-relaxed">
           <p className="text-slate-500 dark:text-dark-400 text-xs font-medium uppercase tracking-wider">
             Última atualização: Julho de 2026
           </p>
@@ -218,7 +218,7 @@ export const TermsOfUse: React.FC<TermsOfUseProps> = ({ isOpen, onClose }) => {
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-slate-200 dark:border-dark-700 shrink-0">
+        <div className="px-4 py-4 sm:px-6 border-t border-slate-200 dark:border-dark-700 shrink-0">
           <button
             onClick={onClose}
             className="w-full py-2.5 px-4 rounded-xl bg-brand-500 hover:bg-brand-600 text-white font-medium text-sm transition-colors"

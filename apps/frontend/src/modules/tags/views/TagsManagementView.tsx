@@ -168,7 +168,7 @@ export const TagsManagementView: React.FC = () => {
           </div>
           <div className="flex flex-col gap-2">
             <label className="text-sm font-medium text-slate-700 dark:text-dark-200">Cor</label>
-            <div className="flex gap-3">
+            <div className="flex gap-3 flex-wrap">
               {TAG_COLORS_ARRAY.map((color) => (
                 <button
                   key={color}
@@ -214,7 +214,7 @@ export const TagsManagementView: React.FC = () => {
           </div>
           <div className="flex flex-col gap-2">
             <label className="text-sm font-medium text-slate-700 dark:text-dark-200">Cor</label>
-            <div className="flex gap-3">
+            <div className="flex gap-3 flex-wrap">
               {TAG_COLORS_ARRAY.map((color) => (
                 <button
                   key={color}

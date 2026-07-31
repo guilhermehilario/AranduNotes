@@ -60,7 +60,7 @@ export const Modal: React.FC<ModalProps> = ({
 
       {/* Content Container */}
       <div
-        className={`relative w-full rounded-3xl flex flex-col max-h-[90vh] animate-in fade-in-50 zoom-in-95 duration-200 ${sizeClasses[size]}`}
+        className={`relative w-full rounded-3xl flex flex-col max-h-[calc(100dvh-2rem)] animate-in fade-in-50 zoom-in-95 duration-200 ${sizeClasses[size]}`}
         style={{
           background: 'var(--bg-surface)',
           border: '1px solid var(--border-color)',
@@ -69,7 +69,7 @@ export const Modal: React.FC<ModalProps> = ({
       >
         {/* Header */}
         <div
-          className="flex items-center justify-between px-6 py-5"
+          className="flex items-center justify-between px-4 py-4 sm:px-6 sm:py-5 flex-shrink-0"
           style={{ borderBottom: '1px solid var(--border-color)' }}
         >
           <h3 className="text-xl font-heading font-semibold" style={{ color: 'var(--text-primary)' }}>
@@ -87,14 +87,14 @@ export const Modal: React.FC<ModalProps> = ({
         </div>
 
         {/* Body */}
-        <div className="px-6 py-6 overflow-y-auto flex-grow" style={{ color: 'var(--text-primary)' }}>
+        <div className="px-4 py-5 sm:px-6 sm:py-6 overflow-y-auto overscroll-contain flex-grow" style={{ color: 'var(--text-primary)' }}>
           {children}
         </div>
 
         {/* Footer */}
         {footer && (
           <div
-            className="px-6 py-4 flex items-center justify-end gap-3"
+            className="px-4 py-4 sm:px-6 flex items-center justify-end gap-3 flex-shrink-0 flex-wrap"
             style={{
               background: 'var(--bg-surface-hover)',
               borderTop: '1px solid var(--border-color)',

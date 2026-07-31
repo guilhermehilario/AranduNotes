@@ -40,11 +40,11 @@ const SummaryForm: React.FC<{
           Markdown para formatação (negrito, itálico, listas, etc.).
         </p>
       </div>
-      <div className="flex gap-3 mt-4">
-        <Button variant="outline" onClick={onCancel}>
+      <div className="flex flex-col sm:flex-row gap-3 mt-4">
+        <Button variant="outline" onClick={onCancel} className="w-full sm:w-auto">
           Cancelar
         </Button>
-        <Button onClick={() => onSave(summaryText)}>
+        <Button onClick={() => onSave(summaryText)} className="w-full sm:w-auto">
           Salvar Resumo
         </Button>
       </div>
