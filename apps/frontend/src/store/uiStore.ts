@@ -1,9 +1,8 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import type { ThemePreference } from '../modules/auth/types';
 
-export type ThemePreference = 'light' | 'dark' | 'system';
-
-const THEME_VALUES = ['light', 'dark', 'system'] as const;
+export type { ThemePreference };
 
 /** Converte a preferência (incluindo 'system') em tema efetivo aplicado no DOM. */
 export function resolveTheme(pref: ThemePreference): 'light' | 'dark' {
@@ -24,7 +23,6 @@ interface UIState {
   language: string;
   dateFormat: string;
   timeFormat: '24h' | '12h';
-  toggleTheme: () => void;
   setTheme: (theme: ThemePreference) => void;
   toggleSidebar: () => void;
   setSidebarCollapsed: (collapsed: boolean) => void;
@@ -53,14 +51,6 @@ export const useUIStore = create<UIState>()(
       language: 'pt-BR',
       dateFormat: 'dd/MM/yyyy',
       timeFormat: '24h',
-      toggleTheme: () =>
-        set((state) => {
-          // Cicla entre os modos (system → dark → light → system)
-          const idx = THEME_VALUES.indexOf(state.theme);
-          const next = THEME_VALUES[(idx + 1) % THEME_VALUES.length];
-          applyThemeClass(next);
-          return { theme: next };
-        }),
       setTheme: (theme) => {
         applyThemeClass(theme);
         return set({ theme });

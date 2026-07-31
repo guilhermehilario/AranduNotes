@@ -132,7 +132,6 @@ const AISidebarComponent: React.FC<AISidebarProps> = ({
                   onClick={onGenerateSummary}
                   isLoading={isGeneratingSummary}
                   leftIcon={<Sparkles className="h-4 w-4" />}
-                  className="self-start"
                 >
                   Atualizar Resumo
                 </Button>

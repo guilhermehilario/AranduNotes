@@ -2,6 +2,8 @@ import React from 'react';
 import { Moon, Sun, Monitor } from 'lucide-react';
 import { useUIStore, resolveTheme } from '../../../store/uiStore.ts';
 import type { ThemePreference } from '../../../store/uiStore.ts';
+import { useToastStore } from '../../../store/toastStore.ts';
+import { extractApiError } from '../../../utils/api-errors.ts';
 import { authService } from '../../auth/services/authService.ts';
 import { OptionCard } from '../components/OptionCard.tsx';
 import { SectionTitle } from '../components/SectionTitle.tsx';
@@ -26,9 +28,20 @@ export const ThemeSection: React.FC = () => {
     if (next === theme) return;
     setTheme(next);
     // Persiste no servidor para sincronizar entre dispositivos
-    authService.updateTheme(next).catch(() => {
-      // Falha silenciosa — o tema continua aplicado localmente; na próxima
-      // sincronização de perfil o servidor volta a ser a fonte da verdade.
+    authService.updateTheme(next).then(() => {
+      useToastStore.getState().addToast('Tema salvo na conta com sucesso!', 'success');
+    }).catch((err) => {
+      // O tema continua aplicado localmente, mas avisamos que a sincronização
+      // entre dispositivos falhou (ex.: offline).
+      useToastStore
+        .getState()
+        .addToast(
+          extractApiError(
+            err,
+            'Não foi possível salvar o tema na conta. O tema continua aplicado neste dispositivo.',
+          ),
+          'error',
+        );
     });
   };
 
