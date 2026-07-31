@@ -108,6 +108,22 @@ export const EditorView: React.FC = () => {
     return () => clearTimeout(t);
   }, [aiSidebarOpen]);
 
+  // ── Fade de troca suave (mobile): ao abrir o painel de IA, o editor desvanece
+  // (opacity + translate) em vez de sumir de forma brusca com display:none; após
+  // os 300ms ele é realmente ocultado (max-lg:hidden) para liberar layout/foco.
+  // Ao fechar, ele volta ao fluxo no próximo frame e desvanece de volta enquanto
+  // o painel sai — a troca vira um crossfade na mesma duração da ocultação do painel.
+  const [editorHidden, setEditorHidden] = useState(false);
+
+  useEffect(() => {
+    if (aiSidebarOpen) {
+      const t = setTimeout(() => setEditorHidden(true), 300);
+      return () => clearTimeout(t);
+    }
+    const t = setTimeout(() => setEditorHidden(false), 0);
+    return () => clearTimeout(t);
+  }, [aiSidebarOpen]);
+
   useEffect(() => {
     const isMobile = window.matchMedia("(max-width: 1023.98px)").matches;
     if (!isMobile) return;
@@ -191,13 +207,24 @@ export const EditorView: React.FC = () => {
           os dois ficam lado a lado */}
       <div className="relative flex-1 flex flex-col lg:flex-row gap-4 lg:gap-6 min-h-[250px] sm:min-h-[400px] lg:min-h-[90vh] min-w-0 overflow-hidden">
         {/* Lado Esquerdo - Editor */}
+        {/* No mobile, ao trocar com o painel de IA o editor desvanece (opacity +
+            translate) em vez de sumir com display:none; após os 300ms é ocultado
+            de verdade (max-lg:hidden). No desktop permanece sempre visível. */}
         <EditorContentArea
           editor={editor}
           localTitle={localTitle}
           setLocalTitle={setLocalTitle}
           setSaveStatus={editorStatus.setSaveStatus}
           annotationTrigger={annotationTrigger}
-          className={aiSidebarOpen ? "max-lg:hidden" : ""}
+          className={`max-lg:transition-all max-lg:duration-300 max-lg:ease-in-out ${
+            // opacity/translate controladas por editorHidden || aiSidebarOpen para que,
+            // ao fechar, o editor volte ao fluxo já com opacidade 0 e o fade-in funcione
+            // (se fosse só aiSidebarOpen, a opacidade voltaria a 1 antes de sair do
+            // display:none, causando um pop instantâneo)
+            editorHidden || aiSidebarOpen
+              ? "max-lg:opacity-0 max-lg:translate-y-2 max-lg:pointer-events-none"
+              : ""
+          } ${editorHidden ? "max-lg:hidden" : ""}`.trim()}
         />
 
         {/* Lado Direito - Painel de IA */}

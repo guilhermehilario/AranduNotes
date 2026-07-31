@@ -94,22 +94,21 @@ const EditorBubbleMenuComponent: React.FC<EditorBubbleMenuProps> = ({ editor }) 
         // Evita que o menu fique colado nas bordas (respiro de 8px)
         flip: { padding: 8 },
         shift: { padding: 8 },
-        // Limita largura/altura ao espaço REAL disponível (container do editor,
-        // não a viewport) — evita ícone cortado na lateral e 2ª linha fora da tela
+        // Limita a LARGURA ao espaço REAL disponível (container do editor, não a
+        // viewport) — evita ícone cortado na lateral. A altura NÃO é limitada para
+        // não gerar scroll interno: o menu cresce na altura natural (com flex-wrap)
+        // e o flip reposiciona quando não há espaço acima/abaixo.
         size: {
           padding: 8,
-          apply: ({ availableWidth, availableHeight, elements }) => {
+          apply: ({ availableWidth, elements }) => {
             const { floating } = elements;
             if (Number.isFinite(availableWidth)) {
               floating.style.maxWidth = `${Math.max(0, availableWidth)}px`;
             }
-            if (Number.isFinite(availableHeight)) {
-              floating.style.maxHeight = `${Math.max(0, availableHeight)}px`;
-            }
           },
         },
       }}
-      className="bg-slate-800 dark:bg-dark-800 border border-slate-700 dark:border-dark-700 rounded-xl shadow-xl px-2 py-1.5 max-w-[calc(100dvw-1.25rem)] sm:max-w-none overflow-y-auto overscroll-contain"
+      className="bg-slate-800 dark:bg-dark-800 border border-slate-700 dark:border-dark-700 rounded-xl shadow-xl px-2 py-1.5 max-w-[calc(100dvw-1.25rem)] sm:max-w-none overflow-hidden"
     >
       {/* ── Linha 1: Essenciais (flex-wrap permite quebrar em telas pequenas) ── */}
       <div className="flex flex-wrap items-center gap-0.5 gap-y-1">
