@@ -69,8 +69,8 @@ export const AvatarSelector: React.FC<AvatarSelectorProps> = ({
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Seletor de categoria — estilo colapsado, no topo */}
-      <details className="group" open>
+      {/* Seletor de categoria — estilo colapsado, no topo (recolhido por padrão) */}
+      <details className="group">
         <summary
           className="text-xs font-semibold cursor-pointer hover:opacity-80 transition-opacity list-none flex items-center gap-1 py-1"
           style={{ color: 'var(--primary)' }}
