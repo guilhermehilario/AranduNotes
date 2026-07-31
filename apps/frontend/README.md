@@ -83,11 +83,12 @@ apps/frontend/
 
 ### 📝 Editor de Texto (TipTap)
 - Toolbar multi-linha com formatação completa (negrito, itálico, headings, listas, blocos de código, tasks)
+- Toolbar com **linha extra colapsável** (botão toggle) — mesmo comportamento do BubbleMenu; as ferramentas ocultas aparecem na sequência das já visíveis
 - Pincel de formatação
 - Anotações coloridas
 - Autosave com debounce (1.5s)
 - Suporte a links com tooltip
-- Bubble menu para formatação rápida
+- Bubble menu para formatação rápida (responsivo: sem scroll, largura limitada ao editor, linhas adicionais no mobile)
 
 ### 🗂️ Cadernos e Folhas
 - Dashboard em grid com cards coloridos
@@ -122,10 +123,11 @@ apps/frontend/
 
 ### 👤 Perfil
 - Nome, email, avatar
-- **Avatar personalizável** com múltiplas categorias (DiceBear)
+- **Avatar personalizável** com múltiplas categorias (DiceBear) e seletor de categorias colapsável no topo
 - Alteração de senha
 - Exclusão de conta com confirmação por código
 - Preferências do sistema (tema, notificações)
+- **Tema Claro / Escuro / Automático** sincronizado na conta entre dispositivos (toasts de sucesso/erro ao salvar)
 - **Aba "Sobre"** com descrição do projeto, roadmap de versões, apoio coletivo (chave PIX em breve) e notas de atualização **(Novo)**
 
 ### 📱 Responsividade Mobile **(Novo)**
@@ -133,6 +135,7 @@ apps/frontend/
 - Menu combinado de notificações + clipboard no header mobile
 - Abas de perfil e configurações com scroll horizontal e containers responsivos
 - Auditoria de grids 2-3 colunas: `StudyHistory` corrigido para empilhar em telas estreitas
+- Tipografia dos cards melhorada no mobile (`text-wrap: pretty/balance` + `overflow-wrap`) para leitura mais confortável
 
 ### 🔧 Outras
 - Autenticação JWT + refresh token em cookie HttpOnly
@@ -141,7 +144,7 @@ apps/frontend/
 - Lista de tarefas
 - Gestor de clipboard com busca e favoritos
 - Notificações in-app e nativas (Browser API)
-- Tema claro/escuro
+- Tema claro/escuro/automático (sincronizado na conta entre dispositivos)
 - Responsivo
 
 ---

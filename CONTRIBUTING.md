@@ -6,7 +6,7 @@ Obrigado por considerar contribuir com o **Arandu**! Este guia vai te ajudar a e
 
 ## 📋 Pré-requisitos
 
-- **Node.js** `>= 18` (LTS)
+- **Node.js** `>= 20` (recomendado: versão LTS mais recente; Dockerfile usa Node 22)
 - **Yarn v1** (Classic)
 - **Git**
 - Conhecimento básico de **TypeScript**, **React** e **NestJS**

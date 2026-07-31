@@ -42,6 +42,7 @@ estudo individual: criar, organizar, revisar e acompanhar o progresso.
 - 🔐 **Autenticação e perfil**
   - JWT com refresh tokens, verificação de e-mail e recuperação de senha
   - Perfil, avatares personalizáveis (DiceBear) e preferências do sistema
+  - Tema **Claro / Escuro / Automático** com sincronização na conta entre dispositivos (salvo no servidor)
   - Aba **"Sobre"** no perfil (descrição, versões, apoio coletivo e notas de atualização)
 - 🧰 **Ferramentas de organização**
   - Tags, bookmarks, lista de tarefas e histórico de cópia/cola

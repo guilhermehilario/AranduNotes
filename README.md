@@ -37,6 +37,7 @@ técnicas como **Pomodoro** e **revisão espaçada** (algoritmo SM-2).
 - 📅 **Planejamento** com agenda, calendário, cronograma, metas e Pomodoro
 - 📋 **Histórico de cópia e cola** (gestor de clipboard) com busca, favoritos e drag & drop
 - 👤 **Avatar personalizável** com múltiplas categorias visuais
+- 🎨 **Tema Claro / Escuro / Automático** sincronizado na conta entre dispositivos **(Novo)**
 - 🔔 **Notificações e preferências** do sistema
 - 🗑️ **Lixeira e arquivamento** com soft-delete
 - 🔄 **Histórico de edições**

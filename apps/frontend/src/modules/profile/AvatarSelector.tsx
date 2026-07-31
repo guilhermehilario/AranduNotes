@@ -76,7 +76,8 @@ export const AvatarSelector: React.FC<AvatarSelectorProps> = ({
           style={{ color: 'var(--primary)' }}
         >
           <ChevronRight className="h-3 w-3 group-open:rotate-90 transition-transform" />
-          {AVATAR_CATEGORIES.length} estilos de avatar · {totalAvatars} avatares
+          {currentCategory.icon} {currentCategory.name} · {AVATAR_CATEGORIES.length} estilos ·{' '}
+          {totalAvatars} avatares
         </summary>
         <div
           className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-1.5 mt-2 p-3 rounded-xl"

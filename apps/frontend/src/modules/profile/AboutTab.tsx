@@ -61,6 +61,7 @@ const VERSIONS: Array<{ tag: string; name: string; status: string; items: string
       'Questões, simulados e revisões',
       'Planejamento de estudos: agenda, cronograma, metas e pomodoro',
       'Autenticação, perfil, avatares e histórico de cópia',
+      'Tema Claro/Escuro/Automático sincronizado na conta entre dispositivos',
     ],
   },
   {
@@ -91,9 +92,13 @@ const RELEASE_NOTES: Array<{ version: string; date: string; latest?: boolean; hi
     date: '31/07/2026',
     latest: true,
     highlights: [
+      'Tema Claro/Escuro/Automático com sincronização na conta entre dispositivos',
+      'Toasts de feedback ao salvar o tema (sucesso/erro)',
+      'Seletor de categorias de avatares colapsável no topo da aba Avatares',
+      'Barra de ferramentas do editor com linha extra colapsável (como o BubbleMenu)',
+      'Melhorias de leitura de texto nos cards no mobile',
       'Responsividade mobile completa: modais, perfil, configurações e abas',
       'Menu combinado de notificações + histórico de cópia no mobile',
-      'Dropdown de histórico de cópia acessível no celular',
       'CI com lint obrigatório (0 warnings) no GitHub Actions',
       'Melhorias de desempenho e tipagem em todo o monorepo',
     ],
