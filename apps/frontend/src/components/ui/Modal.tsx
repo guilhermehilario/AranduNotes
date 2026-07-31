@@ -9,7 +9,6 @@ export interface ModalProps {
   children: React.ReactNode;
   footer?: React.ReactNode;
   size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl';
-  className?: string;
   /**
    * Quando false, o body vira `flex flex-col min-h-0` e o conteúdo assume o
    * próprio scroll interno (ex.: AbasComScroll) — o `overflow-y: auto` fica
