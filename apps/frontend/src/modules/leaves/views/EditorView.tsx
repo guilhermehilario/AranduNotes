@@ -94,14 +94,17 @@ export const EditorView: React.FC = () => {
 
   // ── Fade de saída suave: mantém o painel de IA montado durante os 300ms
   // da transição de ocultação (opacidade/deslocamento), desmontando só depois.
-  const [aiPanelPresent, setAiPanelPresent] = useState(aiSidebarOpen);
+  // O estado só é alterado via timers (respeitando react-hooks/set-state-in-effect):
+  // ao fechar, agenda a ocultação para 300ms depois; ao reabrir, agenda a
+  // exibição para o próximo frame (permite o fade-in de entrada normalmente).
+  const [aiPanelHidden, setAiPanelHidden] = useState(false);
 
   useEffect(() => {
     if (aiSidebarOpen) {
-      setAiPanelPresent(true);
-      return;
+      const t = setTimeout(() => setAiPanelHidden(false), 0);
+      return () => clearTimeout(t);
     }
-    const t = setTimeout(() => setAiPanelPresent(false), 300);
+    const t = setTimeout(() => setAiPanelHidden(true), 300);
     return () => clearTimeout(t);
   }, [aiSidebarOpen]);
 
@@ -200,13 +203,14 @@ export const EditorView: React.FC = () => {
         {/* Lado Direito - Painel de IA */}
         {/* No mobile o painel vira um overlay absoluto; ao fechar ele desvanece
             (opacity + translate) revelando o editor por trás, e só então é
-            desmontado — no desktop permanece em fluxo ao lado do editor. */}
-        {aiPanelPresent && (
+            desmontado — no desktop permanece em fluxo ao lado do editor e faz
+            um fade puro no lugar. */}
+        {!aiPanelHidden && (
           <AISidebar
             className={`max-lg:absolute max-lg:inset-0 max-lg:z-20 ${
               aiSidebarOpen
                 ? ""
-                : "opacity-0 translate-y-2 pointer-events-none"
+                : "opacity-0 max-lg:translate-y-2 pointer-events-none"
             }`}
             editor={editor}
             summary={leaf?.summary}
