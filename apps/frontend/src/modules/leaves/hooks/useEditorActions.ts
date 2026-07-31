@@ -22,8 +22,6 @@ interface UseEditorActionsParams {
 interface UseEditorActionsReturn {
   aiSidebarOpen: boolean;
   setAiSidebarOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  editorExpanded: boolean;
-  handleExpandToggle: () => void;
   handleArchiveToggle: () => Promise<void>;
   confirmDeleteOpen: boolean;
   setConfirmDeleteOpen: React.Dispatch<React.SetStateAction<boolean>>;
@@ -49,19 +47,8 @@ export function useEditorActions({
   generateAIFlashcards,
   editor,
 }: UseEditorActionsParams): UseEditorActionsReturn {
-  // ── UI State: Sidebar e Expansão ──
+  // ── UI State: Sidebar ──
   const [aiSidebarOpen, setAiSidebarOpen] = useState(true);
-  const [editorExpanded, setEditorExpanded] = useState(false);
-
-  const handleExpandToggle = useCallback(() => {
-    setEditorExpanded((prev) => {
-      const expanding = !prev;
-      if (expanding) {
-        setAiSidebarOpen(false);
-      }
-      return expanding;
-    });
-  }, []);
 
   // ── Archive / Unarchive ──
   const handleArchiveToggle = useCallback(async () => {
@@ -165,8 +152,6 @@ export function useEditorActions({
   return {
     aiSidebarOpen,
     setAiSidebarOpen,
-    editorExpanded,
-    handleExpandToggle,
     handleArchiveToggle,
     confirmDeleteOpen,
     setConfirmDeleteOpen,

@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { useParams, useNavigate, Link as RouterLink } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { useLeaf } from "../hooks/useLeaves";
@@ -63,8 +64,6 @@ export const EditorView: React.FC = () => {
   const {
     aiSidebarOpen,
     setAiSidebarOpen,
-    editorExpanded,
-    handleExpandToggle,
     handleArchiveToggle,
     confirmDeleteOpen,
     setConfirmDeleteOpen,
@@ -87,6 +86,28 @@ export const EditorView: React.FC = () => {
     generateAIFlashcards,
     editor,
   });
+
+  // ── Dica mobile: painel de IA abre por ~1s na entrada e fecha sozinho ──
+  // No mobile o painel de IA começa aberto (estado inicial); após 1s ele fecha
+  // e o botão "PA" do header pulsa para indicar onde reabrir.
+  const [aiButtonHint, setAiButtonHint] = useState(false);
+
+  useEffect(() => {
+    const isMobile = window.matchMedia("(max-width: 1023.98px)").matches;
+    if (!isMobile) return;
+
+    setAiSidebarOpen(true);
+    const closeTimer = setTimeout(() => {
+      setAiSidebarOpen(false);
+      setAiButtonHint(true);
+    }, 1000);
+    const hintTimer = setTimeout(() => setAiButtonHint(false), 5000);
+
+    return () => {
+      clearTimeout(closeTimer);
+      clearTimeout(hintTimer);
+    };
+  }, [setAiSidebarOpen, setAiButtonHint]);
 
   const {
     editingFlashcard,
@@ -142,15 +163,16 @@ export const EditorView: React.FC = () => {
         isBookmarked={isBookmarked}
         isArchived={isArchived}
         aiSidebarOpen={aiSidebarOpen}
-        editorExpanded={editorExpanded}
+        aiButtonHint={aiButtonHint}
         onToggleBookmark={toggleBookmark}
         onArchiveToggle={handleArchiveToggle}
         onDelete={() => setConfirmDeleteOpen(true)}
         onToggleAiSidebar={() => setAiSidebarOpen(!aiSidebarOpen)}
-        onToggleExpand={handleExpandToggle}
       />
 
-      {/* Split Pane Editor / IA */}
+      {/* Split Pane Editor / IA — no mobile, quando o painel de IA está aberto ele
+          "troca" com o editor (o texto fica oculto via max-lg:hidden); no desktop
+          os dois ficam lado a lado */}
       <div className="flex-1 flex flex-col lg:flex-row gap-4 lg:gap-6 min-h-[250px] sm:min-h-[400px] lg:min-h-[90vh] min-w-0 overflow-hidden">
         {/* Lado Esquerdo - Editor */}
         <EditorContentArea
@@ -158,12 +180,12 @@ export const EditorView: React.FC = () => {
           localTitle={localTitle}
           setLocalTitle={setLocalTitle}
           setSaveStatus={editorStatus.setSaveStatus}
-          editorExpanded={editorExpanded}
           annotationTrigger={annotationTrigger}
+          className={aiSidebarOpen ? "max-lg:hidden" : ""}
         />
 
         {/* Lado Direito - Painel de IA */}
-        {aiSidebarOpen && !editorExpanded && (
+        {aiSidebarOpen && (
           <AISidebar
             editor={editor}
             summary={leaf?.summary}
@@ -188,7 +210,7 @@ export const EditorView: React.FC = () => {
       </div>
 
       {/* Sub-folhas com drag & drop */}
-      {!editorExpanded && leaf && (
+      {leaf && (
         <SubLeavesSection
           leaf={leaf}
           notebookId={notebookId || ""}

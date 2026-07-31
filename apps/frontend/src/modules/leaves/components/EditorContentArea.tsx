@@ -9,8 +9,9 @@ interface EditorContentAreaProps {
   localTitle: string;
   setLocalTitle: React.Dispatch<React.SetStateAction<string>>;
   setSaveStatus: (status: "idle" | "saving" | "saved" | "error") => void;
-  editorExpanded: boolean;
   annotationTrigger: { text: string } | null;
+  /** Classes adicionais no container (ex.: ocultar no mobile quando o painel de IA está aberto) */
+  className?: string;
 }
 
 export const EditorContentArea: React.FC<EditorContentAreaProps> = ({
@@ -18,12 +19,12 @@ export const EditorContentArea: React.FC<EditorContentAreaProps> = ({
   localTitle,
   setLocalTitle,
   setSaveStatus,
-  editorExpanded,
   annotationTrigger,
+  className = '',
 }) => {
   return (
     <div
-      className={`flex-1 flex flex-col bg-white dark:bg-dark-900 border border-slate-100 dark:border-dark-800 rounded-3xl p-4 sm:p-6 min-w-0 overflow-hidden ${editorExpanded ? "lg:w-full" : ""}`}
+      className={`flex-1 flex flex-col bg-white dark:bg-dark-900 border border-slate-100 dark:border-dark-800 rounded-3xl p-4 sm:p-6 min-w-0 overflow-hidden ${className}`}
     >
       <input
         type="text"
