@@ -89,11 +89,11 @@ export const AvatarSelector: React.FC<AvatarSelectorProps> = ({
             style={{ borderColor: 'var(--bg-surface)' }}
           />
         </div>
-        <div>
-          <p className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>
+        <div className="min-w-0">
+          <p className="text-sm font-bold truncate" style={{ color: 'var(--text-primary)' }}>
             Avatar selecionado
           </p>
-          <p className="text-[11px] mt-0.5" style={{ color: 'var(--text-secondary)' }}>
+          <p className="text-[11px] mt-0.5 truncate" style={{ color: 'var(--text-secondary)' }}>
             {customAvatarUrl
               ? "📸 Sua foto"
               : `${currentCategory.icon} ${currentCategory.name} · ${currentVariant.seed}`

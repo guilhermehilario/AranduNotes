@@ -71,7 +71,7 @@ export const DeleteAccountModals: React.FC<DeleteAccountModalsProps> = ({
             className="text-center font-mono tracking-wider uppercase"
           />
 
-          <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-3">
             <Button
               variant="outline"
               onClick={resetDeleteFlow}
@@ -122,7 +122,7 @@ export const DeleteAccountModals: React.FC<DeleteAccountModalsProps> = ({
             </p>
           </div>
 
-          <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-3">
             <Button
               variant="outline"
               onClick={resetDeleteFlow}
@@ -202,7 +202,7 @@ export const DeleteAccountModals: React.FC<DeleteAccountModalsProps> = ({
             </p>
           </div>
 
-          <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-3">
             <Button
               variant="outline"
               onClick={resetDeleteFlow}

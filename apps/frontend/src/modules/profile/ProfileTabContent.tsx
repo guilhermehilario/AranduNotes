@@ -44,7 +44,7 @@ export const ProfileTabContent: React.FC<ProfileTabContentProps> = ({ onClose })
 
   return (
     <>
-      <div className="flex flex-col gap-7 max-h-[calc(90vh-12rem)] overflow-y-auto pr-1 tab-enter">
+      <div className="flex flex-col gap-5 sm:gap-7 max-h-[calc(100dvh-12rem)] overflow-y-auto overscroll-contain pr-1.5 tab-enter">
         {/* User info */}
         <div className="flex items-center gap-4">
           <div
@@ -57,11 +57,11 @@ export const ProfileTabContent: React.FC<ProfileTabContentProps> = ({ onClose })
             <img src={user?.avatarUrl || ""} alt="Avatar" className="w-full h-full object-cover" />
             <div className="absolute inset-0 rounded-full ring-2" style={{ boxShadow: '0 0 0 2px var(--bg-surface)' }} />
           </div>
-          <div>
-            <h2 className="text-lg font-heading font-extrabold" style={{ color: 'var(--text-primary)' }}>
+          <div className="min-w-0">
+            <h2 className="text-lg font-heading font-extrabold truncate" style={{ color: 'var(--text-primary)' }}>
               {user?.name || "Meu Perfil"}
             </h2>
-            <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>{user?.email}</p>
+            <p className="text-xs mt-0.5 truncate" style={{ color: 'var(--text-secondary)' }}>{user?.email}</p>
           </div>
         </div>
 
