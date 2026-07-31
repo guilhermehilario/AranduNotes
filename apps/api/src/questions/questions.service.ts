@@ -1,4 +1,5 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import type { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -6,7 +7,7 @@ export class QuestionsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async findAll(userId: string, notebookId?: string) {
-    const where: any = { userId };
+    const where: Prisma.QuestionWhereInput = { userId };
     if (notebookId) where.notebookId = notebookId;
     return this.prisma.withConnection(() =>
       this.prisma.question.findMany({
@@ -88,7 +89,7 @@ export class QuestionsService {
     );
     if (!question) throw new NotFoundException('Questão não encontrada');
 
-    const updates: Record<string, any> = {};
+    const updates: Prisma.QuestionUpdateInput = {};
     if (data.question !== undefined) updates.question = data.question;
     if (data.options !== undefined) updates.options = data.options;
     if (data.correctAnswer !== undefined) updates.correctAnswer = data.correctAnswer;
@@ -117,7 +118,7 @@ export class QuestionsService {
   }
 
   async getRandomQuestions(userId: string, limit: number = 10, notebookId?: string) {
-    const where: any = { userId };
+    const where: Prisma.QuestionWhereInput = { userId };
     if (notebookId) where.notebookId = notebookId;
 
     const total = await this.prisma.withConnection(() =>

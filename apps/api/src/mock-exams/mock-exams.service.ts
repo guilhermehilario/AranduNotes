@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import type { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -6,7 +7,7 @@ export class MockExamsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async findAll(userId: string, notebookId?: string) {
-    const where: any = { userId };
+    const where: Prisma.MockExamWhereInput = { userId };
     if (notebookId) where.notebookId = notebookId;
     return this.prisma.withConnection(() =>
       this.prisma.mockExam.findMany({

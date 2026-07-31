@@ -19,8 +19,7 @@ export class SaveSessionDto {
 
   @IsOptional()
   @IsArray()
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  flashcards?: any[];
+  flashcards?: Array<Record<string, unknown>>;
 
   @IsOptional()
   @IsArray()

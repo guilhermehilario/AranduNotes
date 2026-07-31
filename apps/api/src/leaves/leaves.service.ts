@@ -65,7 +65,7 @@ export class LeavesService {
   }
 
   async findOne(leafId: string, userId: string) {
-    const { leaf, error } = await this.verifyLeafOwnership(leafId, userId);
+    const { error } = await this.verifyLeafOwnership(leafId, userId);
     if (error) {
       if (error === 'Acesso negado') throw new ForbiddenException(error);
       throw new NotFoundException(error);
@@ -226,7 +226,7 @@ export class LeavesService {
   }
 
   async archive(leafId: string, userId: string) {
-    const { leaf, error } = await this.verifyLeafOwnership(leafId, userId);
+    const { error } = await this.verifyLeafOwnership(leafId, userId);
     if (error) {
       if (error === 'Acesso negado') throw new ForbiddenException(error);
       throw new NotFoundException(error);
@@ -242,7 +242,7 @@ export class LeavesService {
   }
 
   async unarchive(leafId: string, userId: string) {
-    const { leaf, error } = await this.verifyLeafOwnership(leafId, userId);
+    const { error } = await this.verifyLeafOwnership(leafId, userId);
     if (error) {
       if (error === 'Acesso negado') throw new ForbiddenException(error);
       throw new NotFoundException(error);
@@ -277,7 +277,7 @@ export class LeavesService {
     userId: string,
     data: { orderedIds: string[]; parentId?: string },
   ) {
-    const { orderedIds, parentId } = data;
+    const { orderedIds } = data;
 
     // Verifica se todas as folhas pertencem ao usuário
     const leaves = await this.prisma.withConnection(() =>

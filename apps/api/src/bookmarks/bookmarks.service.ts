@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import type { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -71,7 +72,7 @@ export class BookmarksService {
   }
 
   async isBookmarked(userId: string, leafId?: string, notebookId?: string): Promise<boolean> {
-    const where: any = { userId };
+    const where: Prisma.BookmarkWhereInput = { userId };
     if (leafId) where.leafId = leafId;
     if (notebookId) where.notebookId = notebookId;
 

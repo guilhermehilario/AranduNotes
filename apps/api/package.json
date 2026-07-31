@@ -10,7 +10,7 @@
     "dev": "prisma generate && prisma db push && ts-node-dev --respawn --transpile-only src/main.ts",
     "test": "jest",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "lint": "eslint \"{src,test}/**/*.ts\""
+    "lint": "eslint \"{src,test}/**/*.ts\" --max-warnings 0"
   },
   "dependencies": {
     "@flydotio/litestream": "^1.0.1",

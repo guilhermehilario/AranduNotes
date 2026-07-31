@@ -51,7 +51,7 @@ export class StudyService {
       reviewedCount?: number;
       showAnswer?: boolean;
       sessionActive?: boolean;
-      flashcards?: any[];
+      flashcards?: Array<Record<string, unknown>>;
       completedCardIds?: string[];
       scores?: Record<string, number>;
     },

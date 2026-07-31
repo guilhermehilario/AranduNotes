@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsInt, IsBoolean, Min, Max, MinLength, MaxLength } from 'class-validator';
+import { IsString, IsOptional, IsInt, IsBoolean, Min, Max, MaxLength } from 'class-validator';
 
 export class CreatePomodoroDto {
   @IsOptional()

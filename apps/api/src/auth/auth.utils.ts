@@ -24,6 +24,14 @@ export function stripPassword(user: {
   createdAt: Date;
   updatedAt: Date;
 }): UserPublic {
-  const { password: _, deletedAt: __, ...rest } = user;
-  return rest;
+  // Retorna apenas os campos públicos, omitindo password e deletedAt
+  return {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    avatarUrl: user.avatarUrl,
+    emailVerified: user.emailVerified,
+    createdAt: user.createdAt,
+    updatedAt: user.updatedAt,
+  };
 }

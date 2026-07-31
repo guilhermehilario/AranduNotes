@@ -144,7 +144,7 @@ export class VerificationService {
         user.name,
         verificationToken,
       );
-    } catch (error) {
+    } catch {
       this.logger.error("Falha ao reenviar e-mail de verificação");
       throw new Error("Erro ao enviar e-mail. Tente novamente mais tarde.");
     }

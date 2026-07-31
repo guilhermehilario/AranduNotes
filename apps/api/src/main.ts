@@ -1,6 +1,7 @@
 import { NestFactory } from "@nestjs/core";
 import cookieParser from "cookie-parser";
 import helmet from "helmet";
+import { Request, Response, NextFunction } from "express";
 import { AppModule } from "./app.module";
 
 async function bootstrap() {
@@ -141,7 +142,7 @@ async function bootstrap() {
   const startupStart = Date.now();
 
   // ── Middleware global: adiciona header de tempo de startup e saúde do DB ──
-  app.use((req: any, res: any, next: () => void) => {
+  app.use((req: Request, res: Response, next: NextFunction) => {
     // Adiciona header indicando que o servidor está pronto
     res.setHeader("X-Instance-Status", "ready");
     next();
@@ -149,7 +150,7 @@ async function bootstrap() {
 
   // ── Request Logger ──
   // Em produção, loga apenas warnings/errors e tempo de resposta lento
-  app.use((req: any, res: any, next: () => void) => {
+  app.use((req: Request, res: Response, next: NextFunction) => {
     const start = Date.now();
     res.on("finish", () => {
       const duration = Date.now() - start;

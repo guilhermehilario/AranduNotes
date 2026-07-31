@@ -23,7 +23,6 @@ export class AppController {
     const dbHealthy = await this.prisma.isHealthy();
 
     const healthStatus = dbHealthy ? 'healthy' : 'degraded';
-    const httpStatusCode = dbHealthy ? 200 : 503;
 
     return {
       status: healthStatus,
