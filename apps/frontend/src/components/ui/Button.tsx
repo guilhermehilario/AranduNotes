@@ -24,9 +24,9 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     },
     ref
   ) => {
-    // Classes base com foco e transições suaves
+    // Classes base com foco e transições suaves (inclui o estilo focus-visible comum)
     const baseClass =
-      'inline-flex items-center justify-center font-medium rounded-xl transition-all duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50 disabled:pointer-events-none active:scale-[0.97] cursor-pointer';
+      'inline-flex items-center justify-center font-medium rounded-xl transition-all duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)] disabled:opacity-50 disabled:pointer-events-none active:scale-[0.97] cursor-pointer';
 
     // Variantes de estilos usando a paleta Dark Elegance
     const variantClasses = {
@@ -49,16 +49,13 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       lg: 'px-6 py-3.5 text-lg gap-2.5',
     };
 
-    // Classes comuns de foco via keyboard
-    const focusVisibleClass =
-      'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]';
 
     return (
       <button
         ref={ref}
         type="button"
         disabled={disabled || isLoading}
-        className={`${baseClass} ${variantClasses[variant]} ${sizeClasses[size]} ${focusVisibleClass} ${className}`}
+        className={`${baseClass} ${variantClasses[variant]} ${sizeClasses[size]} ${className}`}
         {...props}
       >
         {isLoading && <Loader2 className="h-4 w-4 animate-spin text-current" />}
