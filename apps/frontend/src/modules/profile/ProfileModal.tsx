@@ -101,7 +101,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
         )}
 
         {activeTab === "avatars" && (
-          <div className="flex flex-col gap-5 sm:gap-7 max-h-[calc(100dvh-12rem)] overflow-y-auto overscroll-contain pr-1.5 scroll-smooth tab-enter">
+          <div className="flex flex-col gap-5 sm:gap-7 tab-enter">
             <AvatarSelector
               selectedCategory={selectedCategory}
               selectedVariant={selectedVariant}

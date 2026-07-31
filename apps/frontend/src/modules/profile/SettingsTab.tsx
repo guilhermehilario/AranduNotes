@@ -6,7 +6,7 @@ import { NotificationSection } from './sections/NotificationSection.tsx';
 
 export const SettingsTab: React.FC = () => {
   return (
-    <div className="flex flex-col gap-4 sm:gap-5 max-h-[calc(100dvh-12rem)] overflow-y-auto overscroll-contain pr-1.5">
+    <div className="flex flex-col gap-4 sm:gap-5">
       <ThemeSection />
       <LanguageSection />
       <DateTimeSection />
