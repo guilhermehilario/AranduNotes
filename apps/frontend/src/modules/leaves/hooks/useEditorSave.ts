@@ -97,8 +97,14 @@ export function useEditorSave({
     } finally {
       saveInFlightRef.current = false;
     }
-  // biome-ignore lint/correctness/useExhaustiveDependencies: refs são objetos estáveis
-  }, [updateLeaf]);
+  // refs são objetos estáveis (criados via useRef no pai) — seguros nas deps
+  }, [
+    updateLeaf,
+    initialSyncDoneRef,
+    lastSavedRef,
+    latestValuesRef,
+    saveInFlightRef,
+  ]);
 
   // ── Salvamento de emergência (keepalive) ──
 
@@ -141,8 +147,8 @@ export function useEditorSave({
     }).catch(() => {
       // Silencia erros — é um salvamento best-effort de emergência
     });
-  // biome-ignore lint/correctness/useExhaustiveDependencies: refs são objetos estáveis
-  }, []);
+  // refs são objetos estáveis (criados via useRef no pai) — seguros nas deps
+  }, [initialSyncDoneRef, lastSavedRef, latestValuesRef]);
 
   // ── Atualização das refs das funções ──
 
@@ -243,8 +249,16 @@ export function useEditorSave({
           saveInFlightRef.current = false;
         });
     }
-  // biome-ignore lint/correctness/useExhaustiveDependencies: refs são objetos estáveis
-  }, [debouncedTitle, debouncedContent, debouncedRawText, updateLeaf]);
+  // refs são objetos estáveis (criados via useRef no pai) — seguros nas deps
+  }, [
+    debouncedTitle,
+    debouncedContent,
+    debouncedRawText,
+    updateLeaf,
+    initialSyncDoneRef,
+    lastSavedRef,
+    saveInFlightRef,
+  ]);
   // 🔴 editorStatus removido das deps — acessa store diretamente via getState() para evitar loop
 
   return { flushSave };

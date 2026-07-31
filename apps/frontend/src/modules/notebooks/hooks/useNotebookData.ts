@@ -13,7 +13,11 @@ interface UseNotebookDataParams {
 
 export function useNotebookData({ notebookId }: UseNotebookDataParams) {
   const navigate = useNavigate();
-  const editorStatus = useEditorStatusStore();
+  // Seletores individuais da store (ações estáveis) — evita re-render a cada
+  // setState e permite colocar as ações nas deps sem loop infinito.
+  const showEditorStatus = useEditorStatusStore((s) => s.show);
+  const setEditorStatusLastUpdate = useEditorStatusStore((s) => s.setLastUpdate);
+  const hideEditorStatus = useEditorStatusStore((s) => s.hide);
 
   const {
     notebook,
@@ -42,20 +46,23 @@ export function useNotebookData({ notebookId }: UseNotebookDataParams) {
   // Sincroniza editorStatus com o notebook carregado
   useEffect(() => {
     if (notebook) {
-      editorStatus.show();
-      editorStatus.setLastUpdate(
+      showEditorStatus();
+      setEditorStatusLastUpdate(
         typeof notebook.updatedAt === "string"
           ? notebook.updatedAt
           : notebook.updatedAt.toISOString(),
       );
     }
     return () => {
-      editorStatus.hide();
+      hideEditorStatus();
     };
-  // NOTA: editorStatus NÃO entra nas deps — é um objeto store do Zustand
-  // que muda de referência a cada setState, causando loop infinito.
-  // As funções show/hide são estáveis e independem do estado da store.
-  }, [notebook?.id, notebook?.updatedAt]);
+  }, [
+    notebook?.id,
+    notebook?.updatedAt,
+    showEditorStatus,
+    setEditorStatusLastUpdate,
+    hideEditorStatus,
+  ]);
 
   const isLoading = isLoadingNotebook || isLoadingLeaves;
 

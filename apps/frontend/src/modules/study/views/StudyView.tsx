@@ -147,6 +147,7 @@ export const StudyView: React.FC = () => {
       setReviewedCount,
       setShowAnswer,
       markCardCompleted,
+      updateFlashcardInSession,
       submitScore,
     ],
   );

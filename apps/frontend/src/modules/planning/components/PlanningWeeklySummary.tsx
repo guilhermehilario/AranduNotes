@@ -14,20 +14,15 @@ export const PlanningWeeklySummary: React.FC = () => {
   const { data: goals = [] } = useGoals();
   const { data: pomodoros = [] } = usePomodoros();
 
-  const weekKey = useMemo(() => {
-    const { start } = getWeekBounds();
-    return start.toISOString().split("T")[0];
-  }, []);
-
   const weeklyEvents = useMemo(
     () =>
       events.filter((e) => e.status !== "completed" && isThisWeek(e.date)),
-    [events, weekKey],
+    [events],
   );
 
   const { start: weekStart, end: weekEnd } = useMemo(
     () => getWeekBounds(),
-    [weekKey],
+    [],
   );
 
   const weeklyPomodoros = useMemo(
@@ -35,7 +30,7 @@ export const PlanningWeeklySummary: React.FC = () => {
       pomodoros.filter(
         (s) => s.completed && s.createdAt && isThisWeek(s.createdAt),
       ),
-    [pomodoros, weekKey],
+    [pomodoros],
   );
 
   const hasData =

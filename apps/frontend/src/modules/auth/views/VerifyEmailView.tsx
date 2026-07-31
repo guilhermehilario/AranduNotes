@@ -37,7 +37,6 @@ export const VerifyEmailView: React.FC = () => {
   const [resendMessage, setResendMessage] = React.useState<string | null>(null);
 
   // Trigger verification once when component mounts with a token
-  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     if (token && step === "verifying") {
       authService.verifyEmail(token).then((result) => {

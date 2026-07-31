@@ -64,7 +64,7 @@ export function useStudySessionPersistence(notebookId: string) {
         isRestoringRef.current = false;
         // Falha silenciosa — apenas não restaura
       });
-  }, [notebookId, sessionSlot?.flashcards?.length, loadSession]);
+  }, [notebookId, sessionSlot?.flashcards, loadSession]);
 
   // ── 2. Persiste sessão no backend com debounce ──
   const persistSession = useCallback(() => {
@@ -106,16 +106,7 @@ export function useStudySessionPersistence(notebookId: string) {
         clearTimeout(debounceRef.current);
       }
     };
-  }, [
-    notebookId,
-    sessionSlot?.currentIndex,
-    sessionSlot?.reviewedCount,
-    sessionSlot?.showAnswer,
-    sessionSlot?.sessionActive,
-    sessionSlot?.flashcards?.length,
-    sessionSlot?.completedCardIds?.length,
-    persistSession,
-  ]);
+  }, [notebookId, sessionSlot, persistSession]);
 
   /**
    * Limpa a sessão persistida no backend (chamar ao resetar/finalizar).

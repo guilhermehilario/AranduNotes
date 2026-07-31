@@ -1,5 +1,5 @@
 import React from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
@@ -22,8 +22,8 @@ export const RegisterView: React.FC = () => {
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors },
-    watch,
     setValue,
   } = useForm<RegisterInput>({
     resolver: zodResolver(RegisterSchema),
@@ -36,7 +36,9 @@ export const RegisterView: React.FC = () => {
     },
   });
 
-  const acceptedTerms = watch('acceptedTerms');
+  // useWatch em vez de watch(): a função watch() do useForm não pode ser
+  // memoizada (warning do React Compiler) — useWatch é a API compatível.
+  const acceptedTerms = useWatch({ control, name: 'acceptedTerms' });
 
   const onSubmit = async (data: RegisterInput) => {
     setApiError(null);
