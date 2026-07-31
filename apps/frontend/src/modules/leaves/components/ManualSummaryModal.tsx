@@ -103,7 +103,6 @@ export const ManualSummaryModal: React.FC<ManualSummaryModalProps> = ({
       {/* key força remount quando o modal abre com dados atualizados */}
       <SummaryForm
         key={`${isOpen}-${currentSummary ?? ''}`}
-        leafId={leafId}
         currentSummary={currentSummary}
         onSave={handleSave}
         onCancel={onClose}

@@ -32,8 +32,7 @@ export interface Leaf {
   position?: number;
 }
 
-// LeafSchema explicitly typed to break circular inference
-export const LeafSchema: z.ZodType<Leaf> = z.object({
+export const LeafSchema = z.object({
   id: z.string().uuid(),
   notebookId: z.string().uuid(),
   title: z.string().min(1, 'O título da folha é obrigatório').max(100, 'Título muito longo'),
