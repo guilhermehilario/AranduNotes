@@ -75,7 +75,7 @@ export const DeleteAccountModals: React.FC<DeleteAccountModalsProps> = ({
             <Button
               variant="outline"
               onClick={resetDeleteFlow}
-              className="flex-1"
+              className="w-full sm:flex-1"
             >
               Cancelar
             </Button>
@@ -83,7 +83,7 @@ export const DeleteAccountModals: React.FC<DeleteAccountModalsProps> = ({
               variant="danger"
               onClick={confirmStep1}
               disabled={typedCode !== confirmationCode}
-              className="flex-1"
+              className="w-full sm:flex-1"
             >
               Confirmar Exclusão
             </Button>
@@ -126,7 +126,7 @@ export const DeleteAccountModals: React.FC<DeleteAccountModalsProps> = ({
             <Button
               variant="outline"
               onClick={resetDeleteFlow}
-              className="flex-1"
+              className="w-full sm:flex-1"
             >
               Cancelar
             </Button>
@@ -134,7 +134,7 @@ export const DeleteAccountModals: React.FC<DeleteAccountModalsProps> = ({
               variant="danger"
               onClick={sendEmailConfirmation}
               isLoading={sendingEmail}
-              className="flex-1"
+              className="w-full sm:flex-1"
             >
               {sendingEmail ? "Enviando..." : "Enviar E-mail de Confirmação"}
             </Button>
@@ -206,7 +206,7 @@ export const DeleteAccountModals: React.FC<DeleteAccountModalsProps> = ({
             <Button
               variant="outline"
               onClick={resetDeleteFlow}
-              className="flex-1"
+              className="w-full sm:flex-1"
             >
               Cancelar
             </Button>
@@ -215,7 +215,7 @@ export const DeleteAccountModals: React.FC<DeleteAccountModalsProps> = ({
               onClick={confirmDeleteWithCode}
               isLoading={deleting}
               disabled={emailCode.length !== 6}
-              className="flex-1"
+              className="w-full sm:flex-1"
             >
               {deleting ? "Excluindo..." : "Confirmar e Excluir Conta"}
             </Button>

@@ -58,7 +58,7 @@ export const ProfileTabContent: React.FC<ProfileTabContentProps> = ({ onClose })
             <div className="absolute inset-0 rounded-full ring-2" style={{ boxShadow: '0 0 0 2px var(--bg-surface)' }} />
           </div>
           <div className="min-w-0">
-            <h2 className="text-lg font-heading font-extrabold truncate" style={{ color: 'var(--text-primary)' }}>
+            <h2 className="text-lg font-heading font-extrabold break-words" style={{ color: 'var(--text-primary)' }}>
               {user?.name || "Meu Perfil"}
             </h2>
             <p className="text-xs mt-0.5 truncate" style={{ color: 'var(--text-secondary)' }}>{user?.email}</p>
