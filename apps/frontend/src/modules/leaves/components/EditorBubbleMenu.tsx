@@ -91,11 +91,28 @@ const EditorBubbleMenuComponent: React.FC<EditorBubbleMenuProps> = ({ editor }) 
       editor={editor}
       options={{
         placement: 'top',
+        // Evita que o menu fique colado nas bordas (respiro de 8px)
+        flip: { padding: 8 },
+        shift: { padding: 8 },
+        // Limita largura/altura ao espaço REAL disponível (container do editor,
+        // não a viewport) — evita ícone cortado na lateral e 2ª linha fora da tela
+        size: {
+          padding: 8,
+          apply: ({ availableWidth, availableHeight, elements }) => {
+            const { floating } = elements;
+            if (Number.isFinite(availableWidth)) {
+              floating.style.maxWidth = `${Math.max(0, availableWidth)}px`;
+            }
+            if (Number.isFinite(availableHeight)) {
+              floating.style.maxHeight = `${Math.max(0, availableHeight)}px`;
+            }
+          },
+        },
       }}
-      className="bg-slate-800 dark:bg-dark-800 border border-slate-700 dark:border-dark-700 rounded-xl shadow-xl px-2 py-1.5 overflow-hidden"
+      className="bg-slate-800 dark:bg-dark-800 border border-slate-700 dark:border-dark-700 rounded-xl shadow-xl px-2 py-1.5 max-w-[calc(100dvw-1.25rem)] sm:max-w-none overflow-y-auto overscroll-contain"
     >
-      {/* ── Linha 1: Essenciais ── */}
-      <div className="flex items-center gap-0.5">
+      {/* ── Linha 1: Essenciais (flex-wrap permite quebrar em telas pequenas) ── */}
+      <div className="flex flex-wrap items-center gap-0.5 gap-y-1">
         <BubbleMenuItem
           onClick={() => editor.chain().focus().toggleBold().run()}
           isActive={editor.isActive('bold')}
@@ -136,11 +153,11 @@ const EditorBubbleMenuComponent: React.FC<EditorBubbleMenuProps> = ({ editor }) 
           <Code className="h-3.5 w-3.5" />
         </BubbleMenuItem>
 
-        <div className="w-px h-4 bg-slate-600 dark:bg-dark-600 mx-1" />
+        <div className="hidden sm:block w-px h-4 bg-slate-600 dark:bg-dark-600 mx-1" />
 
         <HeadingSelector editor={editor} variant="bubble" />
 
-        <div className="w-px h-4 bg-slate-600 dark:bg-dark-600 mx-1" />
+        <div className="hidden sm:block w-px h-4 bg-slate-600 dark:bg-dark-600 mx-1" />
 
         <BubbleMenuItem
           onClick={() => editor.chain().focus().toggleBlockquote().run()}
@@ -150,7 +167,7 @@ const EditorBubbleMenuComponent: React.FC<EditorBubbleMenuProps> = ({ editor }) 
           <TextQuote className="h-3.5 w-3.5" />
         </BubbleMenuItem>
 
-        <div className="w-px h-4 bg-slate-600 dark:bg-dark-600 mx-1" />
+        <div className="hidden sm:block w-px h-4 bg-slate-600 dark:bg-dark-600 mx-1" />
 
         <BubbleMenuItem
           onClick={() => {
@@ -219,7 +236,7 @@ const EditorBubbleMenuComponent: React.FC<EditorBubbleMenuProps> = ({ editor }) 
         }}
       >
         <div className="overflow-hidden min-h-0">
-          <div className="flex items-center gap-0.5 pt-1.5 mt-1.5 border-t border-slate-700/60 dark:border-dark-700/60">
+          <div className="flex flex-wrap items-center gap-0.5 gap-y-1 pt-1.5 mt-1.5 border-t border-slate-700/60 dark:border-dark-700/60">
             <BubbleMenuItem
               onClick={() => editor.chain().focus().setTextAlign('left').run()}
               isActive={editor.isActive({ textAlign: 'left' })}
@@ -252,7 +269,7 @@ const EditorBubbleMenuComponent: React.FC<EditorBubbleMenuProps> = ({ editor }) 
               <AlignJustify className="h-3.5 w-3.5" />
             </BubbleMenuItem>
 
-            <div className="w-px h-4 bg-slate-600 dark:bg-dark-600 mx-1" />
+            <div className="hidden sm:block w-px h-4 bg-slate-600 dark:bg-dark-600 mx-1" />
 
             <BubbleMenuItem
               onClick={() => editor.chain().focus().indent().run()}
