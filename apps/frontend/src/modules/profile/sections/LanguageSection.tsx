@@ -8,7 +8,7 @@ export const LanguageSection: React.FC = () => {
 
   return (
     <div
-      className="flex flex-col gap-3 p-5"
+      className="flex flex-col gap-3 p-4 sm:p-5"
       style={{
         background: 'var(--bg-surface)',
         border: '1px solid var(--border-color)',

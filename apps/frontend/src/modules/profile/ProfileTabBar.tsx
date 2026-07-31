@@ -17,7 +17,7 @@ const TABS: { id: Tab; label: string; icon: React.FC<{ className?: string }> }[]
 export const ProfileTabBar: React.FC<ProfileTabBarProps> = ({ activeTab, onTabChange }) => {
   return (
     <div
-      className="flex -mx-6 px-6 mb-6 sticky top-0 z-10 rounded-t-2xl"
+      className="flex -mx-6 px-3 sm:px-6 mb-6 sticky top-0 z-10 rounded-t-2xl overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       style={{
         background: 'var(--bg-surface)',
         borderBottom: '1px solid var(--border-color)',
@@ -30,7 +30,7 @@ export const ProfileTabBar: React.FC<ProfileTabBarProps> = ({ activeTab, onTabCh
           <button
             key={tab.id}
             onClick={() => onTabChange(tab.id)}
-            className={`relative flex items-center gap-2 pb-4 px-4 font-heading font-bold text-sm tracking-wide transition-all duration-300 cursor-pointer ${
+            className={`relative flex items-center gap-1.5 sm:gap-2 pb-4 px-2.5 sm:px-4 shrink-0 whitespace-nowrap font-heading font-bold text-xs sm:text-sm tracking-wide transition-all duration-300 cursor-pointer ${
               isActive
                 ? 'text-brand-500'
                 : 'hover:opacity-80 text-[var(--text-secondary)]'

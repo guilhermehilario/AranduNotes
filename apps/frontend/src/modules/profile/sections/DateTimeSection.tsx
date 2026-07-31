@@ -18,7 +18,7 @@ export const DateTimeSection: React.FC = () => {
     <>
       {/* Formato de Data */}
       <div
-        className="flex flex-col gap-3 p-5"
+        className="flex flex-col gap-3 p-4 sm:p-5"
         style={{
           background: 'var(--bg-surface)',
           border: '1px solid var(--border-color)',
@@ -29,7 +29,7 @@ export const DateTimeSection: React.FC = () => {
           icon={<Calendar className="h-4 w-4" style={{ color: '#10B981' }} />}
           label="Formato de Data"
         />
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
           {dateFormats.map((fmt) => (
             <OptionCard
               key={fmt.value}
@@ -53,7 +53,7 @@ export const DateTimeSection: React.FC = () => {
 
       {/* Formato de Hora */}
       <div
-        className="flex flex-col gap-3 p-5"
+        className="flex flex-col gap-3 p-4 sm:p-5"
         style={{
           background: 'var(--bg-surface)',
           border: '1px solid var(--border-color)',
@@ -64,7 +64,7 @@ export const DateTimeSection: React.FC = () => {
           icon={<Clock className="h-4 w-4" style={{ color: '#F59E0B' }} />}
           label="Formato de Hora"
         />
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <OptionCard
             selected={timeFormat === '24h'}
             onClick={() => setTimeFormat('24h')}
