@@ -49,7 +49,7 @@ apps/
 
 | Aspecto | Padrão |
 |---------|--------|
-| **Linguagem** | TypeScript estrito (API ~5.7, Frontend ~6.0) |
+| **Linguagem** | TypeScript estrito (~5.9.3 unificado no monorepo) **(Novo)** |
 | **Estilo** | TailwindCSS v4 (`@import "tailwindcss"`) |
 | **Estado global** | Zustand v5 |
 | **Server state** | TanStack Query v5 |
@@ -193,16 +193,19 @@ graph LR
    ```
 3. **Desenvolva** a funcionalidade ou correção
 4. **Teste** suas mudanças:
-   ```bash
-   # Verifique se o build não quebra
-   yarn build
+```bash
+# Verifique se o build não quebra (da raiz do monorepo)
+yarn build
 
-   # Verifique o typecheck
-   cd apps/frontend && npx tsc --noEmit --skipLibCheck
+# Verifique o typecheck
+cd apps/frontend && npx tsc --noEmit --skipLibCheck
 
-   # Execute os testes
-   yarn test
-   ```
+# Execute os testes
+yarn test
+
+# Execute o lint (obrigatório — falha com qualquer warning)
+yarn lint
+```
 5. **Faça commits** seguindo o padrão
 6. **Envie** sua branch e abra um Pull Request
 

@@ -41,6 +41,9 @@ técnicas como **Pomodoro** e **revisão espaçada** (algoritmo SM-2).
 - 🗑️ **Lixeira e arquivamento** com soft-delete
 - 🔄 **Histórico de edições**
 - 👤 **Autenticação** JWT com refresh tokens, recuperação de senha e aceitação de termos
+- ℹ️ **Aba "Sobre" no perfil** com descrição do projeto, roadmap de versões, apoio coletivo (chave PIX em breve) e notas de atualização **(Novo)**
+- 📱 **Responsividade mobile completa**: modais com `dvh` + `overscroll-contain`, grids empilhados e menu combinado de notificações + clipboard no header **(Novo)**
+- 🧹 **CI com lint obrigatório** (0 warnings) via GitHub Actions no monorepo **(Novo)**
 
 ---
 
@@ -79,6 +82,7 @@ técnicas como **Pomodoro** e **revisão espaçada** (algoritmo SM-2).
 | **Build tool** | Vite | v8 |
 | **Estilos** | TailwindCSS | v4 |
 | **Editor Rich Text** | TipTap v3 + `@tiptap/pm` | v3 |
+| **TypeScript** | Unificado `~5.9.3` em todo o monorepo **(Novo)** | ~5.9.3 |
 | **Estado** | Zustand + TanStack Query | v5 |
 | **Validação** | Zod v4 + class-validator | — |
 | **HTTP Client** | Axios | — |
@@ -145,7 +149,7 @@ arandu-monorepo/
 │       │   │   ├── leaves/           # Editor TipTap + IA (resumo, flashcards)
 │       │   │   ├── notebooks/        # Dashboard + CRUD de cadernos
 │       │   │   ├── planning/         # Agenda, calendário, cronograma, metas, pomodoro
-│       │   │   ├── profile/          # Perfil, avatar personalizável, configurações
+│       │   │   ├── profile/          # Perfil, avatar, configurações e aba Sobre (AboutTab) **(Novo)**
 │       │   │   ├── questions/        # Questões de estudo
 │       │   │   ├── mock-exams/       # Simulados
 │       │   │   ├── study/            # Flashcards SM-2, revisões, histórico, estatísticas
@@ -167,10 +171,10 @@ arandu-monorepo/
 │       ├── tsconfig.node.json
 │       ├── eslint.config.js
 │       └── package.json
-│
 ├── .github/
 │   └── workflows/
-│       └── fly-deploy.yml            # CI/CD automático para Fly.io
+│       ├── ci.yml                       # CI com lint obrigatório (turbo run lint) **(Novo)**
+│       └── fly-deploy.yml               # CI/CD automático para Fly.io
 │
 ├── package.json                      # Workspaces root + scripts globais
 ├── turbo.json                        # Configuração do Turborepo

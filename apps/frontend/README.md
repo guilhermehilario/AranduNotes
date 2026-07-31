@@ -16,7 +16,7 @@ O **Arandu** (que significa "saber" em Tupi Antigo) é uma plataforma completa p
 |-----------|--------|-----|
 | React | 19 | UI Library |
 | Vite | 8 | Build tool |
-| TypeScript | ~6.0 | Linguagem |
+| TypeScript | ~5.9.3 | Linguagem (alinhado com a raiz do monorepo) **(Novo)** |
 | Tailwind CSS | 4 | Estilos utilitários |
 | Zustand | 5 | Estado global (persist + middleware) |
 | TanStack React Query | 5 | Server state & cache |
@@ -126,6 +126,13 @@ apps/frontend/
 - Alteração de senha
 - Exclusão de conta com confirmação por código
 - Preferências do sistema (tema, notificações)
+- **Aba "Sobre"** com descrição do projeto, roadmap de versões, apoio coletivo (chave PIX em breve) e notas de atualização **(Novo)**
+
+### 📱 Responsividade Mobile **(Novo)**
+- Modais com `dvh` + `overscroll-contain` + grids empilhados (padrão aplicado a todos os modais do app)
+- Menu combinado de notificações + clipboard no header mobile
+- Abas de perfil e configurações com scroll horizontal e containers responsivos
+- Auditoria de grids 2-3 colunas: `StudyHistory` corrigido para empilhar em telas estreitas
 
 ### 🔧 Outras
 - Autenticação JWT + refresh token em cookie HttpOnly
