@@ -85,10 +85,11 @@ const VERSIONS: Array<{ tag: string; name: string; status: string; items: string
   },
 ];
 
-const RELEASE_NOTES: Array<{ version: string; date: string; highlights: string[] }> = [
+const RELEASE_NOTES: Array<{ version: string; date: string; latest?: boolean; highlights: string[] }> = [
   {
     version: 'Julho 2026',
-    date: 'Atualização mais recente',
+    date: '31/07/2026',
+    latest: true,
     highlights: [
       'Responsividade mobile completa: modais, perfil, configurações e abas',
       'Menu combinado de notificações + histórico de cópia no mobile',
@@ -98,8 +99,8 @@ const RELEASE_NOTES: Array<{ version: string; date: string; highlights: string[]
     ],
   },
   {
-    version: 'Junho 2026',
-    date: 'Planejamento & Estudos',
+    version: 'Julho 2026',
+    date: '29/07/2026',
     highlights: [
       'Módulo de planejamento com agenda, calendário, metas e pomodoro',
       'Registro de revisões e histórico de estudos (Review Log)',
@@ -108,13 +109,13 @@ const RELEASE_NOTES: Array<{ version: string; date: string; highlights: string[]
     ],
   },
   {
-    version: 'Maio 2026',
-    date: 'Fundação',
+    version: 'Julho 2026',
+    date: '22/07/2026',
     highlights: [
       'Lançamento do Arandu — plataforma de estudos inteligente',
       'Cadernos, folhas, tags, favoritos e lixeira',
       'Flashcards, questões, simulados e modo de estudo',
-      'Autenticação com e-mail, verificação e recuperação de senha',
+      'Autenticação com e-mail, verificação, termos de uso e exclusão de conta',
     ],
   },
 ];
@@ -263,7 +264,7 @@ export const AboutTab: React.FC = () => {
         <div className="flex flex-col gap-3">
           {RELEASE_NOTES.map((release) => (
             <div
-              key={release.version}
+              key={release.date}
               className="rounded-xl p-3.5"
               style={{
                 background: 'var(--bg-surface-hover)',
@@ -271,8 +272,19 @@ export const AboutTab: React.FC = () => {
               }}
             >
               <div className="flex items-center justify-between gap-2 mb-2">
-                <span className="text-sm font-heading font-bold" style={{ color: 'var(--text-primary)' }}>
+                <span className="text-sm font-heading font-bold flex items-center gap-2 min-w-0" style={{ color: 'var(--text-primary)' }}>
                   {release.version}
+                  {release.latest && (
+                    <span
+                      className="text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0"
+                      style={{
+                        background: 'rgba(16,185,129,0.12)',
+                        color: '#34D399',
+                      }}
+                    >
+                      Mais recente
+                    </span>
+                  )}
                 </span>
                 <span className="text-[10px] font-semibold flex-shrink-0" style={{ color: 'var(--text-secondary)' }}>
                   {release.date}
