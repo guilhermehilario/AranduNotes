@@ -206,7 +206,7 @@ export const FlashcardsStudyView: React.FC = () => {
               <div className="flex items-center gap-1.5 text-brand-500 text-[10px] sm:text-xs font-bold tracking-wider uppercase">
                 <HelpCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> Pergunta de Revisão
               </div>
-              <p className="text-lg sm:text-xl md:text-2xl font-heading font-semibold text-slate-800 dark:text-dark-50 leading-relaxed">
+              <p className="text-lg sm:text-xl md:text-2xl font-heading font-semibold text-slate-800 dark:text-dark-50 leading-relaxed w-full min-w-0">
                 {currentCard?.front}
               </p>
               <Button
@@ -222,7 +222,7 @@ export const FlashcardsStudyView: React.FC = () => {
               <div className="flex items-center gap-1.5 text-emerald-500 text-[10px] sm:text-xs font-bold tracking-wider uppercase animate-fade-in">
                 <CheckCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> Resposta Correta
               </div>
-              <p className="text-base sm:text-lg md:text-xl text-slate-700 dark:text-dark-100 leading-relaxed animate-fade-in">
+              <p className="text-base sm:text-lg md:text-xl text-slate-700 dark:text-dark-100 leading-relaxed animate-fade-in w-full min-w-0">
                 {currentCard?.back}
               </p>
             </>

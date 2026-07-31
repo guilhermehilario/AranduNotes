@@ -46,7 +46,7 @@ export const ReviewFlashcardView: React.FC<ReviewFlashcardViewProps> = ({
             <div className="flex items-center gap-1.5 text-brand-500 text-xs font-bold tracking-wider uppercase mb-4">
               <HelpCircle className="h-4 w-4" /> Pergunta
             </div>
-            <p className="text-xl font-heading font-semibold text-slate-800 dark:text-dark-50 leading-relaxed">
+            <p className="text-xl font-heading font-semibold text-slate-800 dark:text-dark-50 leading-relaxed w-full min-w-0">
               {card.front}
             </p>
             <Button
@@ -62,7 +62,7 @@ export const ReviewFlashcardView: React.FC<ReviewFlashcardViewProps> = ({
             <div className="flex items-center gap-1.5 text-emerald-500 text-xs font-bold tracking-wider uppercase mb-4">
               <CheckCircle className="h-4 w-4" /> Resposta Correta
             </div>
-            <p className="text-lg text-slate-700 dark:text-dark-100 leading-relaxed mb-6">
+            <p className="text-lg text-slate-700 dark:text-dark-100 leading-relaxed mb-6 w-full min-w-0">
               {card.back}
             </p>
           </>

@@ -76,11 +76,11 @@ export const FlashcardsSection: React.FC<FlashcardsSectionProps> = ({
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
               </div>
-              <p className="text-sm font-semibold text-slate-800 dark:text-dark-50 line-clamp-2 pr-14">
+              <p className="text-sm font-semibold text-slate-800 dark:text-dark-50 line-clamp-2 pr-14 break-words">
                 <span className="text-xs font-bold text-brand-500 mr-1.5">Q:</span>
                 {card.front}
               </p>
-              <p className="text-sm text-slate-500 dark:text-dark-350 line-clamp-2">
+              <p className="text-sm text-slate-500 dark:text-dark-350 line-clamp-2 break-words">
                 <span className="text-xs font-bold text-emerald-500 mr-1.5">R:</span>
                 {card.back}
               </p>

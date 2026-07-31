@@ -130,4 +130,33 @@
   h1, h2, h3, h4, h5, h6 {
     @apply font-heading tracking-tight font-semibold;
   }
+
+  /* ───── Tipografia responsiva: quebras de linha equilibradas ───── */
+  /* Evita palavras órfãs na última linha (text-wrap: pretty) e quebra
+     equilibrada em títulos (text-wrap: balance) — melhora muito a leitura
+     em telas estreitas. Palavras longas quebram em vez de estourar o card. */
+  p,
+  li,
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    overflow-wrap: break-word;
+    overflow-wrap: anywhere;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    text-wrap: balance;
+  }
 }

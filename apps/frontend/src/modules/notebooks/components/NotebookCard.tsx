@@ -33,7 +33,7 @@ export const NotebookCard: React.FC<NotebookCardProps> = ({ notebook }) => {
             {notebook.title}
           </h3>
         </div>
-        <p className="text-sm text-slate-500 dark:text-dark-350 line-clamp-3">
+        <p className="text-sm text-slate-500 dark:text-dark-350 line-clamp-3 min-w-0">
           {notebook.description || 'Nenhuma descrição adicionada.'}
         </p>
       </div>
