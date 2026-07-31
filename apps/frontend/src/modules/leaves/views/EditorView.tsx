@@ -92,6 +92,19 @@ export const EditorView: React.FC = () => {
   // e o botão "PA" do header pulsa para indicar onde reabrir.
   const [aiButtonHint, setAiButtonHint] = useState(false);
 
+  // ── Fade de saída suave: mantém o painel de IA montado durante os 300ms
+  // da transição de ocultação (opacidade/deslocamento), desmontando só depois.
+  const [aiPanelPresent, setAiPanelPresent] = useState(aiSidebarOpen);
+
+  useEffect(() => {
+    if (aiSidebarOpen) {
+      setAiPanelPresent(true);
+      return;
+    }
+    const t = setTimeout(() => setAiPanelPresent(false), 300);
+    return () => clearTimeout(t);
+  }, [aiSidebarOpen]);
+
   useEffect(() => {
     const isMobile = window.matchMedia("(max-width: 1023.98px)").matches;
     if (!isMobile) return;
@@ -173,7 +186,7 @@ export const EditorView: React.FC = () => {
       {/* Split Pane Editor / IA — no mobile, quando o painel de IA está aberto ele
           "troca" com o editor (o texto fica oculto via max-lg:hidden); no desktop
           os dois ficam lado a lado */}
-      <div className="flex-1 flex flex-col lg:flex-row gap-4 lg:gap-6 min-h-[250px] sm:min-h-[400px] lg:min-h-[90vh] min-w-0 overflow-hidden">
+      <div className="relative flex-1 flex flex-col lg:flex-row gap-4 lg:gap-6 min-h-[250px] sm:min-h-[400px] lg:min-h-[90vh] min-w-0 overflow-hidden">
         {/* Lado Esquerdo - Editor */}
         <EditorContentArea
           editor={editor}
@@ -185,8 +198,16 @@ export const EditorView: React.FC = () => {
         />
 
         {/* Lado Direito - Painel de IA */}
-        {aiSidebarOpen && (
+        {/* No mobile o painel vira um overlay absoluto; ao fechar ele desvanece
+            (opacity + translate) revelando o editor por trás, e só então é
+            desmontado — no desktop permanece em fluxo ao lado do editor. */}
+        {aiPanelPresent && (
           <AISidebar
+            className={`max-lg:absolute max-lg:inset-0 max-lg:z-20 ${
+              aiSidebarOpen
+                ? ""
+                : "opacity-0 translate-y-2 pointer-events-none"
+            }`}
             editor={editor}
             summary={leaf?.summary}
             flashcards={flashcards}

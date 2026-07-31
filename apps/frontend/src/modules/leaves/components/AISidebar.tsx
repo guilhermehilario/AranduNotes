@@ -32,6 +32,8 @@ interface AISidebarProps {
   onEditFlashcard: (card: Flashcard) => void;
   onDeleteFlashcard: (cardId: string) => void;
   isDeletingFlashcard?: boolean;
+  /** Classes extras aplicadas à raiz (usadas para o fade de saída no mobile) */
+  className?: string;
 }
 
 const AI_TABS = [
@@ -59,13 +61,16 @@ const AISidebarComponent: React.FC<AISidebarProps> = ({
   onEditFlashcard,
   onDeleteFlashcard,
   isDeletingFlashcard,
+  className,
 }) => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<AiTab>("summary");
   const uploadId = useId();
 
   return (
-    <div className="w-full lg:w-[450px] flex flex-col bg-white dark:bg-dark-900 border border-slate-150 dark:border-dark-800 rounded-3xl overflow-hidden max-lg:flex-1 lg:flex-shrink-0 min-h-0 animate-in fade-in duration-300">
+    <div
+      className={`w-full lg:w-[450px] flex flex-col bg-white dark:bg-dark-900 border border-slate-150 dark:border-dark-800 rounded-3xl overflow-hidden max-lg:flex-1 lg:flex-shrink-0 min-h-0 animate-in fade-in duration-300 transition-all duration-300 ease-in-out ${className ?? ""}`}
+    >
       {/* Abas */}
       <div className="flex border-b border-slate-100 dark:border-dark-800/60 flex-shrink-0 bg-slate-50 dark:bg-dark-950/20">
         {AI_TABS.map((tab) => (
