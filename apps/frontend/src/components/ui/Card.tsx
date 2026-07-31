@@ -12,7 +12,7 @@ export const Card: React.FC<CardProps> = ({
 }) => {
   return (
     <div
-      className={`rounded-2xl p-4 sm:p-6 min-w-0 break-words transition-all duration-150 ${
+      className={`rounded-2xl p-6 max-sm:p-4 min-w-0 break-words transition-all duration-150 ${
         hoverable
           ? 'clickable hover:shadow-md hover:-translate-y-0.5'
           : ''
