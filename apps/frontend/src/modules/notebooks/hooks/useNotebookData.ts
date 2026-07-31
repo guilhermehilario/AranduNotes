@@ -56,13 +56,7 @@ export function useNotebookData({ notebookId }: UseNotebookDataParams) {
     return () => {
       hideEditorStatus();
     };
-  }, [
-    notebook?.id,
-    notebook?.updatedAt,
-    showEditorStatus,
-    setEditorStatusLastUpdate,
-    hideEditorStatus,
-  ]);
+  }, [notebook, showEditorStatus, setEditorStatusLastUpdate, hideEditorStatus]);
 
   const isLoading = isLoadingNotebook || isLoadingLeaves;
 
