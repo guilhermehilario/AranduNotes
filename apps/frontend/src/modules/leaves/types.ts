@@ -32,6 +32,12 @@ export interface Leaf {
   position?: number;
 }
 
+// Sem anotação explícita de propósito: uma anotação `: z.ZodType<Leaf>` falha
+// com TS2322 no TS 5.9 (usado no monorepo). Em TS 5.9 não-strict a
+// autorreferência circular via z.lazy é inferida corretamente e o tipo
+// inferido é estruturalmente compatível com a interface Leaf. Obs.: em um
+// eventual upgrade para TS 6.x será necessário reintroduzir uma anotação
+// (ex.: `as unknown as z.ZodType<Leaf>`) para evitar erros TS7022/TS7024.
 export const LeafSchema = z.object({
   id: z.string().uuid(),
   notebookId: z.string().uuid(),
