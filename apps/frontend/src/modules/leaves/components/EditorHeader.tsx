@@ -96,9 +96,9 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
         <button
           type="button"
           onClick={onToggleAiSidebar}
-          className={`flex items-center gap-1.5 text-xs font-semibold transition-colors py-1 px-2 rounded-lg hover:bg-slate-100 dark:hover:bg-dark-800 cursor-pointer ${
+          className={`flex items-center gap-1.5 text-xs font-semibold transition-all duration-300 py-1 px-2 rounded-lg hover:bg-slate-100 dark:hover:bg-dark-800 cursor-pointer ${
             aiButtonHint
-              ? "text-brand-500 bg-brand-50 dark:bg-brand-950/20 ring-2 ring-brand-500/60 animate-pulse"
+              ? "text-brand-500 bg-brand-50 dark:bg-brand-950/20 ring-2 ring-brand-500/60 attention-pulse"
               : "text-slate-500 dark:text-dark-300 hover:text-brand-500"
           }`}
           title={aiSidebarOpen ? "Ocultar painel IA" : "Mostrar painel IA"}

@@ -65,7 +65,7 @@ const AISidebarComponent: React.FC<AISidebarProps> = ({
   const uploadId = useId();
 
   return (
-    <div className="w-full lg:w-[450px] flex flex-col bg-white dark:bg-dark-900 border border-slate-150 dark:border-dark-800 rounded-3xl overflow-hidden max-lg:flex-1 lg:flex-shrink-0 min-h-0">
+    <div className="w-full lg:w-[450px] flex flex-col bg-white dark:bg-dark-900 border border-slate-150 dark:border-dark-800 rounded-3xl overflow-hidden max-lg:flex-1 lg:flex-shrink-0 min-h-0 animate-in fade-in duration-300">
       {/* Abas */}
       <div className="flex border-b border-slate-100 dark:border-dark-800/60 flex-shrink-0 bg-slate-50 dark:bg-dark-950/20">
         {AI_TABS.map((tab) => (
