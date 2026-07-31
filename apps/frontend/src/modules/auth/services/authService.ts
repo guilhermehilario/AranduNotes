@@ -1,5 +1,5 @@
 import { api } from "../../../core/api/client";
-import type { LoginInput, RegisterInput, AuthResponse, User } from "../types";
+import type { LoginInput, RegisterInput, AuthResponse, User, ThemePreference } from "../types";
 
 export const authService = {
   async login(credentials: LoginInput): Promise<AuthResponse> {
@@ -26,6 +26,11 @@ export const authService = {
 
   async getProfile(): Promise<User> {
     const response = await api.get<User>("/auth/profile");
+    return response.data;
+  },
+
+  async updateTheme(theme: ThemePreference): Promise<User> {
+    const response = await api.put<User>("/auth/profile", { theme });
     return response.data;
   },
 

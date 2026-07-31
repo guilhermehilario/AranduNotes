@@ -93,7 +93,7 @@ export class AuthService {
 
   async updateProfile(
     userId: string,
-    data: { name?: string; avatarUrl?: string },
+    data: { name?: string; avatarUrl?: string; theme?: string },
   ): Promise<UserPublic> {
     return this.profile.updateProfile(userId, data);
   }

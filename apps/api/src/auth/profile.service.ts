@@ -1,6 +1,7 @@
 import {
   Injectable,
   UnauthorizedException,
+  BadRequestException,
   Logger,
 } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
@@ -44,8 +45,14 @@ export class ProfileService {
 
   async updateProfile(
     userId: string,
-    data: { name?: string; avatarUrl?: string },
+    data: { name?: string; avatarUrl?: string; theme?: string },
   ): Promise<UserPublic> {
+    if (data.theme !== undefined && !["light", "dark", "system"].includes(data.theme)) {
+      throw new BadRequestException(
+        "Tema inválido. Use 'light', 'dark' ou 'system'.",
+      );
+    }
+
     const result = await this.prisma.withConnection(() =>
       this.prisma.$transaction(async (tx) => {
         const user = await tx.user.findUnique({
@@ -61,11 +68,12 @@ export class ProfileService {
           data: {
             ...(data.name !== undefined && { name: data.name }),
             ...(data.avatarUrl !== undefined && { avatarUrl: data.avatarUrl }),
+            ...(data.theme !== undefined && { theme: data.theme }),
           },
         });
 
         this.logger.log(
-          `Perfil atualizado: ${user.email} (ID: ${user.id}) - name: ${data.name !== undefined ? "alterado" : "mantido"}, avatarUrl: ${data.avatarUrl !== undefined ? "alterado" : "mantido"}`,
+          `Perfil atualizado: ${user.email} (ID: ${user.id}) - name: ${data.name !== undefined ? "alterado" : "mantido"}, avatarUrl: ${data.avatarUrl !== undefined ? "alterado" : "mantido"}, theme: ${data.theme !== undefined ? "alterado" : "mantido"}`,
         );
 
         return stripPassword(updated);
