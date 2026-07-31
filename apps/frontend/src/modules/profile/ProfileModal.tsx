@@ -62,6 +62,14 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
   const [savingAvatar, setSavingAvatar] = useState(false);
   const [avatarSaveMessage, setAvatarSaveMessage] = useState<string | null>(null);
 
+  const handleCategoryChange = (catId: string) => {
+    const cat = AVATAR_CATEGORIES.find((c) => c.id === catId);
+    setSelectedCategory(catId);
+    // Sincroniza o variante selecionado para o primeiro da nova categoria,
+    // evitando preview mostrar um avatar mas o save persistir outro.
+    if (cat) setSelectedVariant(cat.variants[0].id);
+  };
+
   const handleSaveAvatar = async () => {
     setSavingAvatar(true);
     setAvatarSaveMessage(null);
@@ -70,9 +78,12 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
       if (customAvatarUrl) {
         avatarUrl = customAvatarUrl;
       } else {
+        // O variante selecionado identifica a categoria (cada categoria tem
+        // prefixos únicos de id — ex.: adv-, avt-, smile-).
         const currentCategory =
-          AVATAR_CATEGORIES.find((c) => c.id === selectedCategory) ||
-          AVATAR_CATEGORIES[0];
+          AVATAR_CATEGORIES.find((c) =>
+            c.variants.some((v) => v.id === selectedVariant),
+          ) || AVATAR_CATEGORIES[0];
         const currentVariant =
           currentCategory.variants.find((v) => v.id === selectedVariant) ||
           currentCategory.variants[0];
@@ -106,7 +117,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                   setSelectedCategory(catId);
                   setSelectedVariant(variantId);
                 }}
-                onCategoryChange={setSelectedCategory}
+                onCategoryChange={handleCategoryChange}
                 customAvatarUrl={customAvatarUrl}
                 onCustomUpload={(dataUrl) => setCustomAvatarUrl(dataUrl || null)}
               />
