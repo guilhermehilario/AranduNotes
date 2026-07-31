@@ -38,7 +38,7 @@ export const StudyProgressSummaryModal: React.FC<StudyProgressSummaryModalProps>
       size="2xl"
     >
       {/* Header: Tabs + Refresh */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
         {/* View Tabs */}
         <div className="flex items-center gap-1 p-0.5 rounded-lg bg-slate-100 dark:bg-dark-900">
           <button

@@ -65,13 +65,13 @@ const FlashcardForm: React.FC<{
           {isDeleting ? 'Excluindo...' : 'Excluir'}
         </Button>
         <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-          <Button variant="outline" onClick={onClose} disabled={isPending} className="flex-1 sm:flex-none">
+          <Button variant="outline" onClick={onClose} disabled={isPending} className="w-full sm:w-auto">
             Cancelar
           </Button>
           <Button
             onClick={handleSave}
             disabled={!front.trim() || !back.trim() || isPending}
-            className="flex-1 sm:flex-none"
+            className="w-full sm:w-auto"
           >
             {isSaving ? 'Salvando...' : 'Salvar'}
           </Button>

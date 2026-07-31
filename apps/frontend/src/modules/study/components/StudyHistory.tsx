@@ -295,7 +295,7 @@ export const StudyHistory: React.FC = () => {
   return (
     <div className="flex flex-col gap-4">
       {/* Summary Stats */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div className="flex flex-col items-center gap-1 p-3 rounded-xl" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)' }}>
           <Brain className="h-4 w-4 text-brand-500" />
           <p className="text-lg font-heading font-extrabold text-slate-800 dark:text-dark-50">
