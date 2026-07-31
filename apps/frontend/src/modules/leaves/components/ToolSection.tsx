@@ -11,6 +11,8 @@ interface ToolSectionProps {
   onFormatPainter: () => void;
   onWrapQuotes: () => void;
   annotationTrigger?: { text: string } | null;
+  /** 'main' = essenciais (format painter/anotação); 'extra' = aspas (linha colapsável) */
+  variant?: 'main' | 'extra';
 }
 
 export const ToolSection: React.FC<ToolSectionProps> = ({
@@ -19,7 +21,23 @@ export const ToolSection: React.FC<ToolSectionProps> = ({
   onFormatPainter,
   onWrapQuotes,
   annotationTrigger,
+  variant = 'main',
 }) => {
+  if (variant === 'extra') {
+    return (
+      <>
+        <EditorToolbarDivider />
+
+        <ToolbarButton
+          onClick={onWrapQuotes}
+          title="Envolver em aspas"
+        >
+          <span className="text-[10px] font-bold leading-none tracking-[1.5px]">“”</span>
+        </ToolbarButton>
+      </>
+    );
+  }
+
   return (
     <>
       <EditorToolbarDivider />
@@ -31,13 +49,6 @@ export const ToolSection: React.FC<ToolSectionProps> = ({
         title={formatPainterActive ? 'Aplicar formatação (Esc p/ cancelar)' : 'Copiar formatação'}
       >
         <Paintbrush className={`h-4 w-4 transition-transform duration-200 ${formatPainterActive ? 'scale-110' : ''}`} />
-      </ToolbarButton>
-
-      <ToolbarButton
-        onClick={onWrapQuotes}
-        title="Envolver em aspas"
-      >
-        <span className="text-[10px] font-bold leading-none tracking-[1.5px]">“”</span>
       </ToolbarButton>
 
       <AnnotationPopover editor={editor} variant="toolbar" editTrigger={annotationTrigger} />

@@ -22,13 +22,45 @@ interface HistoryFormatSectionProps {
   editor: Editor;
   canUndo: boolean;
   canRedo: boolean;
+  /** 'main' = ferramentas essenciais sempre visíveis; 'extra' = demais (linha colapsável) */
+  variant?: 'main' | 'extra';
 }
 
 export const HistoryFormatSection: React.FC<HistoryFormatSectionProps> = ({
   editor,
   canUndo,
   canRedo,
+  variant = 'main',
 }) => {
+  if (variant === 'extra') {
+    return (
+      <>
+        {/* Ferramentas menos usadas */}
+        <ToolbarButton
+          onClick={() => editor.chain().focus().clearNodes().unsetAllMarks().run()}
+          title="Limpar formatação"
+        >
+          <RemoveFormatting className="h-4 w-4" />
+        </ToolbarButton>
+
+        <ToolbarButton
+          onClick={() => editor.chain().focus().toggleCodeBlock().run()}
+          isActive={editor.isActive('codeBlock')}
+          title="Bloco de código"
+        >
+          <Code2 className="h-4 w-4" />
+        </ToolbarButton>
+
+        <ToolbarButton
+          onClick={() => editor.chain().focus().setHorizontalRule().run()}
+          title={`Linha horizontal (${kbdShift('-')})`}
+        >
+          <SeparatorHorizontal className="h-4 w-4" />
+        </ToolbarButton>
+      </>
+    );
+  }
+
   return (
     <>
       {/* Histórico */}
@@ -91,13 +123,6 @@ export const HistoryFormatSection: React.FC<HistoryFormatSectionProps> = ({
         <Code className="h-4 w-4" />
       </ToolbarButton>
 
-      <ToolbarButton
-        onClick={() => editor.chain().focus().clearNodes().unsetAllMarks().run()}
-        title="Limpar formatação"
-      >
-        <RemoveFormatting className="h-4 w-4" />
-      </ToolbarButton>
-
       <EditorToolbarDivider />
 
       {/* Estilos de Bloco */}
@@ -109,21 +134,6 @@ export const HistoryFormatSection: React.FC<HistoryFormatSectionProps> = ({
         title={`Citação (${kbdShift('B')})`}
       >
         <TextQuote className="h-4 w-4" />
-      </ToolbarButton>
-
-      <ToolbarButton
-        onClick={() => editor.chain().focus().toggleCodeBlock().run()}
-        isActive={editor.isActive('codeBlock')}
-        title="Bloco de código"
-      >
-        <Code2 className="h-4 w-4" />
-      </ToolbarButton>
-
-      <ToolbarButton
-        onClick={() => editor.chain().focus().setHorizontalRule().run()}
-        title={`Linha horizontal (${kbdShift('-')})`}
-      >
-        <SeparatorHorizontal className="h-4 w-4" />
       </ToolbarButton>
     </>
   );

@@ -13,9 +13,39 @@ import { kbdShift } from '../hooks/useEditorToolbar.ts';
 
 interface ListIndentSectionProps {
   editor: Editor;
+  /** 'main' = listas essenciais; 'extra' = recuo (linha colapsável) */
+  variant?: 'main' | 'extra';
 }
 
-export const ListIndentSection: React.FC<ListIndentSectionProps> = ({ editor }) => {
+export const ListIndentSection: React.FC<ListIndentSectionProps> = ({
+  editor,
+  variant = 'main',
+}) => {
+  if (variant === 'extra') {
+    return (
+      <>
+        {/* Recuo */}
+        <EditorToolbarDivider />
+
+        <ToolbarButton
+          onClick={() => editor.chain().focus().indent().run()}
+          disabled={!editor.can().indent()}
+          title={editor.can().indent() ? 'Aumentar recuo' : 'Recuo máximo atingido'}
+        >
+          <IndentIncrease className="h-4 w-4" />
+        </ToolbarButton>
+
+        <ToolbarButton
+          onClick={() => editor.chain().focus().outdent().run()}
+          disabled={!editor.can().outdent()}
+          title={editor.can().outdent() ? 'Diminuir recuo' : 'Recuo mínimo atingido'}
+        >
+          <IndentDecrease className="h-4 w-4" />
+        </ToolbarButton>
+      </>
+    );
+  }
+
   return (
     <>
       {/* Listas */}
@@ -41,25 +71,6 @@ export const ListIndentSection: React.FC<ListIndentSectionProps> = ({ editor }) 
         title="Lista de tarefas"
       >
         <ListChecks className="h-4 w-4" />
-      </ToolbarButton>
-
-      <EditorToolbarDivider />
-
-      {/* Recuo */}
-      <ToolbarButton
-        onClick={() => editor.chain().focus().indent().run()}
-        disabled={!editor.can().indent()}
-        title={editor.can().indent() ? 'Aumentar recuo' : 'Recuo máximo atingido'}
-      >
-        <IndentIncrease className="h-4 w-4" />
-      </ToolbarButton>
-
-      <ToolbarButton
-        onClick={() => editor.chain().focus().outdent().run()}
-        disabled={!editor.can().outdent()}
-        title={editor.can().outdent() ? 'Diminuir recuo' : 'Recuo mínimo atingido'}
-      >
-        <IndentDecrease className="h-4 w-4" />
       </ToolbarButton>
     </>
   );
