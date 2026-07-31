@@ -28,6 +28,7 @@ export const HeaderActions: React.FC<HeaderActionsProps> = ({ user }) => {
 
   const [showNotifications, setShowNotifications] = React.useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = React.useState(false);
+  const [showMobileMenu, setShowMobileMenu] = React.useState(false);
   const notifRef = React.useRef<HTMLDivElement>(null);
   const clipboardRef = React.useRef<HTMLDivElement>(null);
 
@@ -76,8 +77,8 @@ export const HeaderActions: React.FC<HeaderActionsProps> = ({ user }) => {
           />
         </div>
 
-        {/* Notification Bell */}
-        <div className="relative" ref={notifRef}>
+        {/* Notification Bell - desktop only */}
+        <div className="relative hidden sm:block" ref={notifRef}>
           <button
             type="button"
             onClick={() => setShowNotifications(!showNotifications)}
@@ -96,6 +97,63 @@ export const HeaderActions: React.FC<HeaderActionsProps> = ({ user }) => {
             show={showNotifications}
             onClose={() => setShowNotifications(false)}
           />
+        </div>
+
+        {/* Mobile - combined menu (notifications + clipboard) */}
+        {/* Painel usa fixed (top-14 = altura do header mobile h-14); manter alinhado com AppHeader */}
+        <div className="sm:hidden">
+          <button
+            type="button"
+            onClick={() => setShowMobileMenu(!showMobileMenu)}
+            className="relative p-2 rounded-xl text-slate-500 dark:text-dark-400 hover:bg-slate-100 dark:hover:bg-dark-800 transition-all cursor-pointer"
+            title="Notificações e histórico de cópia"
+            aria-expanded={showMobileMenu}
+            aria-haspopup="true"
+          >
+            <Bell className="h-5 w-5" />
+            {(notificationCount > 0 || clipboardItems.length > 0) && (
+              <span
+                className={`absolute -top-0.5 -right-0.5 min-w-5 h-5 px-1 text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-sm animate-in zoom-in duration-200 ${
+                  notificationCount > 0
+                    ? 'bg-rose-500 shadow-rose-500/30'
+                    : 'bg-brand-500'
+                }`}
+              >
+                {notificationCount + clipboardItems.length > 9
+                  ? '9+'
+                  : notificationCount + clipboardItems.length}
+              </span>
+            )}
+          </button>
+
+          {showMobileMenu && (
+            <>
+              {/* Backdrop */}
+              <div
+                className="fixed inset-0 z-40"
+                onClick={() => setShowMobileMenu(false)}
+              />
+              <div
+                className="fixed right-2 top-14 mt-2 w-80 max-w-[calc(100vw-1rem)] rounded-2xl shadow-xl z-50 max-h-[70dvh] overflow-y-auto animate-in slide-in-from-top-2 fade-in duration-200"
+                style={{
+                  background: 'var(--bg-surface)',
+                  border: '1px solid var(--border-color)',
+                  boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)',
+                }}
+              >
+                <ClipboardManager
+                  show={showMobileMenu}
+                  onClose={() => setShowMobileMenu(false)}
+                  embedded
+                />
+                <NotificationPanel
+                  show={showMobileMenu}
+                  onClose={() => setShowMobileMenu(false)}
+                  embedded
+                />
+              </div>
+            </>
+          )}
         </div>
 
         {/* Profile Button */}

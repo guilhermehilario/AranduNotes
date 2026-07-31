@@ -6,11 +6,14 @@ import { ClipboardItemRow } from './ClipboardItemRow.tsx';
 interface ClipboardManagerProps {
   show: boolean;
   onClose: () => void;
+  /** Quando true, renderiza sem backdrop e sem posicionamento absoluto (para ser embutido em um dropdown combinado). */
+  embedded?: boolean;
 }
 
 export const ClipboardManager: React.FC<ClipboardManagerProps> = ({
   show,
   onClose,
+  embedded = false,
 }) => {
   const items = useClipboardStore((s) => s.items);
   const clearAll = useClipboardStore((s) => s.clearAll);
@@ -27,9 +30,13 @@ export const ClipboardManager: React.FC<ClipboardManagerProps> = ({
   return (
     <>
       {/* Backdrop */}
-      <div className="fixed inset-0 z-40" onClick={onClose} />
+      {!embedded && <div className="fixed inset-0 z-40" onClick={onClose} />}
       <div
-        className="absolute right-0 top-full mt-2 w-80 sm:w-96 rounded-2xl shadow-xl z-50 overflow-hidden animate-in slide-in-from-top-2 fade-in duration-200"
+        className={
+          embedded
+            ? 'w-full'
+            : 'absolute right-0 top-full mt-2 w-80 sm:w-96 rounded-2xl shadow-xl z-50 overflow-hidden animate-in slide-in-from-top-2 fade-in duration-200'
+        }
         style={{
           background: 'var(--bg-surface)',
           border: '1px solid var(--border-color)',
@@ -112,7 +119,7 @@ export const ClipboardManager: React.FC<ClipboardManagerProps> = ({
         )}
 
         {/* Body */}
-        <div className="max-h-80 overflow-y-auto">
+        <div className={embedded ? 'overflow-y-auto' : 'max-h-80 overflow-y-auto'}>
           {items.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-8 px-4 text-center">
               <ClipboardList className="h-8 w-8 mb-2" style={{ color: 'var(--text-secondary)' }} />
@@ -122,9 +129,14 @@ export const ClipboardManager: React.FC<ClipboardManagerProps> = ({
               <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>
                 Copie textos para vê-los aqui
               </p>
-              <p className="text-[10px] mt-2 px-3 py-1 rounded-lg" style={{ background: 'var(--bg-surface-hover)', color: 'var(--text-secondary)' }}>
-                Atalho: Ctrl+Shift+V
-              </p>
+              {!embedded && (
+                <p
+                  className="text-[10px] mt-2 px-3 py-1 rounded-lg"
+                  style={{ background: 'var(--bg-surface-hover)', color: 'var(--text-secondary)' }}
+                >
+                  Atalho: Ctrl+Shift+V
+                </p>
+              )}
             </div>
           ) : filteredItems.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-8 px-4 text-center">
