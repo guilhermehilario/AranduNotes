@@ -1,4 +1,5 @@
 import { User as PrismaUser } from "@prisma/client";
+import { isEmail } from "class-validator";
 import { ThemePreference, UserPublic } from "./auth.types";
 
 // 🔐 SEC-012: rounds aumentado de 12 para 14 (recomendação 2026).
@@ -7,10 +8,12 @@ import { ThemePreference, UserPublic } from "./auth.types";
 export const SALT_ROUNDS = 14;
 export const MIN_PASSWORD_LENGTH = 8;
 
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
+// 🔐 SEC-014: regex própria substituída pela validação robusta do class-validator
+// (mesmo validador usado pelos DTOs via @IsEmail). A regex antiga
+// /^[^\s@]+@[^\s@]+\.[^\s@]+$/ aceitava emails inválidos como "a@b..c" ou
+// "a@b.c..d".
 export function validateEmail(email: string): boolean {
-  return EMAIL_REGEX.test(email);
+  return isEmail(email);
 }
 
 export function validatePassword(password: string): boolean {

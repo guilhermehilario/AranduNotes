@@ -81,6 +81,9 @@ async function bootstrap() {
   app.enableShutdownHooks();
 
   // ── Security Headers (Helmet) ──
+  // 🔐 SEC-022: HSTS configurado EXPLICITAMENTE (antes usava o default implícito).
+  // Em produção, força HTTPS por 180 dias incluindo subdomínios; em desenvolvimento
+  // é desabilitado para não travar o navegador em http://localhost.
   app.use(
     helmet({
       contentSecurityPolicy: {
@@ -97,6 +100,10 @@ async function bootstrap() {
         },
       },
       crossOriginEmbedderPolicy: false,
+      strictTransportSecurity:
+        nodeEnv === "production"
+          ? { maxAge: 15552000, includeSubDomains: true, preload: true }
+          : false,
     }),
   );
 

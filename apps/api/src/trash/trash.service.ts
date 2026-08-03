@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -87,7 +91,7 @@ export class TrashService {
       }),
     );
     if (!card || !card.notebook) throw new NotFoundException('Flashcard não encontrado');
-    if (card.notebook.userId !== userId) throw new NotFoundException('Acesso negado');
+    if (card.notebook.userId !== userId) throw new ForbiddenException('Acesso negado');
 
     const now = new Date();
     await this.prisma.withConnection(() =>
@@ -137,7 +141,7 @@ export class TrashService {
       }),
     );
     if (!leaf) throw new NotFoundException('Folha não encontrada');
-    if (leaf.notebook.userId !== userId) throw new NotFoundException('Acesso negado');
+    if (leaf.notebook.userId !== userId) throw new ForbiddenException('Acesso negado');
 
     const now = new Date();
     await this.prisma.withConnection(() =>
@@ -159,7 +163,7 @@ export class TrashService {
       }),
     );
     if (!card || !card.notebook) throw new NotFoundException('Flashcard não encontrado');
-    if (card.notebook.userId !== userId) throw new NotFoundException('Acesso negado');
+    if (card.notebook.userId !== userId) throw new ForbiddenException('Acesso negado');
     if (!card.deletedAt) throw new NotFoundException('Flashcard não está na lixeira');
 
     await this.prisma.withConnection(() =>
@@ -181,7 +185,7 @@ export class TrashService {
       }),
     );
     if (!card || !card.notebook) throw new NotFoundException('Flashcard não encontrado');
-    if (card.notebook.userId !== userId) throw new NotFoundException('Acesso negado');
+    if (card.notebook.userId !== userId) throw new ForbiddenException('Acesso negado');
     if (!card.deletedAt) throw new NotFoundException('Flashcard não está na lixeira');
 
     await this.prisma.withConnection(() =>
@@ -226,7 +230,7 @@ export class TrashService {
       }),
     );
     if (!leaf) throw new NotFoundException('Folha não encontrada');
-    if (leaf.notebook.userId !== userId) throw new NotFoundException('Acesso negado');
+    if (leaf.notebook.userId !== userId) throw new ForbiddenException('Acesso negado');
     if (!leaf.deletedAt) throw new NotFoundException('Folha não está na lixeira');
 
     await this.prisma.withConnection(() =>
@@ -262,7 +266,7 @@ export class TrashService {
       }),
     );
     if (!leaf) throw new NotFoundException('Folha não encontrada');
-    if (leaf.notebook.userId !== userId) throw new NotFoundException('Acesso negado');
+    if (leaf.notebook.userId !== userId) throw new ForbiddenException('Acesso negado');
     if (!leaf.deletedAt) throw new NotFoundException('Folha não está na lixeira');
 
     await this.prisma.withConnection(() =>

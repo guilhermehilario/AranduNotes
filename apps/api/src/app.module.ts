@@ -56,7 +56,10 @@ import { AllExceptionsFilter } from "./common/filters/http-exception.filter";
       useFactory: () =>
         new ValidationPipe({
           whitelist: true,
-          forbidNonWhitelisted: process.env.NODE_ENV === "production",
+          // 🔐 SEC-009: rejeitar propriedades não permitidas em TODOS os ambientes
+          // (antes só em produção — em dev, campos extras eram ignorados em silêncio,
+          // mascarando erros de payload que explodiriam em produção).
+          forbidNonWhitelisted: true,
           transform: true,
           transformOptions: {
             enableImplicitConversion: true,

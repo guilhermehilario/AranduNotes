@@ -217,25 +217,6 @@ export class AuthCoreService {
         this.logger.debug(
           `Login attempt for ${sanitizedEmail}: password valid = ${isPasswordValid}`,
         );
-
-        if (!isPasswordValid && !user.password.startsWith("$2")) {
-          this.logger.debug(
-            `Plain-text password migration check for ${user.email}`,
-          );
-          if (password === user.password) {
-            const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
-            await this.prisma.withConnection(() =>
-              this.prisma.user.update({
-                where: { id: user.id },
-                data: { password: hashedPassword },
-              }),
-            );
-            isPasswordValid = true;
-            this.logger.log(
-              `Senha do usuário ${user.email} migrada de texto puro para bcrypt.`,
-            );
-          }
-        }
       }
 
       if (!user || !isPasswordValid) {
@@ -244,8 +225,7 @@ export class AuthCoreService {
             !user
               ? "usuário não encontrado no banco"
               : "senha inválida (bcrypt.compare retornou false)"
-          }` +
-            (user ? ` | hash prefix: ${user.password.substring(0, 6)}...` : ""),
+          }`,
         );
 
         throw new UnauthorizedException("E-mail ou senha incorretos");
