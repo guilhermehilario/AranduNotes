@@ -65,7 +65,8 @@ export const trashService = {
   },
 
   async cleanOldTrash(): Promise<void> {
-    await api.post('/trash/clean');
+    // 03/08: backend migrou para DELETE (operação destrutiva) — antes usava POST
+    await api.delete('/trash/clean');
   },
 };
 
