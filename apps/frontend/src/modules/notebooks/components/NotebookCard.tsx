@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, Calendar } from 'lucide-react';
 import { Card } from '../../../components/ui/Card.tsx';
 import type { Notebook } from '../types';
 
@@ -38,9 +38,18 @@ export const NotebookCard: React.FC<NotebookCardProps> = ({ notebook }) => {
         </p>
       </div>
 
-      <div className="flex items-center justify-between border-t border-slate-50 dark:border-dark-800/60 pt-4 text-xs font-semibold text-slate-400 dark:text-dark-400">
-        <span>{notebook.leavesCount} folhas anotadas</span>
-        <span className="flex items-center gap-1 text-brand-500 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+      <div className="flex items-center justify-between gap-2 border-t border-slate-50 dark:border-dark-800/60 pt-4 text-xs font-semibold text-slate-400 dark:text-dark-400">
+        <span className="flex items-center gap-1.5 min-w-0">
+          <Calendar className="h-3.5 w-3.5 flex-shrink-0" />
+          <span
+            className="truncate"
+            title={new Date(notebook.createdAt).toLocaleString('pt-BR')}
+          >
+            Criado em {new Date(notebook.createdAt).toLocaleDateString('pt-BR')} ·{' '}
+            {notebook.leavesCount} folhas
+          </span>
+        </span>
+        <span className="flex items-center gap-1 text-brand-500 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex-shrink-0">
           Acessar <ChevronRight className="h-3.5 w-3.5" />
         </span>
       </div>
