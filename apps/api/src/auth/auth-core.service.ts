@@ -262,6 +262,9 @@ export class AuthCoreService {
           }),
         );
 
+        // Obs.: token revogado/rotacionado aqui NÃO encerra a família (diferente
+        // do refresh) — o fluxo cai para o login com credenciais, que é mais
+        // seguro do que rejeitar sem conferir senha.
         if (
           record &&
           !record.revokedAt &&

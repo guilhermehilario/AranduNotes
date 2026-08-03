@@ -137,8 +137,10 @@ async function bootstrap() {
   // Registrado ANTES do enableCors para que o CORS nem chegue a processar o pedido.
   app.use((req: Request, res: Response, next: NextFunction) => {
     if (!req.headers.origin) {
+      // Normaliza barra final (/health/ == /health) para não quebrar monitores
+      const normalizedPath = req.path.replace(/\/+$/, "");
       const isExempt =
-        READ_METHODS.has(req.method) && NO_ORIGIN_EXEMPT_PATHS.has(req.path);
+        READ_METHODS.has(req.method) && NO_ORIGIN_EXEMPT_PATHS.has(normalizedPath);
       if (!isExempt) {
         console.warn(
           `[SEC] Requisição sem Origin bloqueada: ${req.method} ${JSON.stringify(req.path)}`,
