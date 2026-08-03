@@ -1,5 +1,11 @@
 # 🚀 Guia de Deploy no Render — Arandu
 
+> **✅ STATUS: VIGENTE PARA O FRONTEND (03/08/2026)** — O **frontend** continua
+> hospedado no Render via Blueprint (`render.yaml`). A **API** foi migrada para o
+> Fly.io (ver `docs/MIGRAR_RENDER_PARA_FLY.md`). Nota: `VITE_API_URL` no `render.yaml`
+> aponta para `https://arandu-api.fly.dev/api` — deploy híbrido intencional (confirmar
+> em `docs/TAREFAS_PENDENTES.md`).
+
 Este guia explica como fazer o deploy do **Arandu** (monorepo com API NestJS + Frontend React)
 na plataforma [Render.com](https://render.com) utilizando a funcionalidade **Blueprint**.
 

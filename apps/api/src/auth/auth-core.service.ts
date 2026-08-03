@@ -6,6 +6,7 @@ import {
   Logger,
 } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
+import { ConfigService } from "@nestjs/config";
 import * as bcrypt from "bcryptjs";
 import { v4 as uuidv4 } from "uuid";
 import { PrismaService } from "../prisma/prisma.service";
@@ -22,9 +23,12 @@ export class AuthCoreService {
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
     private readonly emailService: EmailService,
+    // 🔐 SEC-003: ConfigService injetado — segredos devem vir do ConfigModule
+    // (mesmo padrão usado pelo JwtModule para JWT_SECRET), não do process.env direto.
+    private readonly configService: ConfigService,
   ) {
     this.refreshSecret =
-      process.env.REFRESH_SECRET ||
+      this.configService.get<string>("REFRESH_SECRET") ||
       (process.env.NODE_ENV === "production"
         ? (() => {
             throw new Error("REFRESH_SECRET é obrigatório em produção");

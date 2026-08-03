@@ -22,6 +22,8 @@ const PRISMA_CONNECTION_CODES = ['P1001', 'P1002', 'P1008', 'P1017'];
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
   private readonly logger = new Logger(AllExceptionsFilter.name);
+  /** 🔐 SEC-018: em produção, erros 5xx nunca expõem detalhes internos */
+  private readonly isProduction = process.env.NODE_ENV === 'production';
 
   catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
@@ -40,8 +42,24 @@ export class AllExceptionsFilter implements ExceptionFilter {
         message = exceptionResponse;
       } else if (typeof exceptionResponse === 'object') {
         const resp = exceptionResponse as Record<string, unknown>;
-        message = (resp.message as string) || exception.message;
-        error = (resp.error as string) || error;
+        // 🔐 SEC-018: mensagens deliberadas (4xx) são mantidas; a mensagem bruta
+        // de um Error genérico só é exposta em desenvolvimento.
+        if (typeof resp.message === 'string') {
+          message = resp.message;
+        } else if (Array.isArray(resp.message)) {
+          message = (resp.message as string[]).join(', ');
+        } else if (!this.isProduction) {
+          message = exception.message;
+        }
+        if (typeof resp.error === 'string') {
+          error = resp.error;
+        }
+      }
+
+      // 🔐 SEC-018: em produção, nunca vazar internals em respostas 5xx
+      if (status >= HttpStatus.INTERNAL_SERVER_ERROR && this.isProduction) {
+        message = 'Ocorreu um erro interno no servidor';
+        error = 'Internal Server Error';
       }
     } else if (exception instanceof Error) {
       // ── Erros do Prisma ──

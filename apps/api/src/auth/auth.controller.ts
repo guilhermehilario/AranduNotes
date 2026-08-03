@@ -38,6 +38,8 @@ export class AuthController {
   }
 
   @Post('register')
+  // 🔐 SEC-023: rate limit específico para evitar abuso/criação em massa
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   async register(
     @Body() dto: RegisterDto,
   ) {
@@ -108,11 +110,15 @@ export class AuthController {
   }
 
   @Post('forgot-password')
+  // 🔐 SEC-023: rate limit específico contra brute force/abuso de e-mail
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   async forgotPassword(@Body() body: { email: string }) {
     return this.authService.forgotPassword(body.email);
   }
 
   @Post('reset-password')
+  // 🔐 SEC-023: rate limit específico contra brute force de tokens de reset
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   async resetPassword(
     @Body() body: { token: string; password: string },
   ) {
@@ -125,6 +131,8 @@ export class AuthController {
   }
 
   @Post('resend-verification')
+  // 🔐 SEC-023: rate limit específico contra spam de e-mails de verificação
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   async resendVerification(@Body() body: { email: string }) {
     return this.authService.resendVerification(body.email);
   }

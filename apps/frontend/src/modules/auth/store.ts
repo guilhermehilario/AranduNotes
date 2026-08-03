@@ -37,10 +37,19 @@ const useAuthStoreBase = create<AuthState>()(
     }),
     {
       name: 'studynotes-auth', // Nome da chave no localStorage
+      // 🔐 SEC-011: o access token NÃO é persistido no localStorage (roubável via
+      // XSS). Apenas dados não sensíveis são salvos; o token vive apenas em memória
+      // e é obtido via refresh (cookie httpOnly) a cada carregamento de página.
       partialize: (state) => ({
         user: state.user,
-        accessToken: state.accessToken,
         isAuthenticated: state.isAuthenticated,
+      }),
+      // Migra storage antigo (que continha accessToken): força accessToken=null
+      // para que nenhum token previamente salvo seja restaurado na memória.
+      merge: (persistedState, currentState) => ({
+        ...currentState,
+        ...(persistedState as Partial<AuthState>),
+        accessToken: null,
       }),
     },
   ),
@@ -68,8 +77,10 @@ async function validateTokenAndHydrate(): Promise<void> {
   try {
     const state = useAuthStoreBase.getState();
 
-    // Só valida se houver um token armazenado
-    if (!state.accessToken || !state.isAuthenticated) {
+    // 🔐 SEC-011: o token não vem mais do localStorage. Só há o que validar
+    // se o usuário estava autenticado (flag persistido) — o token é obtido
+    // via refresh (cookie httpOnly) ou já está em memória (navegação SPA).
+    if (!state.isAuthenticated && !state.accessToken) {
       return;
     }
 
@@ -77,8 +88,8 @@ async function validateTokenAndHydrate(): Promise<void> {
 
     // ── Passo 1: tenta renovar o token ──
     // O cookie httpOnly com o refresh token é enviado automaticamente
-    // com credentials: 'include'. Se o refresh funcionar, usamos o
-    // novo access token para validar o profile.
+    // com credentials: 'include'. Isso funciona inclusive após F5, quando
+    // o access token ainda não existe em memória.
     try {
       const refreshRes = await fetch(`${apiUrl}/auth/refresh`, {
         method: 'POST',
@@ -94,11 +105,16 @@ async function validateTokenAndHydrate(): Promise<void> {
           useAuthStoreBase.getState().setAccessToken(token);
         }
       }
-      // Se refresh falhou (401, etc.), mantém o token original e
-      // tenta o profile — o profile pode funcionar se o token
-      // ainda não expirou (caso normal sem cold start).
+      // Se refresh falhou (401, etc.), segue com o token em memória (se
+      // houver) — o profile pode funcionar se o token ainda não expirou.
     } catch {
-      // Erro de rede/timeout no refresh — segue com token original
+      // Erro de rede/timeout no refresh — segue com token em memória (se houver)
+    }
+
+    // Sem token em memória E refresh falhou → sessão não existe mais
+    if (!token) {
+      useAuthStoreBase.getState().logout();
+      return;
     }
 
     // ── Passo 2: valida o token com /auth/profile ──
@@ -109,8 +125,9 @@ async function validateTokenAndHydrate(): Promise<void> {
       });
 
       if (profileRes.ok) {
-        // ✅ Token válido — mantém a sessão
-        console.log('[AuthStore] Token validado com sucesso.');
+        // ✅ Token válido — mantém a sessão e atualiza os dados do usuário
+        const user = await profileRes.json();
+        useAuthStoreBase.setState({ user, isAuthenticated: true });
       } else if (profileRes.status === 401) {
         // 🛑 Token inválido mesmo após tentativa de refresh → limpa sessão
         console.warn('[AuthStore] Token inválido/expirado — limpando sessão.');

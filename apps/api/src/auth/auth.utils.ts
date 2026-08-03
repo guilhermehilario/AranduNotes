@@ -1,7 +1,10 @@
 import { User as PrismaUser } from "@prisma/client";
 import { ThemePreference, UserPublic } from "./auth.types";
 
-export const SALT_ROUNDS = 12;
+// 🔐 SEC-012: rounds aumentado de 12 para 14 (recomendação 2026).
+// Hashes existentes continuam verificáveis com bcrypt.compare (não é necessário
+// re-hash); apenas novos hashes usam o custo maior.
+export const SALT_ROUNDS = 14;
 export const MIN_PASSWORD_LENGTH = 8;
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

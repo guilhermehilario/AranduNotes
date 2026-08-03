@@ -2,6 +2,19 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
 
+/**
+ * 🔐 SEC-005: Escapa caracteres HTML em valores interpolados nos templates,
+ * prevenindo XSS em clientes de e-mail que processam HTML.
+ */
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 @Injectable()
 export class EmailService {
   private readonly logger = new Logger(EmailService.name);
@@ -205,6 +218,9 @@ export class EmailService {
   ): Promise<void> {
     const subject = 'Confirme seu e-mail - Arandu';
     const verificationUrl = `${this.frontendUrl}/verify-email?token=${verificationToken}`;
+    // 🔐 SEC-005: escape dos valores interpolados (userName é controlado pelo usuário)
+    const safeUserName = escapeHtml(userName);
+    const safeVerificationUrl = escapeHtml(verificationUrl);
 
     const html = `
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 560px; margin: 0 auto; padding: 24px; background: #fafafa; border-radius: 16px;">
@@ -214,14 +230,14 @@ export class EmailService {
         </div>
 
         <div style="background: white; border-radius: 12px; padding: 24px; border: 1px solid #e2e8f0;">
-          <p style="color: #1e293b; font-size: 16px; line-height: 1.5;">Olá, <strong>${userName}</strong>!</p>
+          <p style="color: #1e293b; font-size: 16px; line-height: 1.5;">Olá, <strong>${safeUserName}</strong>!</p>
 
           <p style="color: #475569; font-size: 14px; line-height: 1.6;">
             Obrigado por criar sua conta no Arandu! Para começar a usar, confirme seu endereço de e-mail clicando no botão abaixo:
           </p>
 
           <div style="text-align: center; margin: 24px 0;">
-            <a href="${verificationUrl}"
+            <a href="${safeVerificationUrl}"
                style="display: inline-block; background: #aa3bff; color: white; font-size: 16px; font-weight: 700; padding: 14px 32px; border-radius: 12px; text-decoration: none;">
               Confirmar E-mail
             </a>
@@ -229,7 +245,7 @@ export class EmailService {
 
           <p style="color: #64748b; font-size: 13px; line-height: 1.5; text-align: center;">
             Se o botão não funcionar, copie e cole o link abaixo no seu navegador:<br>
-            <span style="color: #aa3bff; font-size: 12px; word-break: break-all;">${verificationUrl}</span>
+            <span style="color: #aa3bff; font-size: 12px; word-break: break-all;">${safeVerificationUrl}</span>
           </p>
 
           <p style="color: #94a3b8; font-size: 12px; margin-top: 20px; text-align: center;">
@@ -255,6 +271,9 @@ export class EmailService {
     confirmationCode: string,
   ): Promise<void> {
     const subject = 'Confirmação de Exclusão de Conta - Arandu';
+    // 🔐 SEC-005: escape dos valores interpolados
+    const safeUserName = escapeHtml(userName);
+    const safeConfirmationCode = escapeHtml(confirmationCode);
 
     const html = `
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 560px; margin: 0 auto; padding: 24px; background: #fafafa; border-radius: 16px;">
@@ -264,7 +283,7 @@ export class EmailService {
         </div>
 
         <div style="background: white; border-radius: 12px; padding: 24px; border: 1px solid #e2e8f0;">
-          <p style="color: #1e293b; font-size: 16px; line-height: 1.5;">Olá, <strong>${userName}</strong>!</p>
+          <p style="color: #1e293b; font-size: 16px; line-height: 1.5;">Olá, <strong>${safeUserName}</strong>!</p>
 
           <p style="color: #475569; font-size: 14px; line-height: 1.6;">
             Recebemos uma solicitação de exclusão da sua conta no Arandu.
@@ -276,7 +295,7 @@ export class EmailService {
               Código de Confirmação
             </p>
             <span style="font-size: 28px; font-weight: 800; letter-spacing: 0.15em; color: #b91c1c; font-family: 'Courier New', monospace;">
-              ${confirmationCode}
+              ${safeConfirmationCode}
             </span>
             <p style="color: #94a3b8; font-size: 11px; margin: 8px 0 0;">
               Este código expira em 15 minutos.
@@ -308,6 +327,9 @@ export class EmailService {
   ): Promise<void> {
     const subject = 'Recuperação de Senha - Arandu';
     const resetUrl = `${this.frontendUrl}/reset-password?token=${resetToken}`;
+    // 🔐 SEC-005: escape dos valores interpolados
+    const safeUserName = escapeHtml(userName);
+    const safeResetUrl = escapeHtml(resetUrl);
 
     const html = `
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 560px; margin: 0 auto; padding: 24px; background: #fafafa; border-radius: 16px;">
@@ -317,7 +339,7 @@ export class EmailService {
         </div>
 
         <div style="background: white; border-radius: 12px; padding: 24px; border: 1px solid #e2e8f0;">
-          <p style="color: #1e293b; font-size: 16px; line-height: 1.5;">Olá, <strong>${userName}</strong>!</p>
+          <p style="color: #1e293b; font-size: 16px; line-height: 1.5;">Olá, <strong>${safeUserName}</strong>!</p>
 
           <p style="color: #475569; font-size: 14px; line-height: 1.6;">
             Recebemos uma solicitação de redefinição de senha para sua conta no Arandu.
@@ -325,7 +347,7 @@ export class EmailService {
           </p>
 
           <div style="text-align: center; margin: 24px 0;">
-            <a href="${resetUrl}"
+            <a href="${safeResetUrl}"
                style="display: inline-block; background: #aa3bff; color: white; font-size: 16px; font-weight: 700; padding: 14px 32px; border-radius: 12px; text-decoration: none;">
               Redefinir Senha
             </a>
@@ -333,7 +355,7 @@ export class EmailService {
 
           <p style="color: #64748b; font-size: 13px; line-height: 1.5; text-align: center;">
             Se o botão não funcionar, copie e cole o link abaixo no seu navegador:<br>
-            <span style="color: #aa3bff; font-size: 12px; word-break: break-all;">${resetUrl}</span>
+            <span style="color: #aa3bff; font-size: 12px; word-break: break-all;">${safeResetUrl}</span>
           </p>
 
           <p style="color: #94a3b8; font-size: 12px; margin-top: 20px; text-align: center;">
