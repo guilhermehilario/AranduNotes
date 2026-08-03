@@ -9,6 +9,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
+import { Logger } from '@nestjs/common';
 import { Response, Request } from 'express';
 import { AuthService } from './auth.service';
 import { UserPublic } from './auth.types';
@@ -19,6 +20,8 @@ import { LoginDto } from './dto/login.dto';
 
 @Controller('auth')
 export class AuthController {
+  private readonly logger = new Logger(AuthController.name);
+
   constructor(private readonly authService: AuthService) {}
 
   private readonly isSecure = process.env.NODE_ENV === 'production';
@@ -107,7 +110,12 @@ export class AuthController {
       // Renova o cookie de refresh (rotação de token)
       this.setRefreshCookie(res, result.refreshToken);
       return { accessToken: result.accessToken };
-    } catch {
+    } catch (error) {
+      // Loga o erro REAL para observabilidade — o cliente recebe apenas o 401
+      // genérico (erros de banco não-retryáveis também caem aqui via withConnection).
+      this.logger.warn(
+        `Refresh falhou: ${(error as Error)?.message || 'erro desconhecido'}`,
+      );
       res.clearCookie('refreshToken', {
         httpOnly: true,
         secure: this.isSecure,
