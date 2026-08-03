@@ -120,14 +120,45 @@ async function bootstrap() {
   // Fallback permissivo apenas em desenvolvimento para facilitar testes locais.
   const isCorsPermissive = allowedOrigins.length === 0 && nodeEnv !== "production";
 
+  // 🔐 Endpoints de infra/monitoramento chamados por load balancers SEM header
+  // Origin (Fly.io → /health, Render → /api/health, UptimeRobot → /warmup).
+  const NO_ORIGIN_EXEMPT_PATHS = new Set([
+    "/",
+    "/health",
+    "/warmup",
+    "/api/health",
+    "/api/warmup",
+  ]);
+  const READ_METHODS = new Set(["GET", "HEAD"]);
+
+  // 🔐 Bloqueia requisições sem header Origin (curl, Postman, server-to-server).
+  // Browsers SEMPRE enviam Origin em requisições cross-site — como frontend e API
+  // vivem em domínios diferentes (dev e produção), isso não afeta o app.
+  // Registrado ANTES do enableCors para que o CORS nem chegue a processar o pedido.
+  app.use((req: Request, res: Response, next: NextFunction) => {
+    if (!req.headers.origin) {
+      const isExempt =
+        READ_METHODS.has(req.method) && NO_ORIGIN_EXEMPT_PATHS.has(req.path);
+      if (!isExempt) {
+        console.warn(
+          `[SEC] Requisição sem Origin bloqueada: ${req.method} ${JSON.stringify(req.path)}`,
+        );
+        res.status(403).json({ error: "Requisição sem Origin não permitida" });
+        return;
+      }
+    }
+    next();
+  });
+
   app.enableCors({
     origin: isCorsPermissive
-      ? true // permite qualquer origem
+      ? true // permite qualquer origem (apenas desenvolvimento)
       : (
           origin: string | undefined,
           callback: (err: Error | null, allow?: boolean) => void,
         ) => {
-          // Permitir requisições sem origin (server-to-server, Postman)
+          // Requisições sem Origin chegam aqui apenas nos endpoints de infra
+          // (health/warmup) — o middleware acima bloqueia as demais.
           if (!origin || allowedOrigins.includes(origin)) {
             callback(null, true);
           } else {

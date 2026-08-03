@@ -28,8 +28,28 @@ export class EmailService {
   private readonly smtpPort: number | null = null;
 
   constructor(private readonly configService: ConfigService) {
-    this.frontendUrl =
-      this.configService.get<string>('FRONTEND_URL') || 'http://localhost:5173';
+    const configuredFrontendUrl = this.configService.get<string>('FRONTEND_URL');
+    const isProduction = process.env.NODE_ENV === 'production';
+
+    // 🔐 Fail-safe de FRONTEND_URL: em produção a variável é OBRIGATÓRIA — sem
+    // ela os links dos e-mails apontariam para localhost (inúteis para o
+    // usuário). O main.ts já valida antes do boot; esta é a defesa em
+    // profundidade para quem instanciar o serviço isolado (testes, scripts).
+    if (configuredFrontendUrl) {
+      this.frontendUrl = configuredFrontendUrl;
+    } else if (isProduction) {
+      this.logger.error(
+        'FRONTEND_URL é obrigatória em produção — links de e-mail inválidos.',
+      );
+      throw new Error(
+        'FRONTEND_URL é obrigatória em produção. Defina a variável de ambiente no deploy.',
+      );
+    } else {
+      this.logger.warn(
+        'FRONTEND_URL não definida — usando fallback http://localhost:5173 (apenas desenvolvimento).',
+      );
+      this.frontendUrl = 'http://localhost:5173';
+    }
 
     const host = this.configService.get<string>('SMTP_HOST');
     const portString = this.configService.get<string>('SMTP_PORT');

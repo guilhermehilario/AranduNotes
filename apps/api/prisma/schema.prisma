@@ -37,6 +37,26 @@ model User {
   pomodoroSessions PomodoroSession[]
   questions        Question[]
   mockExams        MockExam[]
+  refreshTokens    RefreshToken[]
+}
+
+/// Refresh tokens rotacionáveis (família de tokens por sessão)
+/// 🔐 SEC: cada refresh token é emitido pelo servidor e registrado aqui
+/// (apenas o hash SHA-256, nunca o token em texto puro). A cada rotação o
+/// token antigo é revogado; o reuso de um token já revogado encerra a família.
+model RefreshToken {
+  id                String    @id @default(uuid())
+  userId            String
+  tokenHash         String    @unique // SHA-256 do JWT — nunca armazenar o token em texto puro
+  expiresAt         DateTime
+  revokedAt         DateTime? // Preenchido = token revogado (logout, rotação ou reuso detectado)
+  replacedByTokenId String? // Token que substituiu este na rotação (rastreamento da família)
+  createdAt         DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
 }
 
 /// Cadernos de anotação (disciplinas/matérias)

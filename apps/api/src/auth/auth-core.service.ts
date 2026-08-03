@@ -7,12 +7,25 @@ import {
 } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import { ConfigService } from "@nestjs/config";
+import { createHash } from "node:crypto";
 import * as bcrypt from "bcryptjs";
 import { v4 as uuidv4 } from "uuid";
 import { PrismaService } from "../prisma/prisma.service";
 import { EmailService } from "../common/email/email.service";
 import { UserPublic, AuthTokens } from "./auth.types";
 import { stripPassword, validateEmail, validatePassword, SALT_ROUNDS } from "./auth.utils";
+
+/** Vida útil do refresh token (7 dias — mesmo valor do JWT) */
+const REFRESH_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+
+/**
+ * 🔐 SHA-256 do refresh token.
+ * Apenas o hash é persistido no banco — um vazamento do banco não expõe
+ * tokens utilizáveis (o JWT original não pode ser reconstruído a partir do hash).
+ */
+function hashRefreshToken(token: string): string {
+  return createHash("sha256").update(token).digest("hex");
+}
 
 @Injectable()
 export class AuthCoreService {
@@ -36,13 +49,64 @@ export class AuthCoreService {
         : "dev-refresh-secret");
   }
 
-  generateTokens(userId: string): AuthTokens {
+  /**
+   * Emite um par de tokens (access + refresh) e registra o refresh token no
+   * banco (hash apenas). Se `revokeRecordId` for informado, o token antigo é
+   * revogado atomicamente — rotação de refresh token.
+   */
+  private async issueRefreshTokenPair(
+    userId: string,
+    revokeRecordId?: string,
+  ): Promise<AuthTokens> {
     const accessToken = this.jwtService.sign({ userId });
     const refreshToken = this.jwtService.sign(
       { userId },
       { secret: this.refreshSecret, expiresIn: "7d" },
     );
+    const tokenHash = hashRefreshToken(refreshToken);
+    const expiresAt = new Date(Date.now() + REFRESH_TOKEN_TTL_MS);
+
+    await this.prisma.withConnection(() =>
+      this.prisma.$transaction(async (tx) => {
+        // Limpeza oportunista: tokens expirados são inúteis (mantém a tabela enxuta)
+        await tx.refreshToken.deleteMany({
+          where: { expiresAt: { lt: new Date() } },
+        });
+
+        const created = await tx.refreshToken.create({
+          data: { userId, tokenHash, expiresAt },
+        });
+
+        if (revokeRecordId) {
+          // 🔄 Rotação: revoga o token antigo e registra a substituição
+          await tx.refreshToken.update({
+            where: { id: revokeRecordId },
+            data: { revokedAt: new Date(), replacedByTokenId: created.id },
+          });
+        }
+      }),
+    );
+
     return { accessToken, refreshToken };
+  }
+
+  async generateTokens(userId: string): Promise<AuthTokens> {
+    return this.issueRefreshTokenPair(userId);
+  }
+
+  /**
+   * Revoga um refresh token no servidor (logout).
+   * A assinatura JWT não é verificada de propósito — um token desconhecido
+   * simplesmente não casa com nenhum registro (updateMany no-op).
+   */
+  async logout(refreshToken: string): Promise<void> {
+    if (!refreshToken) return;
+    await this.prisma.withConnection(() =>
+      this.prisma.refreshToken.updateMany({
+        where: { tokenHash: hashRefreshToken(refreshToken), revokedAt: null },
+        data: { revokedAt: new Date() },
+      }),
+    );
   }
 
   async register(
@@ -185,18 +249,34 @@ export class AuthCoreService {
           secret: this.refreshSecret,
         }) as { userId: string };
 
-        const user = await this.prisma.withConnection(() =>
-          this.prisma.user.findUnique({
-            where: { id: decoded.userId },
+        // 🔐 Rotação: só auto-login se o token ainda estiver ATIVO no servidor
+        // (emitido por nós e não revogado). Um token já rotacionado cai no
+        // fluxo de login normal com credenciais.
+        const record = await this.prisma.withConnection(() =>
+          this.prisma.refreshToken.findUnique({
+            where: { tokenHash: hashRefreshToken(existingRefreshToken) },
           }),
         );
 
-        if (user && !user.deletedAt) {
-          this.logger.log(
-            `Auto-login para ${user.email} (ID: ${user.id}) — refresh token válido existente.`,
+        if (
+          record &&
+          !record.revokedAt &&
+          record.expiresAt.getTime() > Date.now()
+        ) {
+          const user = await this.prisma.withConnection(() =>
+            this.prisma.user.findUnique({
+              where: { id: decoded.userId },
+            }),
           );
-          const tokens = this.generateTokens(user.id);
-          return { user: stripPassword(user), ...tokens };
+
+          if (user && !user.deletedAt) {
+            this.logger.log(
+              `Auto-login para ${user.email} (ID: ${user.id}) — refresh token válido existente.`,
+            );
+            // Rotaciona: revoga o token usado e emite um novo par
+            const tokens = await this.issueRefreshTokenPair(user.id, record.id);
+            return { user: stripPassword(user), ...tokens };
+          }
         }
       } catch {
         // Token inválido ou expirado → permite login normalmente
@@ -244,7 +324,7 @@ export class AuthCoreService {
         );
       }
 
-      const tokens = this.generateTokens(user.id);
+      const tokens = await this.generateTokens(user.id);
       return { user: stripPassword(user), ...tokens };
     } catch (error) {
       const errMsg = (error as Error).message?.toLowerCase() || "";
@@ -271,35 +351,71 @@ export class AuthCoreService {
   async refresh(
     refreshToken: string,
   ): Promise<{ accessToken: string; refreshToken: string }> {
+    let decoded: { userId: string };
     try {
-      const decoded = this.jwtService.verify(refreshToken, {
+      decoded = this.jwtService.verify(refreshToken, {
         secret: this.refreshSecret,
       }) as { userId: string };
-
-      const user = await this.prisma.withConnection(() =>
-        this.prisma.user.findUnique({
-          where: { id: decoded.userId },
-        }),
-      );
-
-      if (!user) {
-        throw new UnauthorizedException("Usuário não encontrado");
-      }
-
-      if (user.deletedAt) {
-        throw new UnauthorizedException("Usuário não encontrado");
-      }
-
-      const smtpConfigured = this.emailService.isSmtpConfigured;
-      if (smtpConfigured && !user.emailVerified) {
-        throw new UnauthorizedException(
-          "E-mail não verificado. Por favor, confira sua caixa de entrada.",
-        );
-      }
-      return this.generateTokens(user.id);
     } catch {
       throw new UnauthorizedException("Refresh token inválido ou expirado");
     }
+
+    // 🔐 Rotação: o token precisa existir no banco (emitido por nós)
+    const record = await this.prisma.withConnection(() =>
+      this.prisma.refreshToken.findUnique({
+        where: { tokenHash: hashRefreshToken(refreshToken) },
+      }),
+    );
+
+    if (!record) {
+      throw new UnauthorizedException("Refresh token inválido ou expirado");
+    }
+
+    if (record.revokedAt) {
+      // 🚨 Reuso de token já rotacionado/revogado → encerra TODA a família de
+      // tokens do usuário (OWASP: família terminada em caso de reuso). Isso
+      // invalida também qualquer token roubado junto com o legítimo.
+      await this.prisma.withConnection(() =>
+        this.prisma.refreshToken.updateMany({
+          where: { userId: record.userId, revokedAt: null },
+          data: { revokedAt: new Date() },
+        }),
+      );
+      this.logger.warn(
+        `[SEC] Reuso de refresh token detectado — sessões do usuário ${record.userId} revogadas.`,
+      );
+      throw new UnauthorizedException("Refresh token inválido ou expirado");
+    }
+
+    if (record.expiresAt.getTime() <= Date.now()) {
+      await this.prisma.withConnection(() =>
+        this.prisma.refreshToken.update({
+          where: { id: record.id },
+          data: { revokedAt: new Date() },
+        }),
+      );
+      throw new UnauthorizedException("Refresh token inválido ou expirado");
+    }
+
+    const user = await this.prisma.withConnection(() =>
+      this.prisma.user.findUnique({
+        where: { id: decoded.userId },
+      }),
+    );
+
+    if (!user || user.deletedAt) {
+      throw new UnauthorizedException("Usuário não encontrado");
+    }
+
+    const smtpConfigured = this.emailService.isSmtpConfigured;
+    if (smtpConfigured && !user.emailVerified) {
+      throw new UnauthorizedException(
+        "E-mail não verificado. Por favor, confira sua caixa de entrada.",
+      );
+    }
+
+    // ✅ Válido → rotaciona (revoga o token atual e emite novos)
+    return this.issueRefreshTokenPair(decoded.userId, record.id);
   }
 
   async validateUser(userId: string): Promise<UserPublic | null> {

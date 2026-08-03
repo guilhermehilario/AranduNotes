@@ -73,7 +73,16 @@ export class AuthController {
 
   @Post('logout')
   @UseGuards(JwtAuthGuard)
-  logout(@Res({ passthrough: true }) res: Response) {
+  async logout(
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    // 🔐 Logout server-side: revoga o refresh token no banco ANTES de limpar o
+    // cookie — um cookie roubado não pode mais ser usado para renovar a sessão.
+    const refreshToken = req.cookies?.refreshToken;
+    if (refreshToken) {
+      await this.authService.logout(refreshToken);
+    }
     res.clearCookie('refreshToken', {
       httpOnly: true,
       secure: this.isSecure,

@@ -60,6 +60,11 @@ export class AuthService {
     return this.core.refresh(refreshToken);
   }
 
+  /** Revoga o refresh token no servidor (logout server-side) */
+  async logout(refreshToken: string): Promise<void> {
+    return this.core.logout(refreshToken);
+  }
+
   async validateUser(userId: string): Promise<UserPublic | null> {
     return this.core.validateUser(userId);
   }

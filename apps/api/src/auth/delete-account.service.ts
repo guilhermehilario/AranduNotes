@@ -101,6 +101,11 @@ export class DeleteAccountService {
           data: { deletedAt: new Date() },
         });
 
+        // 🔐 Remove todos os refresh tokens da conta excluída (logout total)
+        await tx.refreshToken.deleteMany({
+          where: { userId: payload.userId },
+        });
+
         this.logger.log(
           `✅ Conta excluída permanentemente: ${user.email} (ID: ${user.id})`,
         );
