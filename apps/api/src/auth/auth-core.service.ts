@@ -59,8 +59,12 @@ export class AuthCoreService {
     revokeRecordId?: string,
   ): Promise<AuthTokens> {
     const accessToken = this.jwtService.sign({ userId });
+    // 🆔 jti (JWT ID): JWTs são determinísticos — dois tokens assinados no mesmo
+    // segundo para o mesmo usuário seriam IDÊNTICOS, colidindo na constraint
+    // única de tokenHash e quebrando a rotação. O jti único garante que cada
+    // refresh token emitido seja distinto.
     const refreshToken = this.jwtService.sign(
-      { userId },
+      { userId, jti: uuidv4() },
       { secret: this.refreshSecret, expiresIn: "7d" },
     );
     const tokenHash = hashRefreshToken(refreshToken);
