@@ -1,12 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Info,
   Rocket,
   HeartHandshake,
-  Sparkles,
-  CheckCircle2,
   Lock,
+  ChevronRight,
 } from 'lucide-react';
+import { VersoesModal } from './VersoesModal';
 
 interface SectionCardProps {
   icon: React.ReactNode;
@@ -50,82 +50,9 @@ const SectionCard: React.FC<SectionCardProps> = ({
   </div>
 );
 
-const VERSIONS: Array<{ tag: string; name: string; status: string; items: string[] }> = [
-  {
-    tag: 'v1.0',
-    name: 'Fundação',
-    status: 'Atual',
-    items: [
-      'Cadernos e folhas de anotação com editor rich text (TipTap)',
-      'Flashcards com repetição espaçada (SM-2)',
-      'Questões, simulados e revisões',
-      'Planejamento de estudos: agenda, cronograma, metas e pomodoro',
-      'Autenticação, perfil, avatares e histórico de cópia',
-      'Tema Claro/Escuro/Automático sincronizado na conta entre dispositivos',
-    ],
-  },
-  {
-    tag: 'v1.5',
-    name: 'Colaboração',
-    status: 'Proposto',
-    items: [
-      'Compartilhamento de cadernos entre usuários',
-      'Sincronização em tempo real do editor',
-      'IA generativa para resumos e questões (via API)',
-    ],
-  },
-  {
-    tag: 'v2.0',
-    name: 'Inteligência & Insights',
-    status: 'Planejado',
-    items: [
-      'Dashboard avançado de desempenho e previsão de revisão',
-      'Análise de lacunas de conhecimento por matéria',
-      'Aplicativos nativos (Android/iOS) e modo offline',
-    ],
-  },
-];
-
-const RELEASE_NOTES: Array<{ version: string; date: string; latest?: boolean; highlights: string[] }> = [
-  {
-    version: 'Julho 2026',
-    date: '31/07/2026',
-    latest: true,
-    highlights: [
-      'Tema Claro/Escuro/Automático com sincronização na conta entre dispositivos',
-      'Toasts de feedback ao salvar o tema (sucesso/erro)',
-      'Seletor de categorias de avatares colapsável no topo da aba Avatares',
-      'Barra de ferramentas do editor com linha extra colapsável (como o BubbleMenu)',
-      'Melhorias de leitura de texto nos cards no mobile',
-      'Responsividade mobile completa: modais, perfil, configurações e abas',
-      'Menu combinado de notificações + histórico de cópia no mobile',
-      'CI com lint obrigatório (0 warnings) no GitHub Actions',
-      'Melhorias de desempenho e tipagem em todo o monorepo',
-    ],
-  },
-  {
-    version: 'Julho 2026',
-    date: '29/07/2026',
-    highlights: [
-      'Módulo de planejamento com agenda, calendário, metas e pomodoro',
-      'Registro de revisões e histórico de estudos (Review Log)',
-      'Flyout de planejamento no menu lateral para mobile',
-      'Estilização avançada do editor (links, listas e tooltips)',
-    ],
-  },
-  {
-    version: 'Julho 2026',
-    date: '22/07/2026',
-    highlights: [
-      'Lançamento do Arandu — plataforma de estudos inteligente',
-      'Cadernos, folhas, tags, favoritos e lixeira',
-      'Flashcards, questões, simulados e modo de estudo',
-      'Autenticação com e-mail, verificação, termos de uso e exclusão de conta',
-    ],
-  },
-];
-
 export const AboutTab: React.FC = () => {
+  const [showVersions, setShowVersions] = useState(false);
+
   return (
     <div className="flex flex-col gap-5 sm:gap-7">
       {/* Projeto */}
@@ -161,66 +88,42 @@ export const AboutTab: React.FC = () => {
         </div>
       </SectionCard>
 
-      {/* Versões */}
-      <SectionCard
-        icon={<Rocket className="h-4.5 w-4.5" />}
-        title="Versões Propostas"
-        description="Roadmap de evolução do projeto"
+      {/* Versões Propostas — card compacto que abre o roadmap completo em um modal */}
+      <button
+        type="button"
+        onClick={() => setShowVersions(true)}
+        aria-label="Abrir versões propostas"
+        className="flex items-center gap-3 w-full text-left rounded-2xl p-4 sm:p-5 transition-all cursor-pointer group"
+        style={{
+          background: 'var(--bg-surface)',
+          border: '1px solid var(--border-color)',
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.borderColor = 'var(--primary)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.borderColor = 'var(--border-color)';
+        }}
       >
-        <div className="flex flex-col gap-3">
-          {VERSIONS.map((version) => (
-            <div
-              key={version.tag}
-              className="rounded-xl p-3.5"
-              style={{
-                background: 'var(--bg-surface-hover)',
-                border: '1px solid var(--border-color)',
-              }}
-            >
-              <div className="flex items-center justify-between gap-2 mb-2">
-                <div className="flex items-center gap-2 min-w-0">
-                  <span
-                    className="text-[11px] font-extrabold px-2 py-0.5 rounded-md flex-shrink-0"
-                    style={{ background: 'var(--bg-surface)', color: 'var(--primary)' }}
-                  >
-                    {version.tag}
-                  </span>
-                  <span className="text-sm font-bold truncate" style={{ color: 'var(--text-primary)' }}>
-                    {version.name}
-                  </span>
-                </div>
-                <span
-                  className="text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0"
-                  style={{
-                    background:
-                      version.status === 'Atual'
-                        ? 'rgba(16,185,129,0.12)'
-                        : version.status === 'Proposto'
-                          ? 'rgba(139,92,246,0.12)'
-                          : 'rgba(100,116,139,0.12)',
-                    color:
-                      version.status === 'Atual'
-                        ? '#34D399'
-                        : version.status === 'Proposto'
-                          ? '#A78BFA'
-                          : 'var(--text-secondary)',
-                  }}
-                >
-                  {version.status}
-                </span>
-              </div>
-              <ul className="flex flex-col gap-1.5">
-                {version.items.map((item) => (
-                  <li key={item} className="flex items-start gap-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
-                    <CheckCircle2 className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" style={{ color: 'var(--primary)' }} />
-                    <span className="leading-relaxed">{item}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
+        <div
+          className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform"
+          style={{ background: 'var(--bg-surface-hover)', color: 'var(--primary)' }}
+        >
+          <Rocket className="h-4.5 w-4.5" />
         </div>
-      </SectionCard>
+        <div className="min-w-0 flex-1">
+          <span className="text-sm font-heading font-bold block" style={{ color: 'var(--text-primary)' }}>
+            Versões Propostas
+          </span>
+          <span className="text-xs mt-0.5 block" style={{ color: 'var(--text-secondary)' }}>
+            Roadmap de evolução do projeto
+          </span>
+        </div>
+        <ChevronRight
+          className="h-4 w-4 flex-shrink-0 transition-transform group-hover:translate-x-0.5"
+          style={{ color: 'var(--text-secondary)' }}
+        />
+      </button>
 
       {/* Apoio coletivo */}
       <SectionCard
@@ -260,60 +163,12 @@ export const AboutTab: React.FC = () => {
         </div>
       </SectionCard>
 
-      {/* Notas de atualização */}
-      <SectionCard
-        icon={<Sparkles className="h-4.5 w-4.5" />}
-        title="Notas de Atualização"
-        description="O que chegou em cada atualização"
-      >
-        <div className="flex flex-col gap-3">
-          {RELEASE_NOTES.map((release) => (
-            <div
-              key={release.date}
-              className="rounded-xl p-3.5"
-              style={{
-                background: 'var(--bg-surface-hover)',
-                border: '1px solid var(--border-color)',
-              }}
-            >
-              <div className="flex items-center justify-between gap-2 mb-2">
-                <span className="text-sm font-heading font-bold flex items-center gap-2 min-w-0" style={{ color: 'var(--text-primary)' }}>
-                  {release.version}
-                  {release.latest && (
-                    <span
-                      className="text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0"
-                      style={{
-                        background: 'rgba(16,185,129,0.12)',
-                        color: '#34D399',
-                      }}
-                    >
-                      Mais recente
-                    </span>
-                  )}
-                </span>
-                <span className="text-[10px] font-semibold flex-shrink-0" style={{ color: 'var(--text-secondary)' }}>
-                  {release.date}
-                </span>
-              </div>
-              <ul className="flex flex-col gap-1.5">
-                {release.highlights.map((highlight) => (
-                  <li key={highlight} className="flex items-start gap-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
-                    <span
-                      className="w-1.5 h-1.5 mt-1.5 rounded-full flex-shrink-0"
-                      style={{ background: 'var(--primary)' }}
-                    />
-                    <span className="leading-relaxed">{highlight}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </div>
-      </SectionCard>
-
       <p className="text-center text-[11px] pb-2" style={{ color: 'var(--text-secondary)' }}>
         Arandu • Plataforma de Estudos Inteligente
       </p>
+
+      {/* Roadmap completo */}
+      <VersoesModal isOpen={showVersions} onClose={() => setShowVersions(false)} />
     </div>
   );
 };

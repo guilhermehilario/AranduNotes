@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { User, Camera, Settings, Info } from "lucide-react";
+import { User, Camera, Settings, Info, Sparkles } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "../../components/ui/Button.tsx";
 import { Modal } from "../../components/ui/Modal.tsx";
@@ -10,6 +10,7 @@ import { AVATAR_CATEGORIES, getAvatarUrl } from "./avatarCategories";
 import { AvatarSelector } from "./AvatarSelector";
 import { SettingsTab } from "./SettingsTab";
 import { AboutTab } from "./AboutTab";
+import { UpdatesTab } from "./UpdatesTab";
 import { ProfileTabContent } from "./ProfileTabContent.tsx";
 
 interface ProfileModalProps {
@@ -17,13 +18,14 @@ interface ProfileModalProps {
   onClose: () => void;
 }
 
-type Tab = "profile" | "avatars" | "settings" | "about";
+type Tab = "profile" | "avatars" | "settings" | "about" | "updates";
 
 const TABS: AbasComScrollTab<Tab>[] = [
   { id: "profile", label: "Perfil", icon: User },
   { id: "avatars", label: "Avatares", icon: Camera },
   { id: "settings", label: "Configurações", icon: Settings },
   { id: "about", label: "Sobre", icon: Info },
+  { id: "updates", label: "Atualizações", icon: Sparkles },
 ];
 
 export const ProfileModal: React.FC<ProfileModalProps> = ({
@@ -147,6 +149,10 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
 
           {activeTab === "about" && (
             <AboutTab />
+          )}
+
+          {activeTab === "updates" && (
+            <UpdatesTab />
           )}
         </AbasComScroll>
       </Modal>
