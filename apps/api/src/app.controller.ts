@@ -1,10 +1,12 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
+import { Controller, Get, Logger, UseGuards } from '@nestjs/common';
 import { PrismaService } from './prisma/prisma.service';
 import { EmailService } from './common/email/email.service';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 
 @Controller()
 export class AppController {
+  private readonly logger = new Logger(AppController.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly emailService: EmailService,

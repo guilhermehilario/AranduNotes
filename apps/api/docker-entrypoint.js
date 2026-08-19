@@ -11,44 +11,38 @@ function log(level, msg) {
 }
 
 ;(async() => {
-  // ────────────────────────────────────────────────────────────────
-  // Verifica se é o comando do servidor web
-  // ────────────────────────────────────────────────────────────────
   const cmd = process.argv.slice(2).join(' ');
   const isWebServer = cmd.includes('dist/main.js') || cmd.includes('npm run start');
 
   if (isWebServer) {
-    log('log', 'Iniciando migrações do Prisma...');
+    log('log', 'Iniciando migracoes do Supabase...');
 
     try {
-      await exec('npx prisma migrate deploy', { timeout: 60000 });
-      log('log', '✅ Migrações aplicadas com sucesso');
+      await exec('node apps/api/scripts/migrate-supabase.js', { timeout: 60000 });
+      log('log', '✅ Migracoes aplicadas com sucesso');
     } catch (err) {
-      log('error', `❌ Falha ao aplicar migrações: ${err.message}`);
+      log('error', `❌ Falha ao aplicar migracoes: ${err.message}`);
       log('warn', '⚠️ O servidor vai iniciar mesmo assim.');
 
       setTimeout(async () => {
         try {
-          log('log', '🔄 Tentando migração novamente em background...');
-          await exec('npx prisma migrate deploy', { timeout: 60000 });
-          log('log', '✅ Migrações aplicadas com sucesso (2ª tentativa)');
+          log('log', '🔄 Tentando migracao novamente em background...');
+          await exec('node apps/api/scripts/migrate-supabase.js', { timeout: 60000 });
+          log('log', '✅ Migracoes aplicadas com sucesso (2a tentativa)');
         } catch (retryErr) {
-          log('error', `❌ Migração falhou novamente em background: ${retryErr.message}`);
+          log('error', `❌ Migracao falhou novamente em background: ${retryErr.message}`);
         }
       }, 5000);
     }
   }
 
-  // ────────────────────────────────────────────────────────────────
-  // Inicia a aplicação
-  // ────────────────────────────────────────────────────────────────
   const launchCmd = process.argv.slice(2).join(' ');
-  log('log', `Iniciando aplicação: ${launchCmd}`);
+  log('log', `Iniciando aplicacao: ${launchCmd}`);
 
   await exec(launchCmd);
 })().catch((err) => {
   log('error', `Falha fatal no entrypoint: ${err.message}`);
-  log('error', `Tempo até a falha: ${Date.now() - startedAt}ms`);
+  log('error', `Tempo ate a falha: ${Date.now() - startedAt}ms`);
   process.exit(1);
 });
 

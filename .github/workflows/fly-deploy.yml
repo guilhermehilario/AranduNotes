@@ -24,6 +24,13 @@ jobs:
       - name: 🛸 Setup Flyctl
         uses: superfly/flyctl-actions/setup-flyctl@master
 
+      - name: 🗄️ Run Supabase migrations
+        run: |
+          echo "🔄 Rodando migracoes no Supabase..."
+          node apps/api/scripts/migrate-supabase.js
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
       - name: 🚀 Deploy to Fly.io
         run: |
           flyctl deploy --remote-only
