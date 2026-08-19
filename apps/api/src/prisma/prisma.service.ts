@@ -5,7 +5,7 @@ import {
   Logger,
 } from "@nestjs/common";
 import { PrismaClient } from "@prisma/client";
-import { PrismaLibSql } from "@prisma/adapter-libsql";
+import { PrismaPg } from "@prisma/adapter-pg";
 
 const MAX_RETRIES = 5;
 const BASE_DELAY_MS = 1000;
@@ -20,13 +20,19 @@ export class PrismaService
   private isConnected = false;
   /** Mutex simples para evitar múltiplas reconexões concorrentes */
   private connectLock = false;
-  /** Instância do adaptador LibSQL mantida para encerramento gracioso */
-  private adapter: PrismaLibSql;
+  /** Instância do adaptador PG mantida para encerramento gracioso */
+  private adapter: PrismaPg;
 
   constructor() {
-    const url = process.env.DATABASE_URL || "file:./dev.db";
+    const url = process.env.DATABASE_URL;
 
-    const adapter = new PrismaLibSql({ url });
+    if (!url) {
+      throw new Error(
+        "DATABASE_URL não definida. Configure a variável de ambiente.",
+      );
+    }
+
+    const adapter = new PrismaPg({ connectionString: url });
 
     super({ adapter });
     this.adapter = adapter;
@@ -44,7 +50,7 @@ export class PrismaService
         await this.$connect();
         this.isConnected = true;
         this.logger.log(
-          `✅ Conectado ao banco de dados (tentativa ${attempt}/${retries})`,
+          `✅ Conectado ao banco de dados PostgreSQL (tentativa ${attempt}/${retries})`,
         );
         return;
       } catch (error) {
@@ -77,7 +83,6 @@ export class PrismaService
    * Usa um mutex simples para evitar múltiplas reconexões concorrentes.
    */
   async ensureConnection(): Promise<void> {
-    // Se já está conectado, faz um ping rápido
     if (this.isConnected) {
       try {
         await this.$queryRaw`SELECT 1`;
@@ -90,17 +95,14 @@ export class PrismaService
       }
     }
 
-    // Mutex: se outra requisição já está reconectando, aguarda
     if (this.connectLock) {
       this.logger.debug(
         "Reconexão já em andamento por outra requisição. Aguardando...",
       );
-      // Aguarda até 15s pela reconexão concorrente
       for (let i = 0; i < 30; i++) {
         await this.sleep(500);
         if (this.isConnected) return;
       }
-      // Se passou do tempo, tenta reconectar mesmo assim
       this.logger.warn(
         "Timeout aguardando reconexão concorrente. Tentando própria reconexão...",
       );
@@ -108,11 +110,10 @@ export class PrismaService
 
     this.connectLock = true;
     try {
-      // Garante que conexão anterior foi limpa
       try {
         await this.$disconnect();
       } catch {
-        // Ignora erro ao desconectar — pode já estar desconectado
+        // Ignora erro ao desconectar
       }
 
       await this.connectWithRetry(3);
@@ -123,13 +124,11 @@ export class PrismaService
 
   /**
    * Executa uma callback com verificação de conexão automática.
-   * Se a query falhar por erro de conexão, tenta reconectar e executar novamente.
    */
   async withConnection<T>(operation: () => Promise<T>): Promise<T> {
     try {
       return await operation();
     } catch (error) {
-      // Se for erro de conexão do Prisma/LibSQL, tenta reconectar e retentar
       if (this.isConnectionError(error)) {
         this.logger.warn(
           "⚠️ Erro de conexão detectado. Tentando reconectar e retentar operação...",
@@ -137,7 +136,6 @@ export class PrismaService
 
         await this.ensureConnection();
 
-        // Tenta novamente após reconexão
         try {
           return await operation();
         } catch (retryError) {
@@ -148,7 +146,6 @@ export class PrismaService
         }
       }
 
-      // Se não for erro de conexão, propaga o erro original
       throw error;
     }
   }
@@ -167,14 +164,12 @@ export class PrismaService
       msg.includes("econnrefused") ||
       msg.includes("econnreset") ||
       msg.includes("socket") ||
-      msg.includes("handshake") ||
-      msg.includes("database is not connected") ||
       msg.includes("pool") ||
       msg.includes("closed") ||
-      prismaError.code === "P1001" || // Can't reach database
-      prismaError.code === "P1002" || // Timeout
-      prismaError.code === "P1008" || // Connection pool timeout
-      prismaError.code === "P1017" // Server closed connection
+      prismaError.code === "P1001" ||
+      prismaError.code === "P1002" ||
+      prismaError.code === "P1008" ||
+      prismaError.code === "P1017"
     );
   }
 
@@ -190,7 +185,6 @@ export class PrismaService
 
   /**
    * Retorna informações detalhadas da conexão com o banco.
-   * Usado pelo endpoint de diagnóstico /api/debug/connections.
    */
   async getConnectionInfo(): Promise<{
     connected: boolean;
@@ -200,20 +194,13 @@ export class PrismaService
     poolStatus?: string;
     error?: string;
   }> {
-    const databaseUrl = process.env.DATABASE_URL || "file:./dev.db";
-    // Ofusca credenciais na URL para não expor senhas
+    const databaseUrl = process.env.DATABASE_URL || "";
     const sanitizedUrl = databaseUrl.replace(
-      /\?authToken=([^&]+)/i,
-      "?authToken=***",
+      /:[^:@]+@/,
+      ":***@",
     );
 
-    const driver = databaseUrl.startsWith("libsql")
-      ? "Turso/LibSQL"
-      : databaseUrl.startsWith("file")
-        ? "SQLite (local)"
-        : databaseUrl.startsWith("postgresql")
-          ? "PostgreSQL"
-          : "Desconhecido";
+    const driver = "PostgreSQL (Supabase)";
 
     const start = Date.now();
     try {
@@ -244,24 +231,14 @@ export class PrismaService
   }
 
   /**
-   * Chamado pelo NestJS ao receber sinais SIGTERM/SIGINT (com app.enableShutdownHooks()).
-   * Garante o encerramento do Prisma e do LibSQL para liberar locks no volume /data.
+   * Chamado pelo NestJS ao receber sinais SIGTERM/SIGINT.
    */
   async onModuleDestroy() {
-    this.logger.log("⏳ Desconectando Prisma e liberando arquivos locais...");
+    this.logger.log("⏳ Desconectando Prisma...");
     this.isConnected = false;
 
     try {
-      // 1. Desconecta a camada do ORM Prisma
       await this.$disconnect();
-
-      // 2. Fecha o cliente do LibSQL gerenciado pelo adaptador (se exposto pelo driver)
-      if (this.adapter && "client" in this.adapter) {
-        await (
-          this.adapter as unknown as { client: { close: () => Promise<void> } }
-        ).client.close();
-      }
-
       this.logger.log("✅ Conexões do banco de dados encerradas com sucesso.");
     } catch (error) {
       this.logger.error(

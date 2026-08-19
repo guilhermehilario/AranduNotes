@@ -44,20 +44,11 @@ FROM base
 
 # Install packages needed for deployment
 RUN apt-get update -qq && \
-    apt-get install --no-install-recommends -y ca-certificates openssl wget && \
+    apt-get install --no-install-recommends -y ca-certificates openssl && \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives
-
-# Install litestream
-RUN wget https://github.com/benbjohnson/litestream/releases/download/v0.3.13/litestream-v0.3.13-linux-amd64.deb && \
-    dpkg -i litestream-v0.3.13-linux-amd64.deb && \
-    rm litestream-v0.3.13-linux-amd64.deb
 
 # Copy built application
 COPY --from=build /app /app
-
-# Setup sqlite3 on a separate volume
-RUN mkdir -p /data
-VOLUME /data
 
 EXPOSE 3000
 

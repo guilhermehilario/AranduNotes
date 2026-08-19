@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 
 const { spawn } = require('node:child_process')
-const fs = require('node:fs')
 
 const env = { ...process.env }
 const startedAt = Date.now()
@@ -22,20 +21,16 @@ function log(level, msg) {
     log('log', 'Iniciando migrações do Prisma...');
 
     try {
-      await exec('cd apps/api && npx prisma migrate deploy', { timeout: 60000 });
+      await exec('npx prisma migrate deploy', { timeout: 60000 });
       log('log', '✅ Migrações aplicadas com sucesso');
     } catch (err) {
-      // ⚠️ Falha na migração NÃO deve impedir o app de iniciar.
-      // Fly.io pode reiniciar a máquina se o processo falhar,
-      // então preferimos iniciar mesmo sem migração e logar o erro.
       log('error', `❌ Falha ao aplicar migrações: ${err.message}`);
-      log('warn', '⚠️ O servidor vai iniciar mesmo assim. A migração pode estar em andamento ou o volume ainda não está pronto.');
+      log('warn', '⚠️ O servidor vai iniciar mesmo assim.');
 
-      // Tenta uma segunda vez após 5 segundos (em background, sem travar o startup)
       setTimeout(async () => {
         try {
           log('log', '🔄 Tentando migração novamente em background...');
-          await exec('cd apps/api && npx prisma migrate deploy', { timeout: 60000 });
+          await exec('npx prisma migrate deploy', { timeout: 60000 });
           log('log', '✅ Migrações aplicadas com sucesso (2ª tentativa)');
         } catch (retryErr) {
           log('error', `❌ Migração falhou novamente em background: ${retryErr.message}`);
@@ -50,12 +45,7 @@ function log(level, msg) {
   const launchCmd = process.argv.slice(2).join(' ');
   log('log', `Iniciando aplicação: ${launchCmd}`);
 
-  if (process.env.BUCKET_NAME && fs.existsSync('/app/litestream.yml')) {
-    log('log', 'Litestream configurado — executando com replicação');
-    await exec(`litestream replicate -config litestream.yml -exec ${JSON.stringify(launchCmd)}`);
-  } else {
-    await exec(launchCmd);
-  }
+  await exec(launchCmd);
 })().catch((err) => {
   log('error', `Falha fatal no entrypoint: ${err.message}`);
   log('error', `Tempo até a falha: ${Date.now() - startedAt}ms`);
