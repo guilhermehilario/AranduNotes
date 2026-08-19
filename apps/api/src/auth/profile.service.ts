@@ -53,6 +53,16 @@ export class ProfileService {
       );
     }
 
+    // 🔐 SEC: Valida avatarUrl — comprimento máximo e formato permitido
+    if (data.avatarUrl !== undefined) {
+      if (data.avatarUrl.length > 500) {
+        throw new BadRequestException("URL do avatar excede o limite de 500 caracteres.");
+      }
+      if (data.avatarUrl && !/^https:\/\/api\.dicebear\.com\/.+/.test(data.avatarUrl) && data.avatarUrl !== "") {
+        throw new BadRequestException("URL do avatar inválida. Use o formato do DiceBear.");
+      }
+    }
+
     const result = await this.prisma.withConnection(() =>
       this.prisma.$transaction(async (tx) => {
         const user = await tx.user.findUnique({

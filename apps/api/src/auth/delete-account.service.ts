@@ -62,6 +62,7 @@ export class DeleteAccountService {
   async confirmDeleteAccount(
     token: string,
     code: string,
+    authenticatedUserId: string,
   ): Promise<{ message: string }> {
     let payload: { userId: string; code: string; purpose: string };
     try {
@@ -77,6 +78,11 @@ export class DeleteAccountService {
     }
 
     if (payload.purpose !== "delete-account") {
+      throw new BadRequestException("Token inválido para esta operação.");
+    }
+
+    // 🔐 SEC: Verifica que o token pertence ao usuário autenticado
+    if (payload.userId !== authenticatedUserId) {
       throw new BadRequestException("Token inválido para esta operação.");
     }
 

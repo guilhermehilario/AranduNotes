@@ -56,7 +56,7 @@ export class StudiesService {
         this.prisma.withConnection(() =>
           this.prisma.mockExam.findMany({
             where: {
-              ...(notebookId ? { notebookId } : { userId }),
+              ...(notebookId ? { notebookId, userId } : { userId }),
             },
             orderBy: { createdAt: 'desc' },
             include: {

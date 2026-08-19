@@ -95,6 +95,7 @@ export class AuthController {
   }
 
   @Post('refresh')
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   async refresh(
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
@@ -143,6 +144,7 @@ export class AuthController {
   }
 
   @Post('verify-email')
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   async verifyEmail(@Body() body: { token: string }) {
     return this.authService.verifyEmail(body.token);
   }
@@ -198,6 +200,7 @@ export class AuthController {
     const result = await this.authService.confirmDeleteAccount(
       body.token,
       body.code,
+      userId,
     );
     res.clearCookie('refreshToken', {
       httpOnly: true,

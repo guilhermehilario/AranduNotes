@@ -52,10 +52,11 @@ export class AppController {
         timestamp: new Date().toISOString(),
       };
     } catch (error) {
+      // 🔐 SEC: Não expor mensagem de erro detalhada ao cliente
+      this.logger.error(`Warmup failed: ${(error as Error).message}`);
       return {
         status: 'failed',
         database: 'disconnected',
-        error: (error as Error).message,
         warmupTime: `${Date.now() - startTime}ms`,
         timestamp: new Date().toISOString(),
       };
@@ -93,15 +94,11 @@ export class AppController {
       timestamp: new Date().toISOString(),
       totalDiagnosticTime: `${totalTime}ms`,
       server: {
-        uptime: process.uptime(),
-        uptimeFormatted: this.formatUptime(process.uptime()),
-        nodeVersion: process.version,
-        platform: process.platform,
+        uptime: this.formatUptime(process.uptime()),
         environment: process.env.NODE_ENV || 'development',
         memory: {
           rss: `${Math.round(memoryUsage.rss / 1024 / 1024)} MB`,
           heapUsed: `${Math.round(memoryUsage.heapUsed / 1024 / 1024)} MB`,
-          heapTotal: `${Math.round(memoryUsage.heapTotal / 1024 / 1024)} MB`,
         },
       },
       connections: {
@@ -109,7 +106,6 @@ export class AppController {
           name: dbInfo.driver,
           connected: dbInfo.connected,
           latency: dbInfo.latencyMs ? `${dbInfo.latencyMs}ms` : null,
-          url: dbInfo.databaseUrl,
           poolStatus: dbInfo.poolStatus,
           error: dbInfo.error || null,
         },
@@ -117,14 +113,8 @@ export class AppController {
           configured: smtpConfig.configured,
           connected: smtpResult.connected,
           latency: smtpResult.latencyMs ? `${smtpResult.latencyMs}ms` : null,
-          host: smtpConfig.host,
-          port: smtpConfig.port,
-          fromName: smtpConfig.fromName,
-          fromEmail: smtpConfig.fromEmail,
           error: smtpResult.error || null,
         },
-        // Placeholder para futuras integrações (Redis, cache, etc.)
-        // redis: null,
       },
       summary: {
         allConnected: dbInfo.connected && (!smtpConfig.configured || smtpResult.connected),

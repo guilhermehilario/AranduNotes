@@ -124,7 +124,8 @@ export class AuthService {
   async confirmDeleteAccount(
     token: string,
     code: string,
+    userId: string,
   ): Promise<{ message: string }> {
-    return this.deletion.confirmDeleteAccount(token, code);
+    return this.deletion.confirmDeleteAccount(token, code, userId);
   }
 }
