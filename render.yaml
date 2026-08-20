@@ -1,76 +1,16 @@
 # ──────────────────────────────────────────────────────────────────
-# Render Blueprint — Deploy Automatizado do Arandu
+# Render Blueprint — Deploy do Frontend Arandu
 # ──────────────────────────────────────────────────────────────────
-# Use este arquivo com a funcionalidade "Blueprint" do Render:
-#   New + → Blueprint → Conecte o repositório GitHub
-# Ele criará automaticamente os dois serviços abaixo.
+# A API roda no Fly.io (https://arandu-api.fly.dev).
+# Este blueprint configura apenas o Frontend (React + Vite) no Render,
+# apontando para a API no Fly.io.
+#
+# Uso: New + → Blueprint → Conecte o repositório GitHub
 # ──────────────────────────────────────────────────────────────────
 
 services:
   # ────────────────────────────────────────────────────────────────
-  # 1. API — NestJS + Prisma (Web Service)
-  # ────────────────────────────────────────────────────────────────
-  - type: web
-    name: arandu-api
-    env: node
-    region: ohio
-    plan: free
-    # ── Build ──
-    buildCommand: yarn install && npx turbo run build --filter=api
-    # ── Runtime ──
-    startCommand: node apps/api/dist/main.js
-    healthCheckPath: /api/health
-    # ── Pós-deploy: sincroniza schema do Prisma (antes de aceitar tráfego) ──
-    # Usa `db push` em vez de `migrate deploy` para compatibilidade tanto com
-    # SQLite local quanto com Turso/LibSQL (distribuído). Se preferir migrations
-    # versionadas, troque para: yarn workspace api prisma migrate deploy
-    postDeployCommand: yarn workspace api prisma db push
-    # ── Build Filters (evita build quando só o frontend mudou) ──
-    filters:
-      - paths:
-          - apps/api/**
-          - package.json
-          - yarn.lock
-          - turbo.json
-    # ── Variáveis de Ambiente ──
-    envVars:
-      - key: NODE_ENV
-        value: production
-      - key: DATABASE_URL
-        sync: false
-        # ☝️ Preencher manualmente com URL do Turso/LibSQL ou SQLite
-        #    Ex: libsql://arandu-prod-username.turso.io?authToken=xxxx
-      - key: JWT_SECRET
-        generateValue: true
-      - key: REFRESH_SECRET
-        generateValue: true
-      - key: FRONTEND_URL
-        value: https://arandunotes.onrender.com
-      # ── SMTP (Nodemailer) — opcional ──
-      # Se não configurado, e-mails são logados no console (útil para testes).
-      # Para envio real, configure um serviço SMTP (ex: Brevo, SendGrid, Mailgun, etc.)
-      #
-      # ⚠️ ATENÇÃO — Plano Free do Render:
-      #   O plano gratuito do Render BLOQUEIA tráfego de saída nas portas SMTP
-      #   padrão (25, 465, 587). Para usar SMTP no free tier:
-      #   1. Use a porta alternativa 2525 (STARTTLS) — suportada por Brevo,
-      #      SendGrid, Mailgun e outros provedores.
-      #      Ex: SMTP_PORT=2525
-      #   2. Ou faça upgrade para um plano pago do Render.
-      #   3. Ou migre para uma API de e-mail via HTTP (porta 443 nunca bloqueada).
-      - key: SMTP_HOST
-        sync: false
-      - key: SMTP_PORT
-        sync: false
-      - key: EMAIL_USER
-        sync: false
-      - key: EMAIL_PASSWORD
-        sync: false
-      - key: SMTP_FROM
-        sync: false
-
-  # ────────────────────────────────────────────────────────────────
-  # 2. Frontend — React + Vite (Static Site)
+  # Frontend — React + Vite (Static Site)
   # ────────────────────────────────────────────────────────────────
   - type: web
     name: arandu-frontend
