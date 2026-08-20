@@ -92,11 +92,13 @@ async function bootstrap() {
           scriptSrc: ["'self'"],
           styleSrc: ["'self'", "'unsafe-inline'"],
           imgSrc: ["'self'", "data:", "https://api.dicebear.com"],
-          connectSrc: ["'self'"],
+          connectSrc: nodeEnv === "production"
+            ? ["'self'", "https://arandu-api.fly.dev"]
+            : ["'self'", "http://localhost:3000", "http://localhost:5173"],
           fontSrc: ["'self'"],
           objectSrc: ["'none'"],
           frameAncestors: ["'none'"],
-          upgradeInsecureRequests: [],
+          upgradeInsecureRequests: nodeEnv === "production" ? [] : null,
         },
       },
       crossOriginEmbedderPolicy: false,
