@@ -31,13 +31,11 @@ export class PrismaService
     const isPostgres = url.startsWith("postgresql:") || url.startsWith("postgres:");
 
     if (isPostgres) {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const { PrismaPg } = require("@prisma/adapter-pg");
       const adapter = new PrismaPg({ connectionString: url });
       super({ adapter });
     } else {
       // SQLite local — usa adapter better-sqlite3
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const { PrismaBetterSqlite3 } = require("@prisma/adapter-better-sqlite3");
       const dbPath = url.replace("file:", "");
       const adapter = new PrismaBetterSqlite3({ url: dbPath });
