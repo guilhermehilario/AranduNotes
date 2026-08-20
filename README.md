@@ -6,7 +6,7 @@
     <img src="https://img.shields.io/badge/Backend-NestJS-E0234E?style=flat-square&logo=nestjs" alt="NestJS">
     <img src="https://img.shields.io/badge/Frontend-React-61DAFB?style=flat-square&logo=react" alt="React">
     <img src="https://img.shields.io/badge/ORM-Prisma-2D3748?style=flat-square&logo=prisma" alt="Prisma">
-    <img src="https://img.shields.io/badge/Database-SQLite%2FTurso-003B57?style=flat-square&logo=sqlite" alt="Database">
+    <img src="https://img.shields.io/badge/Database-PostgreSQL%20(Supabase)-336791?style=flat-square&logo=postgresql" alt="Database">
     <img src="https://img.shields.io/badge/Deploy-Fly.io%20%2B%20Render-46E3B7?style=flat-square&logo=render" alt="Deploy">
   </p>
 </div>
@@ -62,8 +62,8 @@ técnicas como **Pomodoro** e **revisão espaçada** (algoritmo SM-2).
 │   │ Controllers │   │   │  React 19   │                 │
 │   │  Services   │   │   │  Router DOM │                 │
 │   │   Modules   │   │   │  TanStack   │                 │
-│   │  PrismaORM  │   │   │  Query      │                 │
-│   │   LibSQL    │   │   │  Zustand    │                 │
+│   │   PrismaORM  │   │   │  Query      │                 │
+│   │   PostgreSQL  │   │   │  Zustand    │                 │
 │   └─────────────┘   │   │  Tailwind   │                 │
 │                     │   │  TipTap     │                 │
 │                     │   └─────────────┘                 │
@@ -77,7 +77,7 @@ técnicas como **Pomodoro** e **revisão espaçada** (algoritmo SM-2).
 | **Monorepo** | Turborepo + Yarn Workspaces | v2 (Turbo) |
 | **Backend** | NestJS + TypeScript | v11 |
 | **ORM** | Prisma | v7 |
-| **Database** | SQLite (dev) / LibSQL (Turso) | — |
+| **Database** | PostgreSQL (Supabase) | — |
 | **Autenticação** | JWT + Passport + bcryptjs | — |
 | **Frontend** | React | v19 |
 | **Build tool** | Vite | v8 |
@@ -101,8 +101,7 @@ arandu-monorepo/
 │   ├── api/                          # API NestJS
 │   │   ├── prisma/
 │   │   │   ├── schema.prisma         # Schema do banco de dados
-│   │   │   ├── migrations/           # Migrations do Prisma
-│   │   │   └── seed.ts               # Seed de desenvolvimento
+│   │   │   └── migrations/           # Migrations do Prisma
 │   │   ├── src/
 │   │   │   ├── auth/                 # Autenticação (JWT, registro, login, perfil)
 │   │   │   ├── bookmarks/            # Marcadores de páginas
@@ -123,9 +122,7 @@ arandu-monorepo/
 │   │   │   ├── app.module.ts         # Módulo raiz
 │   │   │   └── main.ts               # Ponto de entrada
 │   │   ├── Dockerfile                # Docker multi-stage para Fly.io
-│   │   ├── docker-entrypoint.js      # Entrypoint com Prisma migrate + Litestream
-│   │   ├── litestream.yml            # Backup do SQLite para S3/R2
-│   │   ├── dbsetup.js                # Setup legacy do banco
+│   │   ├── docker-entrypoint.js      # Entrypoint com Prisma migrate
 │   │   ├── prisma.config.ts          # Config do Prisma v7
 │   │   ├── nest-cli.json
 │   │   ├── tsconfig.json
@@ -179,7 +176,7 @@ arandu-monorepo/
 │
 ├── package.json                      # Workspaces root + scripts globais
 ├── turbo.json                        # Configuração do Turborepo
-├── render.yaml                       # Blueprint do Render (API + Frontend)
+├── render.yaml                       # Blueprint do Render (Frontend)
 ├── fly.toml                          # Configuração do Fly.io
 ├── CONTRIBUTING.md                   # Guia de contribuição
 ├── README.md
@@ -217,8 +214,8 @@ yarn install
 # Ambiente
 NODE_ENV=development
 
-# Banco de dados (SQLite local — padrão)
-DATABASE_URL=file:./dev.db
+# Banco de dados (PostgreSQL — Supabase local ou remoto)
+DATABASE_URL=postgresql://user:password@localhost:5432/arandu
 
 # JWT
 JWT_SECRET=minha-chave-secreta-aqui
@@ -247,7 +244,7 @@ VITE_API_URL=http://localhost:3000/api
 ### 3. Inicialize o banco de dados
 
 ```bash
-# Gera o Prisma Client e cria as tabelas no SQLite
+# Gera o Prisma Client e sincroniza o schema com o PostgreSQL
 yarn workspace api prisma generate
 yarn workspace api prisma db push
 ```
@@ -320,21 +317,19 @@ a cada push na branch `main` (apenas quando há mudanças em `apps/api/**`).
 | Recurso | Arquivo | Descrição |
 |---------|---------|-----------|
 | **CI/CD** | [`.github/workflows/fly-deploy.yml`](./.github/workflows/fly-deploy.yml) | Workflow que executa `flyctl deploy --remote-only` |
-| **Docker** | [`apps/api/Dockerfile`](./apps/api/Dockerfile) | Multi-stage build com Node 22 slim + Litestream |
-| **Entrypoint** | [`apps/api/docker-entrypoint.js`](./apps/api/docker-entrypoint.js) | Roda `prisma migrate deploy`, inicia Litestream (se `BUCKET_NAME` configurado) e então sobe o servidor |
-| **Litestream** | [`apps/api/litestream.yml`](./apps/api/litestream.yml) | Réplica do SQLite para S3/R2 com sync a cada 5min e retenção de 72h |
-| **Fly config** | [`fly.toml`](./fly.toml) | App `arandu-api`, região `gru`, volume persistente `/data`, health check `/health` |
-| **Secrets** | `flyctl secrets set` | `JWT_SECRET`, `DATABASE_URL`, `SMTP_*`, `BUCKET_NAME`, credenciais S3 |
+| **Docker** | [`apps/api/Dockerfile`](./apps/api/Dockerfile) | Multi-stage build com Node 22 slim + Prisma/PostgreSQL |
+| **Entrypoint** | [`apps/api/docker-entrypoint.js`](./apps/api/docker-entrypoint.js) | Roda `prisma migrate deploy` e então sobe o servidor |
+| **Fly config** | [`fly.toml`](./fly.toml) | App `arandu-api`, região `gru`, health check `/health` |
+| **Secrets** | `flyctl secrets set` | `JWT_SECRET`, `DATABASE_URL`, `SMTP_*`, `SUPABASE_*` |
 
-> ⚠️ **Banco de dados:** Em produção a API usa SQLite armazenado em volume persistente
-> do Fly.io, com backup automático via Litestream para bucket S3/R2.
-> Alternativamente, pode usar Turso (LibSQL distribuído) configurando `DATABASE_URL`.
+> ⚠️ **Banco de dados:** Em produção a API usa **PostgreSQL (Supabase)**.
+> Configure `DATABASE_URL` com a string de conexão do Supabase (com pooler).
 
 ### Frontend — Render.com
 
-O frontend (React + Vite) é deployado como **Web Service** no **Render.com**
-via Blueprint ([`render.yaml`](./render.yaml)), que define automaticamente os
-dois serviços (API + Frontend).
+O frontend (React + Vite) é deployado como **Static Site** no **Render.com**
+via Blueprint ([`render.yaml`](./render.yaml)), que define o serviço de frontend
+apontando para a API no Fly.io.
 
 | Recurso | Descrição |
 |---------|-----------|

@@ -27,6 +27,7 @@ dist-ssr
 .antigravityignore
 .env
 .env.local
+dev.db
 TarefasAfazer
 CHANGELOG.md
 DOCUMENTACAO_CONTEXTO.md
