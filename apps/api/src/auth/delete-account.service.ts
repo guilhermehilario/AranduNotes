@@ -4,6 +4,7 @@ import {
   BadRequestException,
   Logger,
 } from "@nestjs/common";
+import { randomInt } from "node:crypto";
 import { JwtService } from "@nestjs/jwt";
 import { PrismaService } from "../prisma/prisma.service";
 import { EmailService } from "../common/email/email.service";
@@ -30,7 +31,8 @@ export class DeleteAccountService {
 
     if (user.deletedAt) throw new NotFoundException("Usuário não encontrado");
 
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    // 🔐 CRIT-5: Usar CSPRNG em vez de Math.random()
+    const code = randomInt(100000, 1000000).toString();
     const token = this.jwtService.sign(
       { userId, code, purpose: "delete-account" },
       { expiresIn: "15m" },
@@ -86,7 +88,13 @@ export class DeleteAccountService {
       throw new BadRequestException("Token inválido para esta operação.");
     }
 
-    if (payload.code !== code) {
+    // 🔐 CRIT-5: Comparação constant-time para evitar timing attack
+    const codeBuffer = Buffer.from(payload.code);
+    const inputBuffer = Buffer.from(code);
+    if (
+      codeBuffer.length !== inputBuffer.length ||
+      !require("node:crypto").timingSafeEqual(codeBuffer, inputBuffer)
+    ) {
       throw new BadRequestException("Código de confirmação incorreto.");
     }
 
@@ -102,9 +110,21 @@ export class DeleteAccountService {
           throw new NotFoundException("Usuário não encontrado");
         }
 
+        // 🔐 CRIT-4: Anonimizar dados PII antes de soft-delete
+        const anonymousSuffix = randomInt(100000, 999999).toString();
         await tx.user.update({
           where: { id: payload.userId },
-          data: { deletedAt: new Date() },
+          data: {
+            deletedAt: new Date(),
+            name: "Usuário excluído",
+            email: `deleted-${anonymousSuffix}@removed.local`,
+            password: "DELETED",
+            avatarUrl: "",
+            resetPasswordToken: null,
+            resetPasswordTokenExpires: null,
+            verificationToken: null,
+            verificationTokenExpires: null,
+          },
         });
 
         // 🔐 Remove todos os refresh tokens da conta excluída (logout total)
@@ -113,11 +133,11 @@ export class DeleteAccountService {
         });
 
         this.logger.log(
-          `✅ Conta excluída permanentemente: ${user.email} (ID: ${user.id})`,
+          `✅ Conta excluída (PII anonimizado): ID ${user.id}`,
         );
       }),
     );
 
-    return { message: "Conta excluída permanentemente" };
+    return { message: "Conta excluída com sucesso. Seus dados foram anonimizados." };
   }
 }

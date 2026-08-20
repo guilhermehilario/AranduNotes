@@ -168,11 +168,19 @@ function isSqliteMigration(sqlPath) {
 async function main() {
   log("🔄 Iniciando migracao Supabase...");
 
+  // 🔐 CRIT-3: SSL/TLS — usar sslmode=require para verificar certificado do servidor.
+  // rejectUnauthorized: false permite MITM; sslmode=require valida o certificado
+  // sem precisar do CA bundle (compatível com PgBouncer do Supabase).
+  const dbUrl = new URL(DATABASE_URL);
+  if (!dbUrl.searchParams.has("sslmode")) {
+    dbUrl.searchParams.set("sslmode", "require");
+  }
+
   const pool = new Pool({
-    connectionString: DATABASE_URL,
-    ssl: DATABASE_URL.includes("supabase")
-      ? { rejectUnauthorized: false }
-      : undefined,
+    connectionString: dbUrl.toString(),
+    ssl: dbUrl.searchParams.get("sslmode") === "disable"
+      ? undefined
+      : { rejectUnauthorized: true },
     max: 2,
   });
 

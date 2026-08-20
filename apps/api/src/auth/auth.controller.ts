@@ -192,6 +192,8 @@ export class AuthController {
 
   @Post('confirm-deletion')
   @UseGuards(JwtAuthGuard)
+  // 🔐 CRIT-5: Rate limit contra brute force do código de confirmação
+  @Throttle({ default: { limit: 5, ttl: 900000 } })
   async confirmDeletion(
     @CurrentUser('id') userId: string,
     @Body() body: { token: string; code: string },

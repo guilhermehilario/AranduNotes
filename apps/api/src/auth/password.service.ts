@@ -5,9 +5,10 @@ import {
   Logger,
 } from "@nestjs/common";
 import * as bcrypt from "bcryptjs";
-import { v4 as uuidv4 } from "uuid";
+import { randomBytes } from "node:crypto";
 import { PrismaService } from "../prisma/prisma.service";
 import { EmailService } from "../common/email/email.service";
+import { hashToken } from "../common/utils/token-hash";
 import { validatePassword, SALT_ROUNDS } from "./auth.utils";
 
 @Injectable()
@@ -55,6 +56,12 @@ export class PasswordService {
           where: { id: userId },
           data: { password: hashedPassword },
         });
+
+        // 🔐 CRIT-2: Revoga TODOS os refresh tokens do usuário (logout total)
+        await tx.refreshToken.updateMany({
+          where: { userId, revokedAt: null },
+          data: { revokedAt: new Date() },
+        });
       }),
     );
 
@@ -90,7 +97,8 @@ export class PasswordService {
       };
     }
 
-    const resetToken = uuidv4();
+    const resetToken = randomBytes(32).toString("hex");
+    const resetTokenHash = hashToken(resetToken);
     const resetTokenExpires = new Date(Date.now() + 60 * 60 * 1000);
 
     await this.prisma.withConnection(() =>
@@ -98,14 +106,14 @@ export class PasswordService {
         await tx.user.update({
           where: { id: user.id },
           data: {
-            resetPasswordToken: resetToken,
+            resetPasswordToken: resetTokenHash,
             resetPasswordTokenExpires: resetTokenExpires,
           },
         });
       }),
     );
 
-    this.logger.log(`Token de reset salvo para ${user.email} (ID: ${user.id})`);
+    this.logger.log(`Token de reset salvo para ID: ${user.id}`);
 
     try {
       await this.emailService.sendPasswordResetEmail(
@@ -150,11 +158,12 @@ export class PasswordService {
     }
 
     const hashedPassword = await bcrypt.hash(newPassword, SALT_ROUNDS);
+    const tokenHash = hashToken(token);
 
     const result = await this.prisma.withConnection(() =>
       this.prisma.$transaction(async (tx) => {
         const user = await tx.user.findFirst({
-          where: { resetPasswordToken: token },
+          where: { resetPasswordToken: tokenHash },
         });
 
         if (!user) {
@@ -194,6 +203,12 @@ export class PasswordService {
             resetPasswordToken: null,
             resetPasswordTokenExpires: null,
           },
+        });
+
+        // 🔐 CRIT-2: Revoga TODOS os refresh tokens do usuário (logout total)
+        await tx.refreshToken.updateMany({
+          where: { userId: user.id, revokedAt: null },
+          data: { revokedAt: new Date() },
         });
 
         this.logger.log(

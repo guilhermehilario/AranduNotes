@@ -3,9 +3,10 @@ import {
   BadRequestException,
   Logger,
 } from "@nestjs/common";
-import { v4 as uuidv4 } from "uuid";
+import { randomBytes } from "node:crypto";
 import { PrismaService } from "../prisma/prisma.service";
 import { EmailService } from "../common/email/email.service";
+import { hashToken } from "../common/utils/token-hash";
 
 @Injectable()
 export class VerificationService {
@@ -19,10 +20,12 @@ export class VerificationService {
   async verifyEmail(token: string): Promise<{ message: string }> {
     this.logger.log(`Iniciando verificação de e-mail com token`);
 
+    const tokenHash = hashToken(token);
+
     const result = await this.prisma.withConnection(() =>
       this.prisma.$transaction(async (tx) => {
         const user = await tx.user.findFirst({
-          where: { verificationToken: token },
+          where: { verificationToken: tokenHash },
         });
 
         if (!user) {
@@ -119,7 +122,8 @@ export class VerificationService {
       };
     }
 
-    const verificationToken = uuidv4();
+    const verificationToken = randomBytes(32).toString("hex");
+    const verificationTokenHash = hashToken(verificationToken);
     const verificationTokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
     await this.prisma.withConnection(() =>
@@ -127,7 +131,7 @@ export class VerificationService {
         await tx.user.update({
           where: { id: user.id },
           data: {
-            verificationToken,
+            verificationToken: verificationTokenHash,
             verificationTokenExpires,
           },
         });
@@ -135,7 +139,7 @@ export class VerificationService {
     );
 
     this.logger.log(
-      `Novo token de verificação salvo para ${user.email} (ID: ${user.id})`,
+      `Novo token de verificação salvo para ID: ${user.id}`,
     );
 
     try {

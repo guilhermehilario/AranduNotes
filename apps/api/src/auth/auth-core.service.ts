@@ -7,11 +7,12 @@ import {
 } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import { ConfigService } from "@nestjs/config";
-import { createHash } from "node:crypto";
+import { randomBytes } from "node:crypto";
 import * as bcrypt from "bcryptjs";
 import { v4 as uuidv4 } from "uuid";
 import { PrismaService } from "../prisma/prisma.service";
 import { EmailService } from "../common/email/email.service";
+import { hashToken } from "../common/utils/token-hash";
 import { UserPublic, AuthTokens } from "./auth.types";
 import { stripPassword, validateEmail, validatePassword, SALT_ROUNDS } from "./auth.utils";
 
@@ -24,7 +25,7 @@ const REFRESH_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000;
  * tokens utilizáveis (o JWT original não pode ser reconstruído a partir do hash).
  */
 function hashRefreshToken(token: string): string {
-  return createHash("sha256").update(token).digest("hex");
+  return hashToken(token);
 }
 
 @Injectable()
@@ -151,7 +152,8 @@ export class AuthCoreService {
 
     const smtpConfigured = this.emailService.isSmtpConfigured;
     const emailVerified = !smtpConfigured;
-    const verificationToken = smtpConfigured ? uuidv4() : null;
+    const verificationTokenRaw = smtpConfigured ? randomBytes(32).toString("hex") : null;
+    const verificationToken = verificationTokenRaw ? hashToken(verificationTokenRaw) : null;
     const verificationTokenExpires = smtpConfigured
       ? new Date(Date.now() + 24 * 60 * 60 * 1000)
       : null;
@@ -177,7 +179,7 @@ export class AuthCoreService {
         await this.emailService.sendVerificationEmail(
           normalizedEmail,
           name,
-          verificationToken!,
+          verificationTokenRaw!,
         );
         return {
           message:
