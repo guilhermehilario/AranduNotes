@@ -15,12 +15,9 @@ export class PrismaService
   extends PrismaClient
   implements OnModuleInit, OnModuleDestroy
 {
-  private readonly logger = new Logger(PrismaService.name);
-  private isConnected = false;
-  /** Mutex simples para evitar múltiplas reconexões concorrentes */
-  private connectLock = false;
-  /** Instância do adaptador PG (apenas PostgreSQL) */
-  private adapter: unknown;
+  private logger!: Logger;
+  private isConnected!: boolean;
+  private connectLock!: boolean;
 
   constructor() {
     const url = process.env.DATABASE_URL;
@@ -38,11 +35,18 @@ export class PrismaService
       const { PrismaPg } = require("@prisma/adapter-pg");
       const adapter = new PrismaPg({ connectionString: url });
       super({ adapter });
-      this.adapter = adapter;
     } else {
-      // SQLite local — sem adapter, Prisma usa driver nativo
-      super();
+      // SQLite local — usa adapter better-sqlite3
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { PrismaBetterSqlite3 } = require("@prisma/adapter-better-sqlite3");
+      const dbPath = url.replace("file:", "");
+      const adapter = new PrismaBetterSqlite3({ url: dbPath });
+      super({ adapter });
     }
+
+    this.logger = new Logger(PrismaService.name);
+    this.isConnected = false;
+    this.connectLock = false;
   }
 
   /**
