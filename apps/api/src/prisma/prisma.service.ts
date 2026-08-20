@@ -5,7 +5,6 @@ import {
   Logger,
 } from "@nestjs/common";
 import { PrismaClient } from "@prisma/client";
-import { PrismaPg } from "@prisma/adapter-pg";
 
 const MAX_RETRIES = 5;
 const BASE_DELAY_MS = 1000;
@@ -20,8 +19,8 @@ export class PrismaService
   private isConnected = false;
   /** Mutex simples para evitar múltiplas reconexões concorrentes */
   private connectLock = false;
-  /** Instância do adaptador PG mantida para encerramento gracioso */
-  private adapter: PrismaPg;
+  /** Instância do adaptador PG (apenas PostgreSQL) */
+  private adapter: unknown;
 
   constructor() {
     const url = process.env.DATABASE_URL;
@@ -32,10 +31,18 @@ export class PrismaService
       );
     }
 
-    const adapter = new PrismaPg({ connectionString: url });
+    const isPostgres = url.startsWith("postgresql:") || url.startsWith("postgres:");
 
-    super({ adapter });
-    this.adapter = adapter;
+    if (isPostgres) {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { PrismaPg } = require("@prisma/adapter-pg");
+      const adapter = new PrismaPg({ connectionString: url });
+      super({ adapter });
+      this.adapter = adapter;
+    } else {
+      // SQLite local — sem adapter, Prisma usa driver nativo
+      super();
+    }
   }
 
   /**
@@ -50,7 +57,7 @@ export class PrismaService
         await this.$connect();
         this.isConnected = true;
         this.logger.log(
-          `✅ Conectado ao banco de dados PostgreSQL (tentativa ${attempt}/${retries})`,
+          `✅ Conectado ao banco de dados (tentativa ${attempt}/${retries})`,
         );
         return;
       } catch (error) {
@@ -200,7 +207,9 @@ export class PrismaService
       ":***@",
     );
 
-    const driver = "PostgreSQL (Supabase)";
+    const driver = databaseUrl.startsWith("postgresql:") || databaseUrl.startsWith("postgres:")
+      ? "PostgreSQL (Supabase)"
+      : "SQLite (local)";
 
     const start = Date.now();
     try {
