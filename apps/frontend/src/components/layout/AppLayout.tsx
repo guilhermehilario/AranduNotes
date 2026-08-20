@@ -6,6 +6,7 @@ import { Sidebar } from './Sidebar.tsx';
 import { AppHeader } from './AppHeader.tsx';
 import { ToastContainer } from '../ui/Toast.tsx';
 import { PomodoroFloatingTimer } from '../../modules/planning/components/PomodoroFloatingTimer.tsx';
+import { WelcomeModal } from '../../modules/auth/components/WelcomeModal.tsx';
 import { usePlanningNotifications } from '../../modules/planning/hooks/usePlanningNotifications.ts';
 import { useClipboardCapture } from '../../modules/clipboard/hooks/useClipboardCapture.ts';
 
@@ -95,6 +96,7 @@ export const AppLayout: React.FC = () => {
       </div>
       <ToastContainer />
       <PomodoroFloatingTimer />
+      <WelcomeModal />
     </div>
   );
 };

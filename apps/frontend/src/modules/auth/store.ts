@@ -28,8 +28,10 @@ const useAuthStoreBase = create<AuthState>()(
       isHydrated: false,
       login: (user, accessToken) =>
         set({ user, accessToken, isAuthenticated: true }),
-      logout: () =>
-        set({ user: null, accessToken: null, isAuthenticated: false }),
+      logout: () => {
+        localStorage.removeItem('arandu-welcome-dismissed');
+        set({ user: null, accessToken: null, isAuthenticated: false });
+      },
       setAccessToken: (accessToken) =>
         set({ accessToken, isAuthenticated: !!accessToken }),
       updateUser: (user) =>
