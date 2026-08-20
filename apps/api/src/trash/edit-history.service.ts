@@ -1,8 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class EditHistoryService {
+  private readonly logger = new Logger(EditHistoryService.name);
   constructor(private readonly prisma: PrismaService) {}
 
   async record(
@@ -29,6 +30,20 @@ export class EditHistoryService {
         },
       }),
     );
+  }
+
+  /** 🔐 ALTO-14: Remove registros de histórico com mais de 6 meses */
+  async cleanupOldRecords(): Promise<number> {
+    const sixMonthsAgo = new Date(Date.now() - 180 * 24 * 60 * 60 * 1000);
+    const result = await this.prisma.withConnection(() =>
+      this.prisma.editHistory.deleteMany({
+        where: { createdAt: { lt: sixMonthsAgo } },
+      }),
+    );
+    if (result.count > 0) {
+      this.logger.log(`[HISTORY] ${result.count} registros antigos removidos (>6 meses)`);
+    }
+    return result.count;
   }
 
   async getLeafHistory(leafId: string, userId: string) {

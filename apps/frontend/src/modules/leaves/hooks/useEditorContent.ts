@@ -7,9 +7,32 @@ import {
 } from "react";
 import { useEditor } from "@tiptap/react";
 import type { Editor } from "@tiptap/react";
+import DOMPurify from "dompurify";
 import { useEditorExtensions } from "./editorExtensions";
 import { useEditorSave } from "./useEditorSave";
 import type { Leaf } from "../types";
+
+/** 🔐 ALTO-11: Schema de URLs permitidas no Ctrl+Click (apenas http/https) */
+const ALLOWED_URL_SCHEMES = new Set(["http:", "https:"]);
+
+/** 🔐 ALTO-11: Sanitiza HTML recebido do servidor antes de carregar no editor */
+function sanitizeHtml(html: string): string {
+  return DOMPurify.sanitize(html, {
+    ALLOWED_TAGS: [
+      "p", "h1", "h2", "h3", "h4", "h5", "h6",
+      "strong", "em", "u", "s", "code", "pre", "blockquote",
+      "ul", "ol", "li", "a", "img", "hr",
+      "table", "thead", "tbody", "tr", "th", "td",
+      "input",
+    ],
+    ALLOWED_ATTR: [
+      "href", "src", "alt", "title", "class", "style",
+      "target", "rel", "type", "checked", "data-type",
+      "data-color", "text-align",
+    ],
+    ALLOW_DATA_ATTR: false,
+  });
+}
 
 interface UseEditorContentParams {
   leaf: Leaf | undefined;
@@ -97,7 +120,15 @@ export function useEditorContent({
         const linkMark = $pos.marks().find((m) => m.type.name === "link");
 
         if (linkMark?.attrs.href) {
-          window.open(linkMark.attrs.href, "_blank", "noopener,noreferrer");
+          // 🔐 ALTO-11: Validar scheme da URL (apenas http/https — bloqueia javascript:, data:, etc.)
+          try {
+            const url = new URL(linkMark.attrs.href);
+            if (ALLOWED_URL_SCHEMES.has(url.protocol)) {
+              window.open(linkMark.attrs.href, "_blank", "noopener,noreferrer");
+            }
+          } catch {
+            // URL inválida — ignora o clique
+          }
           return true; // Consumiu o clique, impede ação padrão do editor
         }
 
@@ -126,7 +157,7 @@ export function useEditorContent({
   useEffect(() => {
     if (!leaf || !editor || initialSyncDoneRef.current) return;
 
-    const serverContent = leaf.content || "";
+    const serverContent = sanitizeHtml(leaf.content || "");
     serverContentRef.current = serverContent;
     lastSavedRef.current = { title: leaf.title, content: serverContent };
 

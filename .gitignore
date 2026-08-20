@@ -26,7 +26,8 @@ dist-ssr
 
 .antigravityignore
 .env
-.env.local
+.env.*
+!.env.example
 dev.db
 TarefasAfazer
 CHANGELOG.md

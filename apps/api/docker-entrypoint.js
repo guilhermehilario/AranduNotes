@@ -47,7 +47,9 @@ function log(level, msg) {
 });
 
 function exec(command, opts = {}) {
-  const child = spawn(command, { shell: true, stdio: 'inherit', env });
+  const args = command.split(' ');
+  const bin = args.shift();
+  const child = spawn(bin, args, { shell: false, stdio: 'inherit', env });
   const timeout = opts.timeout || 0;
 
   return new Promise((resolve, reject) => {

@@ -1,4 +1,5 @@
 import { Controller, Get, Logger, UseGuards } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { PrismaService } from './prisma/prisma.service';
 import { EmailService } from './common/email/email.service';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
@@ -21,6 +22,7 @@ export class AppController {
   }
 
   @Get('health')
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
   async getHealth() {
     const dbHealthy = await this.prisma.isHealthy();
 
@@ -40,6 +42,7 @@ export class AppController {
    * Força a conexão com o banco e retorna o status.
    */
   @Get('warmup')
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   async warmUp() {
     const startTime = Date.now();
 
@@ -69,16 +72,13 @@ export class AppController {
    * Endpoint de diagnóstico: retorna status detalhado de todas as
    * conexões e serviços externos da aplicação.
    *
-   * - Banco de dados (Prisma/LibSQL)
-   * - SMTP (e-mail)
-   * - Informações do servidor (uptime, memória, Node)
-   *
-   * ⚠️ Protegido por JWT — apenas usuários autenticados podem acessar.
-   * Útil para debugging em produção, especialmente após cold starts.
+   * 🔐 ALTO-7: Em produção, retorna apenas status resumido (sem driver,
+   * memória ou detalhes SMTP). Detalhes completos só em dev/test.
    */
   @Get('debug/connections')
   @UseGuards(JwtAuthGuard)
   async getConnectionsStatus() {
+    const isProduction = process.env.NODE_ENV === 'production';
     const startTime = Date.now();
 
     // Executa diagnósticos em paralelo
@@ -89,9 +89,18 @@ export class AppController {
     ]);
 
     const totalTime = Date.now() - startTime;
-
     const memoryUsage = process.memoryUsage();
 
+    if (isProduction) {
+      // 🔐 Produção: resposta sanitizada — sem detalhes de infraestrutura
+      return {
+        timestamp: new Date().toISOString(),
+        database: dbInfo.connected ? 'healthy' : 'degraded',
+        email: !smtpConfig.configured ? 'not configured' : (smtpResult.connected ? 'healthy' : 'degraded'),
+      };
+    }
+
+    // Desenvolvimento: resposta completa
     return {
       timestamp: new Date().toISOString(),
       totalDiagnosticTime: `${totalTime}ms`,

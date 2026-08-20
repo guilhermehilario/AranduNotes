@@ -231,7 +231,7 @@ bootstrap().catch((err) => {
   console.error("📋 Diagnóstico:");
   console.error(`  NODE_ENV: ${process.env.NODE_ENV || "development"}`);
   console.error(
-    `  DATABASE_URL: ${(process.env.DATABASE_URL || "não definida").replace(/\?authToken=([^&]+)/i, "?authToken=***")}`,
+    `  DATABASE_URL: ${(process.env.DATABASE_URL || "não definida").replace(/\/\/([^:]+):([^@]+)@/, "//***:***@").replace(/\?authToken=([^&]+)/i, "?authToken=***")}`,
   );
   console.error(`  PORT: ${process.env.PORT || "3000"}`);
   console.error(

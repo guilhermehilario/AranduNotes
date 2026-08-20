@@ -7,6 +7,7 @@ import { ThemePreference, UserPublic } from "./auth.types";
 // re-hash); apenas novos hashes usam o custo maior.
 export const SALT_ROUNDS = 14;
 export const MIN_PASSWORD_LENGTH = 8;
+export const MAX_PASSWORD_LENGTH = 128;
 
 // 🔐 SEC-014: regex própria substituída pela validação robusta do class-validator
 // (mesmo validador usado pelos DTOs via @IsEmail). A regex antiga
@@ -17,7 +18,7 @@ export function validateEmail(email: string): boolean {
 }
 
 export function validatePassword(password: string): boolean {
-  return password.length >= MIN_PASSWORD_LENGTH;
+  return password.length >= MIN_PASSWORD_LENGTH && password.length <= MAX_PASSWORD_LENGTH;
 }
 
 const THEME_VALUES: ThemePreference[] = ["light", "dark", "system"];

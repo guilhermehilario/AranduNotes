@@ -65,6 +65,11 @@ export class AuthService {
     return this.core.logout(refreshToken);
   }
 
+  /** 🔐 MÉDIO-19: Revoga todos os refresh tokens do usuário (logout de todos os dispositivos) */
+  async logoutAll(userId: string): Promise<void> {
+    return this.core.logoutAll(userId);
+  }
+
   async validateUser(userId: string): Promise<UserPublic | null> {
     return this.core.validateUser(userId);
   }

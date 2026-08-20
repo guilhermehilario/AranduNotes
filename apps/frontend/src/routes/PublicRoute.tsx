@@ -22,7 +22,9 @@ export const PublicRoute: React.FC<PublicRouteProps> = ({ children }) => {
   if (isAuthenticated) {
     // Redireciona para o destino salvo (from) ou para o dashboard caso não exista
     const state = location.state as { from?: { pathname?: string } } | null;
-    const origin = state?.from?.pathname || '/dashboard';
+    const raw = state?.from?.pathname || '/dashboard';
+    // 🛡️ MÉDIO-25: Validação contra open redirect — aceita apenas paths relativos
+    const origin = raw.startsWith('/') && !raw.startsWith('//') ? raw : '/dashboard';
     return <Navigate to={origin} replace />;
   }
 

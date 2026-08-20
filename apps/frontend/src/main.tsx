@@ -36,6 +36,8 @@ import App from "./App.tsx";
   }
 })();
 window.addEventListener("popstate", () => {
-  console.log("URL: ", window.location.href);
+  if (import.meta.env.DEV) {
+    console.log("URL: ", window.location.href);
+  }
 });
 createRoot(document.getElementById("root")!).render(<App />);

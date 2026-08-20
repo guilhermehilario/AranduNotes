@@ -1,4 +1,16 @@
 .git/
 node_modules/
 .env
+.env.*
+!.env.example
 .dockerignore
+.turbo
+.github/
+docs/
+*.md
+apps/frontend/
+apps/dashboard/
+render.yaml
+fly.toml
+CHANGELOG.md
+ROADMAP.md

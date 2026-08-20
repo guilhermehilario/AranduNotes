@@ -41,13 +41,7 @@ export class AuthCoreService {
     // (mesmo padrão usado pelo JwtModule para JWT_SECRET), não do process.env direto.
     private readonly configService: ConfigService,
   ) {
-    this.refreshSecret =
-      this.configService.get<string>("REFRESH_SECRET") ||
-      (process.env.NODE_ENV === "production"
-        ? (() => {
-            throw new Error("REFRESH_SECRET é obrigatório em produção");
-          })()
-        : "dev-refresh-secret");
+    this.refreshSecret = this.configService.getOrThrow<string>("REFRESH_SECRET");
   }
 
   /**
@@ -104,11 +98,21 @@ export class AuthCoreService {
    * A assinatura JWT não é verificada de propósito — um token desconhecido
    * simplesmente não casa com nenhum registro (updateMany no-op).
    */
-  async logout(refreshToken: string): Promise<void> {
+   async logout(refreshToken: string): Promise<void> {
     if (!refreshToken) return;
     await this.prisma.withConnection(() =>
       this.prisma.refreshToken.updateMany({
         where: { tokenHash: hashRefreshToken(refreshToken), revokedAt: null },
+        data: { revokedAt: new Date() },
+      }),
+    );
+  }
+
+  /** 🔐 MÉDIO-19: Revoga TODOS os refresh tokens do usuário (logout de todos os dispositivos) */
+  async logoutAll(userId: string): Promise<void> {
+    await this.prisma.withConnection(() =>
+      this.prisma.refreshToken.updateMany({
+        where: { userId, revokedAt: null },
         data: { revokedAt: new Date() },
       }),
     );
@@ -299,25 +303,61 @@ export class AuthCoreService {
         }),
       );
 
+      // 🔐 MÉDIO-17: Verificar lockout ANTES de verificar senha
+      if (user && user.lockedUntil && user.lockedUntil > new Date()) {
+        const remainingMs = user.lockedUntil.getTime() - Date.now();
+        const remainingMin = Math.ceil(remainingMs / 60000);
+        this.logger.warn(`[LOGIN] Conta bloqueada: ${sanitizedEmail} (restam ~${remainingMin}min)`);
+        throw new UnauthorizedException(
+          `Conta temporariamente bloqueada. Tente novamente em ${remainingMin} minuto(s).`,
+        );
+      }
+
       let isPasswordValid = false;
 
       if (user) {
         isPasswordValid = await bcrypt.compare(password, user.password);
-        this.logger.debug(
-          `Login attempt for ${sanitizedEmail}: password valid = ${isPasswordValid}`,
-        );
       }
 
       if (!user || !isPasswordValid) {
+        // 🔐 MÉDIO-17: Incrementar contador de falhas e aplicar lockout progressivo
+        if (user && !user.deletedAt) {
+          const attempts = (user.failedLoginAttempts || 0) + 1;
+          const MAX_ATTEMPTS = 5;
+          let lockedUntil: Date | null = null;
+
+          if (attempts >= MAX_ATTEMPTS) {
+            // Lockout progressivo: 1min → 5min → 15min
+            const lockoutMinutes = attempts <= 7 ? 1 : attempts <= 10 ? 5 : 15;
+            lockedUntil = new Date(Date.now() + lockoutMinutes * 60000);
+          }
+
+          await this.prisma.withConnection(() =>
+            this.prisma.user.update({
+              where: { id: user.id },
+              data: {
+                failedLoginAttempts: attempts,
+                ...(lockedUntil ? { lockedUntil } : {}),
+              },
+            }),
+          );
+        }
+
         this.logger.warn(
-          `[LOGIN] Falha para ${sanitizedEmail}: ${
-            !user
-              ? "usuário não encontrado no banco"
-              : "senha inválida (bcrypt.compare retornou false)"
-          }`,
+          `[LOGIN] Falha de autenticação para ${sanitizedEmail}`,
         );
 
         throw new UnauthorizedException("E-mail ou senha incorretos");
+      }
+
+      // 🔐 MÉDIO-17: Login bem-sucedido — reseta contador e lockout
+      if (user.failedLoginAttempts > 0 || user.lockedUntil) {
+        await this.prisma.withConnection(() =>
+          this.prisma.user.update({
+            where: { id: user.id },
+            data: { failedLoginAttempts: 0, lockedUntil: null },
+          }),
+        );
       }
 
       if (user.deletedAt) {
