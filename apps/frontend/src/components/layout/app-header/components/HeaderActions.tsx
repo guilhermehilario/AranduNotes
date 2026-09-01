@@ -13,6 +13,7 @@ import { useEditorStatusStore } from '../../../../store/editorStatusStore.ts';
 import { useNotificationStore } from '../../../../store/notificationStore.ts';
 import { useClipboardStore } from '../../../../store/clipboardStore.ts';
 import type { User } from '../../../../modules/auth/types';
+import { formatDateTime } from '../../../../utils/dateFormatUtils.ts';
 
 interface HeaderActionsProps {
   user: User | null;
@@ -40,7 +41,7 @@ export const HeaderActions: React.FC<HeaderActionsProps> = ({ user }) => {
           <div className="hidden sm:flex items-center gap-3 text-xs font-semibold mr-1">
             {editorStatus.lastUpdate && (
               <span className="flex items-center gap-1.5 text-slate-400 dark:text-dark-400 whitespace-nowrap">
-                {new Date(editorStatus.lastUpdate).toLocaleString('pt-BR')}
+                {formatDateTime(editorStatus.lastUpdate)}
               </span>
             )}
             <SaveStatusIndicator status={editorStatus.saveStatus} />

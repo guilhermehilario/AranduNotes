@@ -15,6 +15,7 @@ import { LoadingScreen } from '../../../components/ui/LoadingScreen.tsx';
 import { ConfirmDialog } from '../../../components/ui/ConfirmDialog.tsx';
 import { useToastStore } from '../../../store/toastStore.ts';
 import { extractApiError } from '../../../utils/api-errors.ts';
+import { formatDateShort, formatClockTime } from '../../../utils/dateFormatUtils.ts';
 
 const STATUS_ICONS: Record<string, React.FC<{ className?: string }>> = {
   pending: Circle,
@@ -292,15 +293,6 @@ const EventItem: React.FC<EventItemProps> = ({ event, onToggleStatus, onDelete }
   const StatusIcon = STATUS_ICONS[event.status] || Circle;
   const statusColor = STATUS_COLORS[event.status] || 'text-slate-400';
 
-  const formatDate = (dateStr: string) => {
-    const d = new Date(dateStr);
-    return d.toLocaleDateString('pt-BR', {
-      weekday: 'short',
-      day: 'numeric',
-      month: 'short',
-    });
-  };
-
   return (
     <div
       className="group flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-200"
@@ -331,12 +323,12 @@ const EventItem: React.FC<EventItemProps> = ({ event, onToggleStatus, onDelete }
         </span>
         <div className="flex items-center gap-2 mt-0.5">
           <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-            {formatDate(event.date)}
+            {formatDateShort(event.date)}
           </span>
           {event.time && (
             <>
               <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>•</span>
-              <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>{event.time}h</span>
+              <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>{formatClockTime(event.time)}</span>
             </>
           )}
         </div>

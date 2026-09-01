@@ -13,6 +13,7 @@ import { ConfirmDialog } from '../../../components/ui/ConfirmDialog.tsx';
 import { ProgressBar } from '../../../components/ui/ProgressBar.tsx';
 import { useToastStore } from '../../../store/toastStore.ts';
 import { extractApiError } from '../../../utils/api-errors.ts';
+import { formatDate } from '../../../utils/dateFormatUtils.ts';
 
 export const MetasTab: React.FC = () => {
   const { data: goals = [], isLoading } = useGoals();
@@ -58,16 +59,6 @@ export const MetasTab: React.FC = () => {
     },
     [deleteGoal],
   );
-
-  const formatDate = (dateStr: string | null | undefined) => {
-    if (!dateStr) return null;
-    const d = new Date(dateStr);
-    return d.toLocaleDateString('pt-BR', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-    });
-  };
 
   if (isLoading) return <LoadingScreen />;
 

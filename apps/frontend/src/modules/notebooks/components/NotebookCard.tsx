@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ChevronRight, Calendar } from 'lucide-react';
 import { Card } from '../../../components/ui/Card.tsx';
 import type { Notebook } from '../types';
+import { formatDate, formatDateTime } from '../../../utils/dateFormatUtils.ts';
 
 interface NotebookCardProps {
   notebook: Notebook;
@@ -43,9 +44,9 @@ export const NotebookCard: React.FC<NotebookCardProps> = ({ notebook }) => {
           <Calendar className="h-3.5 w-3.5 flex-shrink-0" />
           <span
             className="truncate"
-            title={new Date(notebook.createdAt).toLocaleString('pt-BR')}
+            title={formatDateTime(notebook.createdAt)}
           >
-            Criado em {new Date(notebook.createdAt).toLocaleDateString('pt-BR')} ·{' '}
+            Criado em {formatDate(notebook.createdAt)} ·{' '}
             {notebook.leavesCount} folhas
           </span>
         </span>

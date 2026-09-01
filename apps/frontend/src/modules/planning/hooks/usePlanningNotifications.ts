@@ -5,6 +5,7 @@ import { useNotificationStore } from '../../../store/notificationStore.ts';
 import { useToastStore } from '../../../store/toastStore.ts';
 import { usePlanningSettingsStore } from '../../../store/planningSettingsStore.ts';
 import type { PlanningEvent, Goal, PomodoroSession } from '../types';
+import { formatDate } from '../../../utils/dateFormatUtils.ts';
 
 const CHECK_INTERVAL = 60_000;
 const NOTIFICATION_TIMEOUT = 300_000;
@@ -25,7 +26,7 @@ function sendBrowserNotification(title: string, body: string) {
   if (!('Notification' in window)) return;
   if (Notification.permission !== 'granted') return;
   try {
-    new Notification(title, { body, icon: '/vite.svg', silent: false });
+    new Notification(title, { body, icon: '/favicon.svg', silent: false });
   } catch {
     // Silencia erro — notificação nativa é best-effort
   }
@@ -104,7 +105,7 @@ export function usePlanningNotifications() {
           if (now - lastNotif < NOTIFICATION_TIMEOUT) continue;
           if (store.hasBeenShown(notifId)) continue;
 
-          const fmtDate = new Date(goal.targetDate).toLocaleDateString('pt-BR');
+          const fmtDate = formatDate(goal.targetDate);
           let title: string;
           let message: string;
 
@@ -161,8 +162,10 @@ export function usePlanningNotifications() {
           store.markShown(notifId);
           lastCheckRef.current[notifId] = now;
 
-          if (canNotifyBrowser) sendBrowserNotification(title, message);
-          useToastStore.getState().addToast(`${title} ${message}`, 'success');
+          if (!isFirstCheck) {
+            if (canNotifyBrowser) sendBrowserNotification(title, message);
+            useToastStore.getState().addToast(`${title} ${message}`, 'success');
+          }
         }
       } catch {
         // Silencia — falha na verificação de pomodoros não deve quebrar o app

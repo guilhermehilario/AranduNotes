@@ -8,6 +8,7 @@ import { useToastStore } from '../../../store/toastStore';
 import { extractApiError } from '../../../utils/api-errors';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import leafService from '../services/leafService';
+import { formatDate } from '../../../utils/dateFormatUtils';
 
 export const ArchivedLeavesView: React.FC = () => {
   const { data: archivedLeaves, isLoading } = useArchivedLeaves();
@@ -73,7 +74,7 @@ export const ArchivedLeavesView: React.FC = () => {
                 </div>
                 <p className="text-xs text-slate-400 dark:text-dark-400 mt-0.5 flex items-center gap-1.5">
                   <Calendar className="h-3 w-3" />
-                  Arquivado em {new Date(leaf.archivedAt || '').toLocaleDateString('pt-BR')}
+                  Arquivado em {formatDate(leaf.archivedAt || '')}
                   {' · '}
                   <BookOpen className="h-3 w-3" />
                   {leaf.notebookId}

@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Trash2, Pencil, Check, X, Copy, FileText, Star } from 'lucide-react';
 import { useClipboardStore, type ClipboardItem } from '../../../store/clipboardStore.ts';
-import { formatTimeAgo, insertIntoFocusedElement } from './clipboard-utils.ts';
+import { insertIntoFocusedElement } from './clipboard-utils.ts';
+import { formatTimeAgo } from '../../../utils/dateFormatUtils.ts';
 
 interface ClipboardItemRowProps {
   item: ClipboardItem;

@@ -30,6 +30,7 @@ import { useToastStore } from '../../../store/toastStore';
 import { extractApiError } from '../../../utils/api-errors';
 import leafService from '../services/leafService';
 import type { Leaf } from '../types';
+import { formatDate } from '../../../utils/dateFormatUtils';
 
 interface SubLeafCardProps {
   subLeaf: Leaf;
@@ -90,7 +91,7 @@ const SortableSubLeafCard: React.FC<SubLeafCardProps> = ({
           </div>
           <p className="text-[10px] text-slate-400 dark:text-dark-400 flex items-center gap-1">
             <Calendar className="h-3 w-3" />
-            {new Date(subLeaf.updatedAt).toLocaleDateString('pt-BR')}
+            {formatDate(subLeaf.updatedAt)}
           </p>
           <div className="mt-1.5 flex items-center gap-1 text-[10px] font-semibold text-brand-500">
             Abrir <ChevronRight className="h-3 w-3" />

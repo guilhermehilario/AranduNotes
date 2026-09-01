@@ -8,6 +8,7 @@ import { ConfirmDialog } from '../../../components/ui/ConfirmDialog.tsx';
 import { useToastStore } from '../../../store/toastStore';
 import { extractApiError } from '../../../utils/api-errors';
 import type { TrashItem } from '../services/trashService';
+import { formatDate } from '../../../utils/dateFormatUtils';
 
 export const TrashView: React.FC = () => {
   const { data: trash, isLoading } = useTrash();
@@ -151,7 +152,7 @@ export const TrashView: React.FC = () => {
                   </div>
                   <p className="text-xs text-slate-400 dark:text-dark-400 mt-0.5 flex items-center gap-1.5">
                     <Clock className="h-3 w-3" />
-                    Excluído em {new Date(item.deletedAt).toLocaleDateString('pt-BR')}
+                    Excluído em {formatDate(item.deletedAt)}
                     {item.type === 'leaf' && item.notebookTitle && (
                       <> · {item.notebookTitle}</>
                     )}

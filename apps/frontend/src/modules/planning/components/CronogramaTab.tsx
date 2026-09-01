@@ -13,6 +13,7 @@ import { LoadingScreen } from '../../../components/ui/LoadingScreen.tsx';
 import { ConfirmDialog } from '../../../components/ui/ConfirmDialog.tsx';
 import { useToastStore } from '../../../store/toastStore.ts';
 import { extractApiError } from '../../../utils/api-errors.ts';
+import { formatDate } from '../../../utils/dateFormatUtils.ts';
 
 export const CronogramaTab: React.FC = () => {
   const { data: events = [], isLoading } = useEvents('cronograma');
@@ -69,14 +70,6 @@ export const CronogramaTab: React.FC = () => {
 
   const pendingEvents = sortedEvents.filter((e) => e.status !== 'completed');
   const completedEvents = sortedEvents.filter((e) => e.status === 'completed');
-
-  const formatDate = (dateStr: string) => {
-    const d = new Date(dateStr);
-    return d.toLocaleDateString('pt-BR', {
-      day: 'numeric',
-      month: 'long',
-    });
-  };
 
   return (
     <div className="flex flex-col gap-6">

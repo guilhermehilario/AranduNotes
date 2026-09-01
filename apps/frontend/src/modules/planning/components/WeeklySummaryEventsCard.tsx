@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { Calendar } from "lucide-react";
 import { Card } from "../../../components/ui/Card";
 import type { PlanningEvent } from "../types";
-import { formatDateShort } from "./planningDateUtils";
+import { formatDateShort } from "../../../utils/dateFormatUtils";
 
 interface WeeklySummaryEventsCardProps {
   events: PlanningEvent[];

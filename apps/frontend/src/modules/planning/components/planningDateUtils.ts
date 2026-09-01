@@ -27,11 +27,3 @@ export function isThisWeek(dateStr: string): boolean {
   return isDateInRange(dateStr, start, end);
 }
 
-export function formatDateShort(dateStr: string): string {
-  const d = new Date(dateStr);
-  return d.toLocaleDateString("pt-BR", {
-    weekday: "short",
-    day: "numeric",
-    month: "short",
-  });
-}

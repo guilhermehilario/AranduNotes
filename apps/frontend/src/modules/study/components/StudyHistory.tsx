@@ -17,6 +17,7 @@ import { studyService } from '../services/studyService';
 import type { ReviewHistoryEntry } from '../services/studyService';
 import { Card } from '../../../components/ui/Card.tsx';
 import { StatsSkeleton } from './StatsSkeleton.tsx';
+import { formatRelativeDay, formatTime } from '../../../utils/dateFormatUtils.ts';
 
 function getScoreLabel(score: number): string {
   if (score <= 1) return 'Esqueci';
@@ -34,30 +35,6 @@ function getScoreColor(score: number): string {
   return 'text-brand-500 bg-brand-50 dark:bg-brand-950/20';
 }
 
-function formatDate(dateStr: string): string {
-  const date = new Date(dateStr + 'T00:00:00');
-  const today = new Date();
-  const yesterday = new Date(today);
-  yesterday.setDate(yesterday.getDate() - 1);
-
-  if (date.toDateString() === today.toDateString()) return 'Hoje';
-  if (date.toDateString() === yesterday.toDateString()) return 'Ontem';
-
-  return date.toLocaleDateString('pt-BR', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-  });
-}
-
-function formatTime(isoString: string): string {
-  const date = new Date(isoString);
-  return date.toLocaleTimeString('pt-BR', {
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-}
-
 interface DaySectionProps {
   entry: ReviewHistoryEntry;
   isExpanded: boolean;
@@ -65,7 +42,7 @@ interface DaySectionProps {
 }
 
 const DaySection: React.FC<DaySectionProps> = ({ entry, isExpanded, onToggle }) => {
-  const dateLabel = formatDate(entry.date);
+  const dateLabel = formatRelativeDay(entry.date);
   const isToday = dateLabel === 'Hoje';
 
   return (

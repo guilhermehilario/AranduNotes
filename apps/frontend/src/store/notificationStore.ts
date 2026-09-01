@@ -59,12 +59,17 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
   },
 
   acknowledge: (id) => {
-    set((s) => ({
-      notifications: s.notifications.map((n) =>
-        n.id === id ? { ...n, acknowledged: true } : n,
-      ),
-      count: Math.max(0, s.count - 1),
-    }));
+    set((s) => {
+      const target = s.notifications.find((n) => n.id === id);
+      // 🔐 Apenas decrementa se ainda estava não-acknowledged
+      if (target?.acknowledged) return s;
+      return {
+        notifications: s.notifications.map((n) =>
+          n.id === id ? { ...n, acknowledged: true } : n,
+        ),
+        count: Math.max(0, s.count - 1),
+      };
+    });
   },
 
   acknowledgeAll: () => {
@@ -75,10 +80,17 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
   },
 
   removeNotification: (id) => {
-    set((s) => ({
-      notifications: s.notifications.filter((n) => n.id !== id),
-      count: Math.max(0, s.count - 1),
-    }));
+    set((s) => {
+      const target = s.notifications.find((n) => n.id === id);
+      return {
+        notifications: s.notifications.filter((n) => n.id !== id),
+        // 🔐 Só decrementa se a removida ainda era não-acknowledged
+        count:
+          target && !target.acknowledged
+            ? Math.max(0, s.count - 1)
+            : s.count,
+      };
+    });
   },
 
   hasBeenShown: (id) => {

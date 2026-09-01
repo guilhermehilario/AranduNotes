@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { FileText, Calendar, ChevronRight, ChevronDown, ChevronUp, Plus } from 'lucide-react';
 import { Card } from '../../../components/ui/Card.tsx';
 import { getTagColor } from '../../tags/constants';
+import { formatDate } from '../../../utils/dateFormatUtils.ts';
 
 interface LeafTag {
   tag: {
@@ -65,7 +66,7 @@ export const LeafCard: React.FC<LeafCardProps> = ({ leaf, notebookId, onCreateSu
           </div>
           <p className="text-xs mt-1 flex items-center gap-1.5" style={{ color: 'var(--text-secondary)' }}>
             <Calendar className="h-3.5 w-3.5" />
-            Atualizado em {new Date(leaf.updatedAt).toLocaleDateString('pt-BR')}
+            Atualizado em {formatDate(leaf.updatedAt)}
             {hasChildren && (
               <span className="ml-1" style={{ color: 'var(--primary)' }}>
                 · {leaf.children!.length} sub-folha(s)

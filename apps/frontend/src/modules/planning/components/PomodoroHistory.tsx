@@ -3,6 +3,7 @@ import { Timer, Trash2, ChevronLeft, ChevronRight, XCircle } from 'lucide-react'
 import type { PomodoroSession } from '../types.ts';
 import { ConfirmDialog } from '../../../components/ui/ConfirmDialog.tsx';
 import { useDeletePomodoro } from '../hooks/usePomodoro.ts';
+import { formatDate } from '../../../utils/dateFormatUtils.ts';
 
 const ITEMS_PER_PAGE = 5;
 
@@ -111,7 +112,7 @@ export const PomodoroHistory: React.FC<PomodoroHistoryProps> = ({ sessions }) =>
                     {session.taskName || 'Sessão de foco'}
                   </p>
                   <p className="text-[11px]" style={{ color: 'var(--text-secondary)' }}>
-                    {session.duration}min • {session.createdAt ? new Date(session.createdAt).toLocaleDateString('pt-BR') : ''}
+                    {session.duration}min • {session.createdAt ? formatDate(session.createdAt) : ''}
                   </p>
                 </div>
                 <button
@@ -149,7 +150,7 @@ export const PomodoroHistory: React.FC<PomodoroHistoryProps> = ({ sessions }) =>
                     {session.taskName || 'Sessão de foco'}
                   </p>
                   <p className="text-[11px]" style={{ color: 'var(--text-secondary)' }}>
-                    {formatElapsed(session.duration)} focados • {session.createdAt ? new Date(session.createdAt).toLocaleDateString('pt-BR') : ''}
+                    {formatElapsed(session.duration)} focados • {session.createdAt ? formatDate(session.createdAt) : ''}
                   </p>
                 </div>
                 <button

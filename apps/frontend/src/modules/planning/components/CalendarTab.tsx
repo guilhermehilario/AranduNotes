@@ -8,6 +8,7 @@ import { useEvents } from '../hooks/useEvents.ts';
 import { useUpdateEvent, useDeleteEvent } from '../hooks/useEvents.ts';
 import { LoadingScreen } from '../../../components/ui/LoadingScreen.tsx';
 import { ConfirmDialog } from '../../../components/ui/ConfirmDialog.tsx';
+import { formatDateLong, formatClockTime } from '../../../utils/dateFormatUtils.ts';
 
 const WEEKDAYS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 const MONTHS = [
@@ -75,15 +76,6 @@ export const CalendarTab: React.FC = () => {
   const handleDelete = (id: string) => {
     deleteEvent.mutate(id);
     setDeleteConfirmId(null);
-  };
-
-  const formatDate = (dateStr: string) => {
-    const d = new Date(dateStr + 'T12:00:00');
-    return d.toLocaleDateString('pt-BR', {
-      weekday: 'long',
-      day: 'numeric',
-      month: 'long',
-    });
   };
 
   if (isLoading) return <LoadingScreen />;
@@ -198,7 +190,7 @@ export const CalendarTab: React.FC = () => {
       <div className="lg:w-1/3">
         <div className="rounded-2xl p-4" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)' }}>
           <h3 className="text-sm font-heading font-bold mb-3" style={{ color: 'var(--text-primary)' }}>
-            {selectedDate ? formatDate(selectedDate) : 'Selecione um dia'}
+            {selectedDate ? formatDateLong(selectedDate) : 'Selecione um dia'}
           </h3>
 
           {selectedDate && selectedEvents.length === 0 && (
@@ -235,7 +227,7 @@ export const CalendarTab: React.FC = () => {
                       {event.title}
                     </p>
                     {event.time && (
-                      <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>{event.time}h</p>
+                      <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>{formatClockTime(event.time)}</p>
                     )}
                   </div>
                   <button
