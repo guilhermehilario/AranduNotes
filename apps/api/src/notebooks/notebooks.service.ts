@@ -93,7 +93,7 @@ export class NotebooksService {
   ) {
     const notebook = await this.prisma.withConnection(() =>
       this.prisma.notebook.findFirst({
-        where: { id, userId },
+        where: { id, userId, deletedAt: null },
       }),
     );
 

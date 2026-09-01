@@ -15,8 +15,85 @@ export class MockExamsService {
         orderBy: { createdAt: 'desc' },
         include: {
           notebook: { select: { title: true, color: true } },
-          _count: { select: { questions: true } },
+          _count: {
+            select: { questions: true, attempts: true },
+          },
         },
+      }),
+    );
+  }
+
+  /** Submete e corrige uma tentativa de simulado */
+  async submit(
+    examId: string,
+    userId: string,
+    data: {
+      answers?: Record<string, string>;
+      selfGrades?: Record<string, boolean>;
+    },
+  ) {
+    const exam = await this.prisma.withConnection(() =>
+      this.prisma.mockExam.findFirst({
+        where: { id: examId, userId },
+        include: {
+          questions: {
+            orderBy: { order: 'asc' },
+            select: { question: true },
+          },
+        },
+      }),
+    );
+    if (!exam) throw new NotFoundException('Simulado não encontrado');
+
+    const questions = exam.questions.map((eq) => eq.question);
+    if (questions.length === 0) {
+      throw new BadRequestException(
+        'Simulado sem questões — adicione questões antes de responder',
+      );
+    }
+
+    const answers = data.answers ?? {};
+    const selfGrades = data.selfGrades ?? {};
+
+    const correctCount = questions.filter((q) => {
+      if (q.questionType === 'dissertative') {
+        return selfGrades[q.id] === true;
+      }
+      return answers[q.id] === q.correctAnswer;
+    }).length;
+
+    const totalQuestions = questions.length;
+    const score = Math.round((correctCount / totalQuestions) * 100);
+
+    return this.prisma.withConnection(() =>
+      this.prisma.mockExamAttempt.create({
+        data: {
+          examId,
+          userId,
+          answers: JSON.stringify(answers),
+          selfGrades: JSON.stringify(selfGrades),
+          correctCount,
+          totalQuestions,
+          score,
+        },
+      }),
+    );
+  }
+
+  /** Lista as tentativas de um simulado (mais recentes primeiro) */
+  async findAttempts(examId: string, userId: string) {
+    const exam = await this.prisma.withConnection(() =>
+      this.prisma.mockExam.findFirst({
+        where: { id: examId, userId },
+        select: { id: true },
+      }),
+    );
+    if (!exam) throw new NotFoundException('Simulado não encontrado');
+
+    return this.prisma.withConnection(() =>
+      this.prisma.mockExamAttempt.findMany({
+        where: { examId },
+        orderBy: { createdAt: 'desc' },
       }),
     );
   }

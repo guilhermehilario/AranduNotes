@@ -17,10 +17,12 @@ export class CreateQuestionDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(10000)
   options?: string; // JSON array de opções
 
   @IsString()
   @MinLength(1)
+  @MaxLength(1000)
   correctAnswer: string;
 
   @IsOptional()
@@ -47,11 +49,13 @@ export class UpdateQuestionDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(10000)
   options?: string;
 
   @IsOptional()
   @IsString()
   @MinLength(1)
+  @MaxLength(1000)
   correctAnswer?: string;
 
   @IsOptional()

@@ -12,6 +12,7 @@ import {
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { BookmarksService } from './bookmarks.service';
+import { CreateBookmarkDto } from './dto/create-bookmark.dto';
 
 @UseGuards(JwtAuthGuard)
 @Controller()
@@ -31,15 +32,9 @@ export class BookmarksController {
   @Post('bookmarks')
   create(
     @CurrentUser('id') userId: string,
-    @Body()
-    data: {
-      leafId?: string;
-      notebookId?: string;
-      title: string;
-      path: string;
-    },
+    @Body() dto: CreateBookmarkDto,
   ) {
-    return this.bookmarksService.create(userId, data);
+    return this.bookmarksService.create(userId, dto);
   }
 
   @Delete('bookmarks/:id')

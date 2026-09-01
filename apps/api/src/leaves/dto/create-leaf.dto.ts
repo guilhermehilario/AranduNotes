@@ -8,10 +8,12 @@ export class CreateLeafDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(200000)
   content?: string;
 
   @IsOptional()
   @IsString()
+  @MaxLength(200000)
   rawText?: string;
 
   @IsOptional()

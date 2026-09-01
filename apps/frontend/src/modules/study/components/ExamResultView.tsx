@@ -8,7 +8,7 @@ import type { MockExam } from "../types";
 interface ExamResultViewProps {
   exam: MockExam;
   answers: Record<string, string>;
-  onBack: () => void;
+  onBack: (selfGrades: Record<string, boolean>) => void;
   onRestart: () => void;
 }
 
@@ -57,7 +57,7 @@ export const ExamResultView: React.FC<ExamResultViewProps> = ({
           {percentage}% de acerto
         </p>
         <div className="flex items-center justify-center gap-3">
-          <Button onClick={onBack} variant="secondary">
+          <Button onClick={() => onBack(selfGrades)} variant="secondary">
             Voltar
           </Button>
           <Button onClick={onRestart}>Refazer</Button>

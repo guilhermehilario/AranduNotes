@@ -30,11 +30,11 @@ estudo individual: criar, organizar, revisar e acompanhar o progresso.
   - Folhas hierárquicas com drag & drop e sub-folhas
   - Anotações coloridas, autosave com debounce e histórico de edições
 - 🃏 **Flashcards com repetição espaçada (algoritmo SM-2)**
-  - Criação manual e por IA
+  - Criação manual e geração automática de conteúdo de exemplo (IA mock — placeholder até a v1.5)
   - Histórico de revisões com timeline diária, médias e breakdown por matéria (Review Log)
 - ❓ **Questões e simulados**
   - Questões de múltipla escolha, verdadeiro/falso e resposta curta
-  - Simulados personalizáveis com limite de tempo
+  - Simulados personalizáveis com limite de tempo, correção automática e histórico de tentativas
 - 📅 **Planejamento de estudos**
   - Agenda, calendário, cronograma e metas
   - Pomodoro com timer flutuante e histórico
@@ -71,7 +71,7 @@ inteligente**, conectando estudantes e aproveitando IA generativa.
   - Colaboração simultânea (presença, cursores compartilhados)
   - Resolução de conflitos e histórico de colaboradores
 - 🤖 **IA generativa para resumos e questões (via API)**
-  - Resumos automáticos aprimorados com modelos externos
+  - Resumos automáticos aprimorados com modelos externos (hoje o botão gera conteúdo de exemplo — `AiMockService`)
   - Geração de questões contextualizadas por caderno/folha
 
 ### Critérios de priorização

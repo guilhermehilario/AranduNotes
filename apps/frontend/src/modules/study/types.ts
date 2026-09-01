@@ -85,8 +85,27 @@ export interface MockExam {
   createdAt: string;
   updatedAt: string;
   notebook?: { title: string; color: string } | null;
-  _count?: { questions: number };
+  _count?: { questions: number; attempts?: number };
   questions?: MockExamQuestion[];
+}
+
+export interface MockExamAttempt {
+  id: string;
+  examId: string;
+  userId: string;
+  answers: string;
+  selfGrades: string;
+  correctCount: number;
+  totalQuestions: number;
+  score: number;
+  completedAt: string;
+  createdAt: string;
+}
+
+export interface SubmitMockExamInput {
+  examId: string;
+  answers: Record<string, string>;
+  selfGrades: Record<string, boolean>;
 }
 
 export interface MockExamQuestion {

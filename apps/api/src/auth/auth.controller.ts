@@ -83,6 +83,7 @@ export class AuthController {
 
   @Post('logout')
   @UseGuards(JwtAuthGuard)
+  @Throttle({ default: { limit: 20, ttl: 60000 } })
   async logout(
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
@@ -104,6 +105,7 @@ export class AuthController {
   /** 🔐 MÉDIO-19: Logout de todos os dispositivos — revoga todos os refresh tokens */
   @Post('logout-all')
   @UseGuards(JwtAuthGuard)
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   async logoutAll(
     @CurrentUser('id') userId: string,
     @Res({ passthrough: true }) res: Response,
@@ -179,12 +181,14 @@ export class AuthController {
 
   @Get('profile')
   @UseGuards(JwtAuthGuard)
+  @Throttle({ default: { limit: 60, ttl: 60000 } })
   getProfile(@CurrentUser() user: UserPublic) {
     return user;
   }
 
   @Put('profile')
   @UseGuards(JwtAuthGuard)
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
   async updateProfile(
     @CurrentUser('id') userId: string,
     @Body() dto: UpdateProfileDto,
@@ -194,6 +198,7 @@ export class AuthController {
 
   @Post('change-password')
   @UseGuards(JwtAuthGuard)
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   async changePassword(
     @CurrentUser('id') userId: string,
     @Body() dto: ChangePasswordDto,

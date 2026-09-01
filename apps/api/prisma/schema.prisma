@@ -40,6 +40,7 @@ model User {
   pomodoroSessions PomodoroSession[]
   questions        Question[]
   mockExams        MockExam[]
+  mockExamAttempts MockExamAttempt[]
   refreshTokens    RefreshToken[]
 }
 
@@ -201,6 +202,7 @@ model MockExam {
   user      User               @relation(fields: [userId], references: [id], onDelete: Cascade)
   notebook  Notebook?          @relation(fields: [notebookId], references: [id], onDelete: SetNull)
   questions MockExamQuestion[]
+  attempts  MockExamAttempt[]
 }
 
 /// Relação N:N entre MockExam e Question
@@ -214,6 +216,26 @@ model MockExamQuestion {
   question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
 
   @@unique([examId, questionId])
+}
+
+/// Tentativas de responder a um simulado (submissão corrigida)
+model MockExamAttempt {
+  id             String   @id @default(uuid())
+  examId         String
+  userId         String
+  answers        String   @default("{}") // JSON: { questionId: resposta }
+  selfGrades     String   @default("{}") // JSON: { questionId: true|false } (dissertativas)
+  correctCount   Int      @default(0)
+  totalQuestions Int      @default(0)
+  score          Int      @default(0) // percentual 0-100
+  completedAt    DateTime @default(now())
+  createdAt      DateTime @default(now())
+
+  exam MockExam @relation(fields: [examId], references: [id], onDelete: Cascade)
+  user User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([examId, createdAt])
+  @@index([userId, createdAt])
 }
 
 /// Flashcards gerados por IA com parâmetros do algoritmo SM-2

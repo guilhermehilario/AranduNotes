@@ -121,13 +121,22 @@ export class TrashService {
       }),
     );
 
-    // Soft-delete all leaves, flashcards, etc. of this notebook
-    await this.prisma.withConnection(() =>
-      this.prisma.leaf.updateMany({
-        where: { notebookId },
-        data: { deletedAt: now },
-      }),
-    );
+    // Soft-delete all leaves, flashcards; deleta em cascata no banco as
+    // questões e demais registros relacionados ao caderno
+    await Promise.all([
+      this.prisma.withConnection(() =>
+        this.prisma.leaf.updateMany({
+          where: { notebookId },
+          data: { deletedAt: now },
+        }),
+      ),
+      this.prisma.withConnection(() =>
+        this.prisma.flashcard.updateMany({
+          where: { notebookId },
+          data: { deletedAt: now },
+        }),
+      ),
+    ]);
 
     return { message: 'Caderno movido para lixeira', deletedAt: now };
   }
@@ -210,13 +219,21 @@ export class TrashService {
       }),
     );
 
-    // Restore all soft-deleted leaves
-    await this.prisma.withConnection(() =>
-      this.prisma.leaf.updateMany({
-        where: { notebookId, deletedAt: { not: null } },
-        data: { deletedAt: null },
-      }),
-    );
+    // Restore all soft-deleted leaves and flashcards
+    await Promise.all([
+      this.prisma.withConnection(() =>
+        this.prisma.leaf.updateMany({
+          where: { notebookId, deletedAt: { not: null } },
+          data: { deletedAt: null },
+        }),
+      ),
+      this.prisma.withConnection(() =>
+        this.prisma.flashcard.updateMany({
+          where: { notebookId, deletedAt: { not: null } },
+          data: { deletedAt: null },
+        }),
+      ),
+    ]);
 
     return { message: 'Caderno restaurado da lixeira' };
   }
@@ -281,7 +298,7 @@ export class TrashService {
     fifteenDaysAgo.setDate(fifteenDaysAgo.getDate() - 15);
 
     // 1. Busca itens expirados (separado dos deletes para evitar race condition)
-    const [oldNotebooks, oldLeaves] = await Promise.all([
+    const [oldNotebooks, oldLeaves, oldFlashcards] = await Promise.all([
       this.prisma.withConnection(() =>
         this.prisma.notebook.findMany({
           where: { userId, deletedAt: { lte: fifteenDaysAgo } },
@@ -297,14 +314,23 @@ export class TrashService {
           select: { id: true, notebookId: true },
         }),
       ),
+      this.prisma.withConnection(() =>
+        this.prisma.flashcard.findMany({
+          where: {
+            notebook: { userId },
+            deletedAt: { lte: fifteenDaysAgo },
+          },
+          select: { id: true, notebookId: true },
+        }),
+      ),
     ]);
 
     const nbIds = oldNotebooks.map((nb) => nb.id);
 
-    // 2. Exclui cadernos primeiro — o ON DELETE CASCADE do SQLite
+    // 2. Exclui cadernos primeiro — o ON DELETE CASCADE do banco
     //    remove automaticamente as folhas, flashcards e demais
     //    registros relacionados. Usamos deleteMany que é seguro pois
-    //    a cascata é aplicada no nível do banco (SQLite FK).
+    //    a cascata é aplicada no nível do banco (FK).
     if (nbIds.length > 0) {
       await this.prisma.withConnection(() =>
         this.prisma.notebook.deleteMany({
@@ -330,10 +356,27 @@ export class TrashService {
       );
     }
 
+    // 4. Exclui flashcards soft-deletados há +15 dias cujo caderno segue
+    //    ativo (movidos individualmente para a lixeira). Flashcards de
+    //    cadernos excluídos já foram removidos no passo 2 e os de folhas
+    //    excluídas no passo 3 (cascade via leafId).
+    const standaloneCardIds = oldFlashcards
+      .filter((fc) => !nbIds.includes(fc.notebookId))
+      .map((fc) => fc.id);
+
+    if (standaloneCardIds.length > 0) {
+      await this.prisma.withConnection(() =>
+        this.prisma.flashcard.deleteMany({
+          where: { id: { in: standaloneCardIds } },
+        }),
+      );
+    }
+
     return {
       deletedNotebooks: nbIds.length,
       deletedLeaves: standaloneLeafIds.length,
-      message: `Lixeira limpa: ${nbIds.length} cadernos e ${standaloneLeafIds.length} folhas excluídos permanentemente`,
+      deletedFlashcards: standaloneCardIds.length,
+      message: `Lixeira limpa: ${nbIds.length} cadernos, ${standaloneLeafIds.length} folhas e ${standaloneCardIds.length} flashcards excluídos permanentemente`,
     };
   }
 }

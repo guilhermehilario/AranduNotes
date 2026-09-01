@@ -18,6 +18,7 @@ import {
   AddQuestionToExamDto,
   CreateExamFromQuestionsDto,
 } from './dto/create-mock-exam.dto';
+import { SubmitMockExamDto } from './dto/submit-mock-exam.dto';
 
 @UseGuards(JwtAuthGuard)
 @Controller('mock-exams')
@@ -60,6 +61,21 @@ export class MockExamsController {
     @Query('title') title?: string,
   ) {
     return this.mockExamsService.generateFromNotebook(userId, notebookId, title);
+  }
+
+  @Post(':examId/submit')
+  @HttpCode(HttpStatus.CREATED)
+  submit(
+    @Param('examId') examId: string,
+    @CurrentUser('id') userId: string,
+    @Body() dto: SubmitMockExamDto,
+  ) {
+    return this.mockExamsService.submit(examId, userId, dto);
+  }
+
+  @Get(':id/attempts')
+  findAttempts(@Param('id') id: string, @CurrentUser('id') userId: string) {
+    return this.mockExamsService.findAttempts(id, userId);
   }
 
   @Post(':examId/questions')

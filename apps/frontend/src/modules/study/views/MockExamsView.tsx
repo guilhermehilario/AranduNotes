@@ -9,7 +9,7 @@ import {
   Plus,
   X,
 } from "lucide-react";
-import { useMockExams, useDeleteMockExam } from "../hooks/useMockExams";
+import { useMockExams, useDeleteMockExam, useSubmitMockExam } from "../hooks/useMockExams";
 import { PageContainer } from "../../../components/ui/PageContainer.tsx";
 import { Card } from "../../../components/ui/Card.tsx";
 import { Button } from "../../../components/ui/Button.tsx";
@@ -29,6 +29,7 @@ export const MockExamsView: React.FC = () => {
 
   const { data: exams = [], isLoading } = useMockExams(notebookId || undefined);
   const deleteExam = useDeleteMockExam();
+  const submitExam = useSubmitMockExam();
 
   const handleStartExam = (exam: MockExam) => {
     setActiveExam(exam);
@@ -44,6 +45,20 @@ export const MockExamsView: React.FC = () => {
     setActiveExam(null);
     setExamAnswers({});
     setExamStep("list");
+  };
+
+  // Ao voltar do resultado, registra a tentativa corrigida no servidor
+  const handleSubmitAndBack = (
+    selfGrades: Record<string, boolean>,
+  ) => {
+    if (activeExam) {
+      submitExam.mutate({
+        examId: activeExam.id,
+        answers: examAnswers,
+        selfGrades,
+      });
+    }
+    handleBackToExams();
   };
 
   const handleDeleteExam = async () => {
@@ -80,11 +95,7 @@ export const MockExamsView: React.FC = () => {
       <ExamResultView
         exam={activeExam}
         answers={examAnswers}
-        onBack={() => {
-          setActiveExam(null);
-          setExamAnswers({});
-          setExamStep("list");
-        }}
+        onBack={handleSubmitAndBack}
         onRestart={() => {
           setExamAnswers({});
           setExamStep("taking");
@@ -154,6 +165,11 @@ export const MockExamsView: React.FC = () => {
                       <span className="text-xs text-slate-400 dark:text-dark-500">
                         {exam._count?.questions || 0} questões
                       </span>
+                      {!!exam._count?.attempts && (
+                        <span className="text-xs text-slate-400 dark:text-dark-500">
+                          {exam._count.attempts} tentativa(s)
+                        </span>
+                      )}
                       {exam.timeLimit && (
                         <span className="flex items-center gap-1 text-xs text-slate-400 dark:text-dark-500">
                           <Clock className="h-3 w-3" />

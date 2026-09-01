@@ -63,6 +63,19 @@ export class QuestionsService {
     );
     if (!notebook) throw new NotFoundException('Caderno não encontrado');
 
+    // Valida que a folha informada pertence ao caderno (e ao usuário)
+    // 🔐 SEC-03: impede apontar uma questão para a folha de outro usuário
+    if (data.leafId) {
+      const leaf = await this.prisma.withConnection(() =>
+        this.prisma.leaf.findFirst({
+          where: { id: data.leafId, notebookId: data.notebookId },
+        }),
+      );
+      if (!leaf) {
+        throw new NotFoundException('Folha não encontrada neste caderno');
+      }
+    }
+
     return this.prisma.withConnection(() =>
       this.prisma.question.create({
         data: {

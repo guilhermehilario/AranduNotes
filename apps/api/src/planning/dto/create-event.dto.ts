@@ -1,4 +1,11 @@
-import { IsString, IsOptional, IsDateString, MinLength, MaxLength } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsIn,
+  IsDateString,
+  MinLength,
+  MaxLength,
+} from 'class-validator';
 
 export class CreateEventDto {
   @IsString()
@@ -16,13 +23,16 @@ export class CreateEventDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(5) // "HH:mm"
   time?: string;
 
   @IsOptional()
   @IsString()
-  type?: string; // "agenda" | "cronograma"
+  @IsIn(['agenda', 'cronograma'])
+  type?: string;
 
   @IsOptional()
   @IsString()
-  status?: string; // "pending" | "completed" | "cancelled"
+  @IsIn(['pending', 'completed', 'cancelled'])
+  status?: string;
 }

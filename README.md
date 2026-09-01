@@ -27,11 +27,11 @@ técnicas como **Pomodoro** e **revisão espaçada** (algoritmo SM-2).
 
 - 📝 **Editor de texto enriquecido** (TipTap) com toolbar multi-linha, pincel de formatação, blocos de código, listas de tarefas e muito mais
 - 🗂️ **Cadernos e folhas** hierárquicas com drag & drop
-- 🃏 **Flashcards** para revisão espaçada (algoritmo SM-2) — criação manual e por IA
+- 🃏 **Flashcards** para revisão espaçada (algoritmo SM-2) — criação manual e geração automática de conteúdo de exemplo
 - 📊 **Histórico de revisões** dos flashcards com timeline diária, médias e breakdown por matéria
 - ❓ **Questões de estudo** (múltipla escolha, verdadeiro/falso, resposta curta)
-- 📋 **Simulados** personalizáveis com limite de tempo
-- 📝 **Resumos** automáticos por IA ou criação manual
+- 📋 **Simulados** personalizáveis com limite de tempo e correção automática
+- 📝 **Resumos** automáticos (conteúdo de exemplo) ou criação manual
 - 🏷️ **Tags e bookmarks** para organização
 - ✅ **Lista de tarefas** integrada (todo-list)
 - 📅 **Planejamento** com agenda, calendário, cronograma, metas e Pomodoro

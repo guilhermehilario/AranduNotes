@@ -2,7 +2,11 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import mockExamService from '../services/mockExamService';
 import { useToastStore } from '../../../store/toastStore';
 import { extractApiError } from '../../../utils/api-errors';
-import type { CreateMockExamInput, CreateExamFromQuestionsInput } from '../types';
+import type {
+  CreateMockExamInput,
+  CreateExamFromQuestionsInput,
+  SubmitMockExamInput,
+} from '../types';
 
 export function useMockExams(notebookId?: string) {
   return useQuery({
@@ -93,5 +97,37 @@ export function useDeleteMockExam() {
         'error',
       );
     },
+  });
+}
+
+export function useSubmitMockExam() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: SubmitMockExamInput) =>
+      mockExamService.submitAttempt(input.examId, {
+        answers: input.answers,
+        selfGrades: input.selfGrades,
+      }),
+    onSuccess: (attempt) => {
+      queryClient.invalidateQueries({ queryKey: ['mock-exams'] });
+      useToastStore
+        .getState()
+        .addToast(`Tentativa registrada: ${attempt.correctCount}/${attempt.totalQuestions} acertos`, 'success');
+    },
+    onError: (err) => {
+      useToastStore.getState().addToast(
+        extractApiError(err, 'Erro ao registrar tentativa'),
+        'error',
+      );
+    },
+  });
+}
+
+export function useMockExamAttempts(examId: string) {
+  return useQuery({
+    queryKey: ['mock-exams', examId, 'attempts'],
+    queryFn: () => mockExamService.getAttempts(examId),
+    enabled: !!examId,
   });
 }

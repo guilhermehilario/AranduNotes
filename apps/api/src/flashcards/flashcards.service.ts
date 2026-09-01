@@ -82,6 +82,17 @@ export class FlashcardsService {
     );
     if (!notebook) throw new NotFoundException('Caderno não encontrado');
 
+    // Valida que a folha pertence ao caderno (e ao usuário)
+    // 🔐 SEC-02: impede apontar um flashcard para a folha de outro usuário
+    const leaf = await this.prisma.withConnection(() =>
+      this.prisma.leaf.findFirst({
+        where: { id: data.leafId, notebookId: data.notebookId },
+      }),
+    );
+    if (!leaf) {
+      throw new NotFoundException('Folha não encontrada neste caderno');
+    }
+
     const now = new Date();
     return this.prisma.withConnection(() =>
       this.prisma.flashcard.create({

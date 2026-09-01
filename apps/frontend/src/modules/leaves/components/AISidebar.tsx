@@ -140,7 +140,7 @@ const AISidebarComponent: React.FC<AISidebarProps> = ({
               <EmptyState
                 icon={<Sparkles className="h-6 w-6" />}
                 title="Nenhum resumo gerado"
-                description="Escreva suas anotações no editor e clique abaixo para gerar um resumo inteligente."
+                description="Escreva suas anotações no editor e clique abaixo para gerar um resumo automático (conteúdo de exemplo)."
                 action={
                   <Button
                     onClick={onGenerateSummary}
@@ -148,7 +148,7 @@ const AISidebarComponent: React.FC<AISidebarProps> = ({
                     leftIcon={<Sparkles className="h-4.5 w-4.5" />}
                     disabled={!editor?.getText()?.trim()}
                   >
-                    Gerar Resumo por IA
+                    Gerar Resumo
                   </Button>
                 }
               />
@@ -172,7 +172,7 @@ const AISidebarComponent: React.FC<AISidebarProps> = ({
               <EmptyState
                 icon={<HelpCircle className="h-6 w-6" />}
                 title="Nenhum flashcard"
-                description="Crie flashcards manualmente ou gere por IA."
+                description="Crie flashcards manualmente ou gere automaticamente (conteúdo de exemplo)."
                 action={
                   <Button
                     onClick={onGenerateFlashcards}
@@ -180,7 +180,7 @@ const AISidebarComponent: React.FC<AISidebarProps> = ({
                     leftIcon={<Sparkles className="h-4.5 w-4.5" />}
                     disabled={!editor?.getText()?.trim()}
                   >
-                    Gerar Flashcards por IA
+                    Gerar Flashcards
                   </Button>
                 }
               />

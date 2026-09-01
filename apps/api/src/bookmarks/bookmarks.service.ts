@@ -1,6 +1,7 @@
 import {
   Injectable,
   NotFoundException,
+  BadRequestException,
 } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
@@ -45,6 +46,31 @@ export class BookmarksService {
       path: string;
     },
   ) {
+    if (!data.leafId && !data.notebookId) {
+      throw new BadRequestException(
+        'Informe pelo menos uma folha ou um caderno para o marcador',
+      );
+    }
+
+    // Valida ownership do recurso referenciado
+    if (data.leafId) {
+      const leaf = await this.prisma.withConnection(() =>
+        this.prisma.leaf.findFirst({
+          where: { id: data.leafId, notebook: { userId } },
+        }),
+      );
+      if (!leaf) throw new NotFoundException('Folha não encontrada');
+    }
+
+    if (data.notebookId) {
+      const notebook = await this.prisma.withConnection(() =>
+        this.prisma.notebook.findFirst({
+          where: { id: data.notebookId, userId },
+        }),
+      );
+      if (!notebook) throw new NotFoundException('Caderno não encontrado');
+    }
+
     return this.prisma.withConnection(() =>
       this.prisma.bookmark.create({
         data: {

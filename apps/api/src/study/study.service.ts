@@ -1,7 +1,7 @@
 import {
   Injectable,
   NotFoundException,
-  InternalServerErrorException,
+  BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -61,13 +61,13 @@ export class StudyService {
       data.currentIndex !== undefined &&
       (typeof data.currentIndex !== 'number' || data.currentIndex < 0)
     ) {
-      throw new InternalServerErrorException('currentIndex inválido');
+      throw new BadRequestException('currentIndex inválido');
     }
     if (
       data.reviewedCount !== undefined &&
       (typeof data.reviewedCount !== 'number' || data.reviewedCount < 0)
     ) {
-      throw new InternalServerErrorException('reviewedCount inválido');
+      throw new BadRequestException('reviewedCount inválido');
     }
 
     const notebook = await this.prisma.withConnection(() =>
@@ -77,36 +77,29 @@ export class StudyService {
     );
     if (!notebook) throw new NotFoundException('Caderno não encontrado');
 
-    try {
-      return await this.prisma.$transaction(async (tx) => {
-        const sessionData = {
-          currentIndex: data.currentIndex ?? 0,
-          reviewedCount: data.reviewedCount ?? 0,
-          showAnswer: data.showAnswer ?? false,
-          sessionActive: data.sessionActive ?? false,
-          flashcards: JSON.stringify(data.flashcards ?? []),
-          completedCardIds: JSON.stringify(data.completedCardIds ?? []),
-          scores: JSON.stringify(data.scores ?? {}),
-        };
+    return this.prisma.$transaction(async (tx) => {
+      const sessionData = {
+        currentIndex: data.currentIndex ?? 0,
+        reviewedCount: data.reviewedCount ?? 0,
+        showAnswer: data.showAnswer ?? false,
+        sessionActive: data.sessionActive ?? false,
+        flashcards: JSON.stringify(data.flashcards ?? []),
+        completedCardIds: JSON.stringify(data.completedCardIds ?? []),
+        scores: JSON.stringify(data.scores ?? {}),
+      };
 
-        return tx.studySession.upsert({
-          where: {
-            notebookId_userId: { notebookId, userId },
-          },
-          create: {
-            notebookId,
-            userId,
-            ...sessionData,
-          },
-          update: sessionData,
-        });
+      return tx.studySession.upsert({
+        where: {
+          notebookId_userId: { notebookId, userId },
+        },
+        create: {
+          notebookId,
+          userId,
+          ...sessionData,
+        },
+        update: sessionData,
       });
-    } catch (err) {
-      if (err instanceof NotFoundException) throw err;
-      throw new InternalServerErrorException(
-        'Erro ao salvar sessão de estudo',
-      );
-    }
+    });
   }
 
   async loadSession(notebookId: string, userId: string) {
@@ -247,62 +240,71 @@ export class StudyService {
 
     const userNotebookIds = notebooks.map((nb) => nb.id);
 
-    const allFlashcards = await this.prisma.withConnection(() =>
-      this.prisma.flashcard.findMany({
-        where: { notebookId: { in: userNotebookIds } },
-      }),
-    );
+    const [allFlashcards, reviewLogs] = await Promise.all([
+      this.prisma.withConnection(() =>
+        this.prisma.flashcard.findMany({
+          where: { notebookId: { in: userNotebookIds } },
+        }),
+      ),
+      this.prisma.withConnection(() =>
+        this.prisma.reviewLog.findMany({
+          where: { userId },
+          select: {
+            score: true,
+            notebookId: true,
+            flashcardId: true,
+            createdAt: true,
+          },
+        }),
+      ),
+    ]);
 
     const todayStart = this.getTodayStart();
     const now = new Date();
 
-    // ── Cálculo mais confiável de revisões de hoje ──
-    // Considera revisado hoje se:
-    // - updatedAt é de hoje
-    // - E o card foi efetivamente revisado (repetitions > 0 OU interval > 0 OU easeFactor != 2.5)
-    // Isso exclui cards recém-criados que nunca foram revisados
     const hasBeenReviewed = (c: typeof allFlashcards[0]) =>
       c.repetitions > 0 || c.interval > 0 || Math.abs(c.easeFactor - 2.5) > 0.001;
 
-    const reviewedToday = allFlashcards.filter((c) => {
-      const updated = new Date(c.updatedAt);
-      if (updated < todayStart) return false;
-      return hasBeenReviewed(c);
-    });
+    // ── Revisões de hoje a partir do histórico real (ReviewLog) ──
+    const todayLogs = reviewLogs.filter((l) => l.createdAt >= todayStart);
+    const reviewedTodayIds = new Set(todayLogs.map((l) => l.flashcardId));
+    const reviewedTodayCount = reviewedTodayIds.size;
 
     const dueForReview = allFlashcards.filter(
       (c) => new Date(c.nextReviewDate) <= now,
     );
 
-    const totalReviewed = allFlashcards.filter(hasBeenReviewed).length;
     const reviewedCards = allFlashcards.filter(hasBeenReviewed);
+    const totalReviewed = reviewedCards.length;
 
     const avgEaseFactor =
       totalReviewed > 0
         ? reviewedCards.reduce((sum, c) => sum + c.easeFactor, 0) / totalReviewed
         : 2.5;
 
-    // accuracyRate baseada no ease-factor médio (proxy confiável do SM-2)
-    const accuracyRate = Math.min(
-      100,
-      Math.max(0, Math.round(((avgEaseFactor - 1.3) / (3.3 - 1.3)) * 100)),
-    );
+    // accuracyRate real: percentual de revisões com score >= 3 (leu/acertou)
+    const totalReviews = reviewLogs.length;
+    const correctReviews = reviewLogs.filter((l) => l.score >= 3).length;
+    const accuracyRate =
+      totalReviews > 0 ? Math.round((correctReviews / totalReviews) * 100) : 0;
 
     const perNotebook = userNotebookIds
       .map((nbId) => {
         const notebook = notebooks.find((nb) => nb.id === nbId);
         const nbCards = allFlashcards.filter((c) => c.notebookId === nbId);
-        const nbReviewedToday = reviewedToday.filter(
-          (c) => c.notebookId === nbId,
-        );
         const nbDue = dueForReview.filter((c) => c.notebookId === nbId);
+        const nbReviewedTodayCount = new Set(
+          todayLogs
+            .filter((l) => l.notebookId === nbId)
+            .map((l) => l.flashcardId),
+        ).size;
 
         return {
           notebookId: nbId,
           notebookTitle: notebook?.title ?? 'Sem título',
           notebookColor: notebook?.color ?? '#aa3bff',
           totalCards: nbCards.length,
-          reviewedToday: nbReviewedToday.length,
+          reviewedToday: nbReviewedTodayCount,
           dueForReview: nbDue.length,
         };
       })
@@ -310,7 +312,7 @@ export class StudyService {
 
     return {
       totalCards: allFlashcards.length,
-      reviewedToday: reviewedToday.length,
+      reviewedToday: reviewedTodayCount,
       dueForReview: dueForReview.length,
       accuracyRate,
       avgEaseFactor: Math.round(avgEaseFactor * 100) / 100,

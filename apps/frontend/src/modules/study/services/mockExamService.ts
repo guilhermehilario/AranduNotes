@@ -1,5 +1,10 @@
 import { api } from '../../../core/api/client';
-import type { MockExam, CreateMockExamInput, CreateExamFromQuestionsInput } from '../types';
+import type {
+  MockExam,
+  MockExamAttempt,
+  CreateMockExamInput,
+  CreateExamFromQuestionsInput,
+} from '../types';
 
 export const mockExamService = {
   async getAll(notebookId?: string): Promise<MockExam[]> {
@@ -26,6 +31,16 @@ export const mockExamService = {
   async generateFromNotebook(notebookId: string, title?: string): Promise<MockExam> {
     const params = title ? { title } : {};
     const response = await api.post<MockExam>(`/mock-exams/generate/${notebookId}`, null, { params });
+    return response.data;
+  },
+
+  async submitAttempt(examId: string, data: { answers: Record<string, string>; selfGrades: Record<string, boolean> }): Promise<MockExamAttempt> {
+    const response = await api.post<MockExamAttempt>(`/mock-exams/${examId}/submit`, data);
+    return response.data;
+  },
+
+  async getAttempts(examId: string): Promise<MockExamAttempt[]> {
+    const response = await api.get<MockExamAttempt[]>(`/mock-exams/${examId}/attempts`);
     return response.data;
   },
 

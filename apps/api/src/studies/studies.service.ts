@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -6,6 +6,16 @@ export class StudiesService {
   constructor(private readonly prisma: PrismaService) {}
 
   async getAllStudyContent(userId: string, notebookId?: string) {
+    // Valida ownership do caderno quando filtrado por notebookId
+    if (notebookId) {
+      const notebook = await this.prisma.withConnection(() =>
+        this.prisma.notebook.findFirst({
+          where: { id: notebookId, userId },
+        }),
+      );
+      if (!notebook) throw new NotFoundException('Caderno não encontrado');
+    }
+
     const notebookFilter = notebookId ? { notebookId } : {};
     const now = new Date();
 
