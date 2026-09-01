@@ -68,6 +68,7 @@ export const PasswordChangeForm: React.FC = () => {
             value={currentPassword}
             onChange={(e) => setCurrentPassword(e.target.value)}
             placeholder="Sua senha atual"
+            autoComplete="current-password"
           />
           <Input
             label="Nova senha"
@@ -75,6 +76,7 @@ export const PasswordChangeForm: React.FC = () => {
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
             placeholder="Mínimo 6 caracteres"
+            autoComplete="new-password"
           />
           <Input
             label="Confirmar nova senha"
@@ -82,6 +84,7 @@ export const PasswordChangeForm: React.FC = () => {
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             placeholder="Repita a nova senha"
+            autoComplete="new-password"
           />
 
           {passwordError && <p className="text-xs text-rose-500 font-medium">{passwordError}</p>}

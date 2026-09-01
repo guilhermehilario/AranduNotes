@@ -1,6 +1,7 @@
 import {
   Injectable,
   BadRequestException,
+  InternalServerErrorException,
   Logger,
 } from "@nestjs/common";
 import { randomBytes } from "node:crypto";
@@ -150,7 +151,7 @@ export class VerificationService {
       );
     } catch {
       this.logger.error("Falha ao reenviar e-mail de verificação");
-      throw new Error("Erro ao enviar e-mail. Tente novamente mais tarde.");
+      throw new InternalServerErrorException("Erro ao enviar e-mail. Tente novamente mais tarde.");
     }
 
     return {

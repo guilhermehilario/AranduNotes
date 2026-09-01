@@ -29,10 +29,13 @@ import App from "./App.tsx";
   const redirect = sessionStorage.getItem("redirect");
   if (
     redirect &&
+    redirect.startsWith('/') && !redirect.startsWith('//') &&
     redirect !== window.location.pathname + window.location.search
   ) {
     sessionStorage.removeItem("redirect");
     window.history.replaceState(null, "", redirect);
+  } else {
+    sessionStorage.removeItem("redirect");
   }
 })();
 window.addEventListener("popstate", () => {

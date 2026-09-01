@@ -17,6 +17,10 @@ export class EditHistoryService {
       newValue?: string;
     },
   ) {
+    // 🔐 ALTO-14: Limpeza lazy — a cada novo registro, remove registros >6 meses
+    // Evita a necessidade de cron job. deleteMany é eficiente e roda poucas vezes.
+    void this.cleanupOldRecords();
+
     return this.prisma.withConnection(() =>
       this.prisma.editHistory.create({
         data: {

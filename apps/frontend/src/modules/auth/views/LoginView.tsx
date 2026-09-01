@@ -132,6 +132,7 @@ export const LoginView: React.FC = () => {
             type="password"
             placeholder="Sua senha secreta"
             error={errors.password?.message}
+            autoComplete="current-password"
             {...register('password')}
           />
         </div>

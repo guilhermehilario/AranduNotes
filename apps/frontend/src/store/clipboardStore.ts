@@ -21,6 +21,8 @@ interface ClipboardState {
 }
 
 const MAX_ITEMS = 50;
+/** 🔐 BAIXO-36: Limita tamanho de cada item (evita senhas/dados sensíveis grandes) */
+const MAX_ITEM_LENGTH = 500;
 
 export const useClipboardStore = create<ClipboardState>()(
   persist(
@@ -37,14 +39,19 @@ export const useClipboardStore = create<ClipboardState>()(
           const trimmed = text.trim();
           if (!trimmed) return state;
 
+          // 🔐 BAIXO-36: Truncar texto longo
+          const truncated = trimmed.length > MAX_ITEM_LENGTH
+            ? trimmed.slice(0, MAX_ITEM_LENGTH) + "…"
+            : trimmed;
+
           // Don't add duplicate consecutive texts
-          if (state.items.length > 0 && state.items[0].text === trimmed) {
+          if (state.items.length > 0 && state.items[0].text === truncated) {
             return state;
           }
 
           const newItem: ClipboardItem = {
             id: crypto.randomUUID(),
-            text: trimmed,
+            text: truncated,
             createdAt: Date.now(),
             favorited: false,
           };
@@ -65,11 +72,16 @@ export const useClipboardStore = create<ClipboardState>()(
         })),
 
       updateItem: (id, text) =>
-        set((state) => ({
-          items: state.items.map((item) =>
-            item.id === id ? { ...item, text } : item
-          ),
-        })),
+        set((state) => {
+          const truncated = text.length > MAX_ITEM_LENGTH
+            ? text.slice(0, MAX_ITEM_LENGTH) + "…"
+            : text;
+          return {
+            items: state.items.map((item) =>
+              item.id === id ? { ...item, text: truncated } : item
+            ),
+          };
+        }),
 
       toggleFavorite: (id) =>
         set((state) => {

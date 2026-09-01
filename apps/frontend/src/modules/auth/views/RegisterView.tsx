@@ -136,6 +136,7 @@ export const RegisterView: React.FC = () => {
           type="password"
           placeholder="Mínimo de 6 caracteres"
           error={errors.password?.message}
+          autoComplete="new-password"
           {...register('password')}
         />
 
@@ -144,6 +145,7 @@ export const RegisterView: React.FC = () => {
           type="password"
           placeholder="Repita sua senha"
           error={errors.confirmPassword?.message}
+          autoComplete="new-password"
           {...register('confirmPassword')}
         />
 

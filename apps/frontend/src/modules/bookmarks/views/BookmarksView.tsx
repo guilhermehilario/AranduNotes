@@ -56,7 +56,13 @@ export const BookmarksView: React.FC = () => {
             <Card
               key={bookmark.id}
               hoverable
-              onClick={() => navigate(bookmark.path)}
+              onClick={() => {
+                // 🔐 BAIXO-37: Validar que path é relativo (não://evil.com)
+                const p = bookmark.path;
+                if (p && p.startsWith('/') && !p.startsWith('//')) {
+                  navigate(p);
+                }
+              }}
               className="flex items-center gap-4 p-4 border border-slate-100 dark:border-dark-800"
             >
               <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-950/20 flex items-center justify-center text-amber-500 flex-shrink-0">

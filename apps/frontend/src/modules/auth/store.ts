@@ -30,6 +30,8 @@ const useAuthStoreBase = create<AuthState>()(
         set({ user, accessToken, isAuthenticated: true }),
       logout: () => {
         localStorage.removeItem('arandu-welcome-dismissed');
+        // 🔐 BAIXO-36: Limpar clipboard ao fazer logout (evita dados sensíveis persistentes)
+        localStorage.removeItem('arandu-clipboard');
         set({ user: null, accessToken: null, isAuthenticated: false });
       },
       setAccessToken: (accessToken) =>

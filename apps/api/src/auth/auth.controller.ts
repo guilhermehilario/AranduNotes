@@ -207,6 +207,8 @@ export class AuthController {
 
   @Post('send-delete-confirmation')
   @UseGuards(JwtAuthGuard)
+  // 🔐 BAIXO-42: Rate limit contra spam de e-mails de exclusão (auto-abuso)
+  @Throttle({ default: { limit: 3, ttl: 900000 } })
   async sendDeleteConfirmation(@CurrentUser('id') userId: string) {
     return this.authService.sendDeleteConfirmation(userId);
   }

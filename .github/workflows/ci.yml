@@ -29,3 +29,23 @@ jobs:
       - name: 🧹 Run lint
         # Falha com qualquer erro ou warning (--max-warnings 0 nos scripts de lint)
         run: yarn lint
+
+  audit:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: yarn
+
+      - name: 📦 Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: 🔒 npm audit
+        # Faila o pipeline se houver vulnerabilidades HIGH ou CRITICAL
+        run: yarn audit --audit-level=high --non-continue
