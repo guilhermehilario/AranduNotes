@@ -1,9 +1,12 @@
 import { api } from '../../../core/api/client';
-import type { Question, CreateQuestionInput } from '../types';
+import type { Question, CreateQuestionInput, QuestionFilters } from '../types';
 
 export const questionService = {
-  async getAll(notebookId?: string): Promise<Question[]> {
-    const params = notebookId ? { notebookId } : {};
+  async getAll(filters?: QuestionFilters): Promise<Question[]> {
+    const params: Record<string, string> = {};
+    if (filters?.notebookId) params.notebookId = filters.notebookId;
+    if (filters?.theme) params.theme = filters.theme;
+    if (filters?.questionType) params.questionType = filters.questionType;
     const response = await api.get<Question[]>('/questions', { params });
     return response.data;
   },

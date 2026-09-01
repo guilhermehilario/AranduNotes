@@ -103,8 +103,11 @@ export const MockExamsView: React.FC = () => {
           <ArrowLeft className="h-4 w-4" /> Voltar aos Estudos
         </Link>
         <Button
-          onClick={() => navigate("/studies")}
-          variant="secondary"
+          onClick={() =>
+            navigate(
+              `/studies/questions?tab=banco${notebookId ? `&notebookId=${notebookId}` : ''}`,
+            )
+          }
           leftIcon={<Plus className="h-4 w-4" />}
         >
           Novo Simulado
@@ -122,10 +125,16 @@ export const MockExamsView: React.FC = () => {
             Nenhum simulado disponível
           </h3>
           <p className="text-sm text-slate-500 dark:text-dark-400 mb-4">
-            Crie questões primeiro, depois gere um simulado automaticamente a partir delas.
+            Crie questões no banco e selecione-as para montar um simulado, ou gere automaticamente a partir de um caderno.
           </p>
-          <Button onClick={() => navigate("/studies")}>
-            Voltar
+          <Button
+            onClick={() =>
+              navigate(
+                `/studies/questions?tab=banco${notebookId ? `&notebookId=${notebookId}` : ''}`,
+              )
+            }
+          >
+            Ir para o Banco de Questões
           </Button>
         </Card>
       ) : (

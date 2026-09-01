@@ -13,7 +13,11 @@ import {
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { MockExamsService } from './mock-exams.service';
-import { CreateMockExamDto, AddQuestionToExamDto } from './dto/create-mock-exam.dto';
+import {
+  CreateMockExamDto,
+  AddQuestionToExamDto,
+  CreateExamFromQuestionsDto,
+} from './dto/create-mock-exam.dto';
 
 @UseGuards(JwtAuthGuard)
 @Controller('mock-exams')
@@ -37,6 +41,15 @@ export class MockExamsController {
   @HttpCode(HttpStatus.CREATED)
   create(@CurrentUser('id') userId: string, @Body() dto: CreateMockExamDto) {
     return this.mockExamsService.create(userId, dto);
+  }
+
+  @Post('from-questions')
+  @HttpCode(HttpStatus.CREATED)
+  createFromQuestions(
+    @CurrentUser('id') userId: string,
+    @Body() dto: CreateExamFromQuestionsDto,
+  ) {
+    return this.mockExamsService.createFromQuestions(userId, dto);
   }
 
   @Post('generate/:notebookId')

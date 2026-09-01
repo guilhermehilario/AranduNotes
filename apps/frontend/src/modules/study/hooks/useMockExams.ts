@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import mockExamService from '../services/mockExamService';
 import { useToastStore } from '../../../store/toastStore';
 import { extractApiError } from '../../../utils/api-errors';
-import type { CreateMockExamInput } from '../types';
+import type { CreateMockExamInput, CreateExamFromQuestionsInput } from '../types';
 
 export function useMockExams(notebookId?: string) {
   return useQuery({
@@ -29,6 +29,26 @@ export function useCreateMockExam() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['mock-exams'] });
       useToastStore.getState().addToast('Simulado criado com sucesso!', 'success');
+    },
+    onError: (err) => {
+      useToastStore.getState().addToast(
+        extractApiError(err, 'Erro ao criar simulado'),
+        'error',
+      );
+    },
+  });
+}
+
+export function useCreateMockExamFromQuestions() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: CreateExamFromQuestionsInput) =>
+      mockExamService.createFromQuestions(data),
+    onSuccess: (exam) => {
+      queryClient.invalidateQueries({ queryKey: ['mock-exams'] });
+      useToastStore.getState().addToast('Simulado criado com sucesso!', 'success');
+      return exam;
     },
     onError: (err) => {
       useToastStore.getState().addToast(

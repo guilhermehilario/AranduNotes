@@ -49,7 +49,8 @@ export interface Question {
   options: string; // JSON array
   correctAnswer: string;
   explanation: string | null;
-  questionType: 'multiple_choice' | 'true_false' | 'short_answer';
+  theme: string | null;
+  questionType: 'multiple_choice' | 'true_false' | 'short_answer' | 'dissertative';
   createdAt: string;
   updatedAt: string;
   notebook?: { title: string; color: string };
@@ -63,6 +64,13 @@ export interface CreateQuestionInput {
   options?: string;
   correctAnswer: string;
   explanation?: string;
+  theme?: string;
+  questionType?: string;
+}
+
+export interface QuestionFilters {
+  notebookId?: string;
+  theme?: string;
   questionType?: string;
 }
 
@@ -94,6 +102,11 @@ export interface CreateMockExamInput {
   description?: string;
   timeLimit?: number;
   notebookId?: string;
+}
+
+export interface CreateExamFromQuestionsInput extends Omit<CreateMockExamInput, 'title'> {
+  title: string;
+  questionIds: string[];
 }
 
 // ── Conteúdo unificado de estudos ──

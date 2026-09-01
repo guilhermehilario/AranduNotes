@@ -141,6 +141,61 @@ export class MockExamsService {
     return { success: true };
   }
 
+  async createFromQuestions(
+    userId: string,
+    data: {
+      title: string;
+      description?: string;
+      timeLimit?: number;
+      notebookId?: string;
+      questionIds: string[];
+    },
+  ) {
+    if (data.notebookId) {
+      const notebook = await this.prisma.withConnection(() =>
+        this.prisma.notebook.findFirst({
+          where: { id: data.notebookId, userId },
+        }),
+      );
+      if (!notebook) throw new NotFoundException('Caderno não encontrado');
+    }
+
+    const ids = [...new Set(data.questionIds)];
+    const found = await this.prisma.withConnection(() =>
+      this.prisma.question.findMany({
+        where: { id: { in: ids }, userId },
+        select: { id: true },
+      }),
+    );
+    if (found.length !== ids.length) {
+      throw new NotFoundException('Uma ou mais questões não foram encontradas');
+    }
+
+    const exam = await this.prisma.withConnection(() =>
+      this.prisma.mockExam.create({
+        data: {
+          userId,
+          title: data.title,
+          description: data.description || null,
+          timeLimit: data.timeLimit || null,
+          notebookId: data.notebookId || null,
+        },
+      }),
+    );
+
+    await this.prisma.withConnection(() =>
+      this.prisma.mockExamQuestion.createMany({
+        data: ids.map((questionId, idx) => ({
+          examId: exam.id,
+          questionId,
+          order: idx,
+        })),
+      }),
+    );
+
+    return this.findOne(exam.id, userId);
+  }
+
   async generateFromNotebook(userId: string, notebookId: string, title?: string) {
     const questions = await this.prisma.withConnection(() =>
       this.prisma.question.findMany({

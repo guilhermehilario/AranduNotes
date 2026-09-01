@@ -29,7 +29,12 @@ export class CreateQuestionDto {
   explanation?: string;
 
   @IsOptional()
-  @IsIn(['multiple_choice', 'true_false', 'short_answer'])
+  @IsString()
+  @MaxLength(80)
+  theme?: string;
+
+  @IsOptional()
+  @IsIn(['multiple_choice', 'true_false', 'short_answer', 'dissertative'])
   questionType?: string;
 }
 
@@ -55,6 +60,11 @@ export class UpdateQuestionDto {
   explanation?: string;
 
   @IsOptional()
-  @IsIn(['multiple_choice', 'true_false', 'short_answer'])
+  @IsString()
+  @MaxLength(80)
+  theme?: string;
+
+  @IsOptional()
+  @IsIn(['multiple_choice', 'true_false', 'short_answer', 'dissertative'])
   questionType?: string;
 }

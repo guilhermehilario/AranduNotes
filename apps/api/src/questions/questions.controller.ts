@@ -25,8 +25,10 @@ export class QuestionsController {
   findAll(
     @CurrentUser('id') userId: string,
     @Query('notebookId') notebookId?: string,
+    @Query('theme') theme?: string,
+    @Query('questionType') questionType?: string,
   ) {
-    return this.questionsService.findAll(userId, notebookId);
+    return this.questionsService.findAll(userId, notebookId, theme, questionType);
   }
 
   @Get('random')

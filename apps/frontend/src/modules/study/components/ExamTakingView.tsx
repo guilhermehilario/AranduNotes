@@ -1,8 +1,9 @@
 import React, { useState } from "react";
-import { ArrowLeft, Timer, HelpCircle } from "lucide-react";
+import { ArrowLeft, Timer, HelpCircle, ClipboardPen } from "lucide-react";
 import { PageContainer } from "../../../components/ui/PageContainer.tsx";
 import { Card } from "../../../components/ui/Card.tsx";
 import { Button } from "../../../components/ui/Button.tsx";
+import { TextArea } from "../../../components/ui/TextArea.tsx";
 import { QuestionOption } from "../../../components/ui/QuestionOption.tsx";
 import type { MockExam } from "../types";
 
@@ -26,10 +27,16 @@ export const ExamTakingView: React.FC<ExamTakingViewProps> = ({
   const currentQuestion = questions[questionIndex];
   const isLast = questionIndex >= questions.length - 1;
   const answered = Object.keys(answers).length;
+  const isDissertative = currentQuestion?.questionType === "dissertative";
 
   const handleSelect = (option: string) => {
     if (!currentQuestion) return;
     setAnswers((prev) => ({ ...prev, [currentQuestion.id]: option }));
+  };
+
+  const handleTextChange = (value: string) => {
+    if (!currentQuestion) return;
+    setAnswers((prev) => ({ ...prev, [currentQuestion.id]: value }));
   };
 
   const handleNext = () => {
@@ -79,18 +86,38 @@ export const ExamTakingView: React.FC<ExamTakingViewProps> = ({
 
       <Card className="p-6">
         <div className="flex items-center gap-1.5 text-amber-500 text-xs font-bold tracking-wider uppercase mb-4">
-          <HelpCircle className="h-4 w-4" /> Questão {questionIndex + 1}
+          {isDissertative ? (
+            <ClipboardPen className="h-4 w-4" />
+          ) : (
+            <HelpCircle className="h-4 w-4" />
+          )}{" "}
+          Questão {questionIndex + 1}
         </div>
+        {currentQuestion?.theme && (
+          <span className="inline-block mb-3 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-slate-100 dark:bg-dark-800 text-slate-600 dark:text-dark-300">
+            {currentQuestion.theme}
+          </span>
+        )}
         <p className="text-lg font-heading font-semibold text-slate-800 dark:text-dark-50 leading-relaxed mb-6">
           {currentQuestion?.question}
         </p>
 
-        <QuestionOption
-          options={currentQuestion?.options || "[]"}
-          selectedOption={answers[currentQuestion?.id || ""] || null}
-          colorTheme="amber"
-          onSelect={handleSelect}
-        />
+        {isDissertative ? (
+          <TextArea
+            label="Sua resposta"
+            placeholder="Escreva sua resposta de forma dissertativa..."
+            rows={5}
+            value={answers[currentQuestion?.id || ""] || ""}
+            onChange={(e) => handleTextChange(e.target.value)}
+          />
+        ) : (
+          <QuestionOption
+            options={currentQuestion?.options || "[]"}
+            selectedOption={answers[currentQuestion?.id || ""] || null}
+            colorTheme="amber"
+            onSelect={handleSelect}
+          />
+        )}
 
         <div className="mt-6 flex justify-between items-center">
           <span className="text-xs text-slate-400 dark:text-dark-500">

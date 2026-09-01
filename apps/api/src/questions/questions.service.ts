@@ -6,9 +6,16 @@ import { PrismaService } from '../prisma/prisma.service';
 export class QuestionsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAll(userId: string, notebookId?: string) {
+  async findAll(
+    userId: string,
+    notebookId?: string,
+    theme?: string,
+    questionType?: string,
+  ) {
     const where: Prisma.QuestionWhereInput = { userId };
     if (notebookId) where.notebookId = notebookId;
+    if (theme) where.theme = { contains: theme };
+    if (questionType) where.questionType = questionType;
     return this.prisma.withConnection(() =>
       this.prisma.question.findMany({
         where,
@@ -45,6 +52,7 @@ export class QuestionsService {
       correctAnswer: string;
       explanation?: string;
       questionType?: string;
+      theme?: string;
     },
   ) {
     // Verify notebook ownership
@@ -66,6 +74,7 @@ export class QuestionsService {
           correctAnswer: data.correctAnswer,
           explanation: data.explanation || null,
           questionType: data.questionType || 'multiple_choice',
+          theme: data.theme || null,
         },
       }),
     );
@@ -80,6 +89,7 @@ export class QuestionsService {
       correctAnswer?: string;
       explanation?: string;
       questionType?: string;
+      theme?: string;
     },
   ) {
     const question = await this.prisma.withConnection(() =>
@@ -95,6 +105,7 @@ export class QuestionsService {
     if (data.correctAnswer !== undefined) updates.correctAnswer = data.correctAnswer;
     if (data.explanation !== undefined) updates.explanation = data.explanation;
     if (data.questionType !== undefined) updates.questionType = data.questionType;
+    if (data.theme !== undefined) updates.theme = data.theme;
 
     return this.prisma.withConnection(() =>
       this.prisma.question.update({
