@@ -25,6 +25,8 @@ import MockExamsView from '../modules/study/views/MockExamsView.tsx';
 import ReviewsStudyView from '../modules/study/views/ReviewsStudyView.tsx';
 import SharedWithMeView from '../modules/sharing/views/SharedWithMeView.tsx';
 import PublicContentView from '../modules/sharing/views/PublicContentView.tsx';
+import { FriendsView } from '../modules/friends/views/FriendsView.tsx';
+import { ChatView } from '../modules/friends/views/ChatView.tsx';
 
 /* ─── Componentes nomeados e memoizados para cada rota ────────────── */
 
@@ -140,6 +142,14 @@ const SharedPage = memo(function SharedPage() {
   return <SharedWithMeView />;
 });
 
+const FriendsPage = memo(function FriendsPage() {
+  return <FriendsView />;
+});
+
+const FriendChatPage = memo(function FriendChatPage() {
+  return <ChatView />;
+});
+
 // Rota pública (sem login): visualização de links compartilhados.
 // NÃO usa PublicRoute — links públicos devem funcionar logados ou não.
 const PublicContentPage = memo(function PublicContentPage() {
@@ -212,6 +222,14 @@ const router = createBrowserRouter([
       {
         path: 'shared',
         element: <SharedPage />,
+      },
+      {
+        path: 'friends',
+        element: <FriendsPage />,
+      },
+      {
+        path: 'friends/chat/:friendId',
+        element: <FriendChatPage />,
       },
       {
         path: 'trash',

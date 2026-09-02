@@ -9,6 +9,8 @@ import { PomodoroFloatingTimer } from '../../modules/planning/components/Pomodor
 import { WelcomeModal } from '../../modules/auth/components/WelcomeModal.tsx';
 import { usePlanningNotifications } from '../../modules/planning/hooks/usePlanningNotifications.ts';
 import { useClipboardCapture } from '../../modules/clipboard/hooks/useClipboardCapture.ts';
+import { usePresenceHeartbeat } from '../../modules/friends/hooks/useFriends';
+import { useFriendNotifications } from '../../modules/friends/hooks/useFriendNotifications';
 
 /** Hook que retorna a preferência de tema efetiva do sistema (matchMedia). */
 function useSystemTheme(): 'light' | 'dark' {
@@ -80,6 +82,12 @@ export const AppLayout: React.FC = () => {
 
   // Ativa captura global de eventos de cópia
   useClipboardCapture();
+
+  // Presença: envia heartbeat enquanto o app está aberto
+  usePresenceHeartbeat();
+
+  // Notificações de amizade (novos pedidos / amigos aceitos)
+  useFriendNotifications();
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-slate-50 text-slate-900 dark:bg-dark-950 dark:text-dark-50 transition-colors duration-200">

@@ -25,6 +25,11 @@ model User {
   // 🔐 MÉDIO-17: Rate limiting por conta (brute force protection)
   failedLoginAttempts       Int       @default(0)
   lockedUntil               DateTime?
+  // 🙋 Presença — status manual + heartbeats para derivar "online"
+  status                    String    @default("available") // "available" | "busy" | "invisible" | "offline"
+  lastActiveAt              DateTime? // Atualizado por heartbeat (deriva "online")
+  // 🤝 Código único para adicionar amigos (alternativa ao e-mail)
+  friendCode                String?   @unique
   createdAt                 DateTime  @default(now())
   updatedAt                 DateTime  @updatedAt
 
@@ -42,8 +47,63 @@ model User {
   mockExams        MockExam[]
   mockExamAttempts MockExamAttempt[]
   refreshTokens    RefreshToken[]
-  sharesOwned      Share[]           @relation("ShareOwner")
-  sharesReceived   Share[]           @relation("ShareRecipient")
+  sharesOwned      Share[]              @relation("ShareOwner")
+  sharesReceived   Share[]              @relation("ShareRecipient")
+
+  friendLinks    Friend[]        @relation("FriendOwner")
+  friendOfLinks  Friend[]        @relation("FriendTarget")
+  friendRequestsSent    FriendRequest[] @relation("FriendRequestSender")
+  friendRequestsReceived FriendRequest[] @relation("FriendRequestRecipient")
+  sentMessages   DirectMessage[]        @relation("MessageSender")
+  receivedMessages DirectMessage[]      @relation("MessageRecipient")
+}
+
+/// Relação de amizade (duas linhas direcionais: owner -> friend).
+model Friend {
+  id       String   @id @default(uuid())
+  ownerId  String
+  friendId String
+  createdAt DateTime @default(now())
+
+  owner  User @relation("FriendOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  friend User @relation("FriendTarget", fields: [friendId], references: [id], onDelete: Cascade)
+
+  @@unique([ownerId, friendId])
+  @@index([friendId])
+}
+
+/// Solicitação de amizade (pendente / aceita / recusada / cancelada).
+model FriendRequest {
+  id          String   @id @default(uuid())
+  senderId    String
+  recipientId String
+  status      String   @default("pending") // "pending" | "accepted" | "declined" | "cancelled"
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  sender    User @relation("FriendRequestSender", fields: [senderId], references: [id], onDelete: Cascade)
+  recipient User @relation("FriendRequestRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+
+  @@unique([senderId, recipientId])
+  @@index([recipientId, status])
+}
+
+/// Mensagem direta entre amigos (texto ou link para conteúdo compartilhado).
+model DirectMessage {
+  id             String   @id @default(uuid())
+  senderId       String
+  recipientId    String
+  contentType    String   @default("text") // "text" | "content_link"
+  content        String
+  contentRef     String? // JSON: { resourceType, resourceId, title } p/ content_link
+  readAt         DateTime?
+  createdAt      DateTime @default(now())
+
+  sender    User @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+  recipient User @relation("MessageRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+
+  @@index([senderId, recipientId, createdAt])
+  @@index([recipientId, readAt])
 }
 
 /// Compartilhamentos de conteúdo entre usuários (item pode ser editado pelo

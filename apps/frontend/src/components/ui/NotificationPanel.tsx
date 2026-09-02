@@ -84,7 +84,11 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({
                         ? "📅"
                         : notif.type === "goal"
                           ? "🎯"
-                          : "🍅"}
+                          : notif.type === "friend"
+                            ? "✅"
+                            : notif.type === "friendRequest"
+                              ? "🤝"
+                              : "🍅"}
                     </span>
                     <div className="flex-grow min-w-0">
                       <p className="text-xs font-bold" style={{ color: 'var(--text-primary)' }}>

@@ -2,7 +2,7 @@ import { create } from 'zustand';
 
 export interface PlanningNotification {
   id: string;
-  type: 'event' | 'goal' | 'pomodoro';
+  type: 'event' | 'goal' | 'pomodoro' | 'friend' | 'friendRequest';
   title: string;
   message: string;
   itemId: string;

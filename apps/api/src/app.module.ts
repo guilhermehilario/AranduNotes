@@ -17,6 +17,7 @@ import { QuestionsModule } from "./questions/questions.module";
 import { MockExamsModule } from "./mock-exams/mock-exams.module";
 import { StudiesModule } from "./studies/studies.module";
 import { SharingModule } from "./sharing/sharing.module";
+import { FriendsModule } from "./friends/friends.module";
 import { AppController } from "./app.controller";
 import { AllExceptionsFilter } from "./common/filters/http-exception.filter";
 
@@ -46,6 +47,7 @@ import { AllExceptionsFilter } from "./common/filters/http-exception.filter";
     MockExamsModule,
     StudiesModule,
     SharingModule,
+    FriendsModule,
   ],
   controllers: [AppController],
   providers: [
