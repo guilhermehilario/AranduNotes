@@ -53,6 +53,8 @@ export interface Question {
   questionType: 'multiple_choice' | 'true_false' | 'short_answer' | 'dissertative';
   createdAt: string;
   updatedAt: string;
+  isPublic?: boolean;
+  publicToken?: string | null;
   notebook?: { title: string; color: string };
   leaf?: { title: string };
 }
@@ -84,6 +86,8 @@ export interface MockExam {
   timeLimit: number | null;
   createdAt: string;
   updatedAt: string;
+  isPublic?: boolean;
+  publicToken?: string | null;
   notebook?: { title: string; color: string } | null;
   _count?: { questions: number; attempts?: number };
   questions?: MockExamQuestion[];

@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Plus, BookOpen, BarChart3, ArrowDown, ArrowUp } from 'lucide-react';
 import { useNotebooks } from '../hooks/useNotebooks';
 import { CreateNotebookSchema } from '../types';
-import type { CreateNotebookInput } from '../types';
+import type { CreateNotebookInput, Notebook } from '../types';
 import { PageContainer } from '../../../components/ui/PageContainer.tsx';
 import { NotebookCard } from '../components/NotebookCard.tsx';
 import { StudyProgressSummaryModal } from '../../../modules/study/components/StudyProgressSummaryModal.tsx';
@@ -15,6 +15,7 @@ import { TextArea } from '../../../components/ui/TextArea.tsx';
 import { ColorPicker } from '../../../components/ui/ColorPicker.tsx';
 import { EmptyState } from '../../../components/ui/EmptyState.tsx';
 import { LoadingScreen } from '../../../components/ui/LoadingScreen.tsx';
+import { ShareModal } from '../../../modules/sharing/components/ShareModal.tsx';
 import { NOTEBOOK_COLORS } from '../../notebooks/constants';
 import { useToastStore } from '../../../store/toastStore';
 import { extractApiError } from '../../../utils/api-errors';
@@ -34,6 +35,7 @@ export const DashboardView: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedColor, setSelectedColor] = useState<string>(NOTEBOOK_COLORS[0]);
   const [isProgressModalOpen, setIsProgressModalOpen] = useState(false);
+  const [notebookToShare, setNotebookToShare] = useState<Notebook | null>(null);
 
   // ── Ordenação ──
   // Default: último criado na frente (createdAt desc)
@@ -203,7 +205,11 @@ export const DashboardView: React.FC = () => {
             {/* Notebook Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {sortedNotebooks.map((notebook) => (
-                <NotebookCard key={notebook.id} notebook={notebook} />
+                <NotebookCard
+                  key={notebook.id}
+                  notebook={notebook}
+                  onShare={() => setNotebookToShare(notebook)}
+                />
               ))}
             </div>
           </div>
@@ -256,6 +262,17 @@ export const DashboardView: React.FC = () => {
           />
         </form>
       </Modal>
+
+      {/* Share Modal */}
+      <ShareModal
+        isOpen={!!notebookToShare}
+        onClose={() => setNotebookToShare(null)}
+        resourceType="notebook"
+        resourceId={notebookToShare?.id || ''}
+        title={notebookToShare?.title || ''}
+        initialIsPublic={notebookToShare?.isPublic}
+        initialToken={notebookToShare?.publicToken ?? null}
+      />
     </PageContainer>
   );
 };

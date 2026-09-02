@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Edit2, Trash2, Play, BookmarkIcon } from 'lucide-react';
+import { Edit2, Trash2, Play, BookmarkIcon, Share2 } from 'lucide-react';
 import { Button } from '../../../components/ui/Button.tsx';
 import type { Notebook } from '../types';
 
@@ -10,6 +10,8 @@ interface NotebookHeaderProps {
   onToggleBookmark: () => void;
   onOpenEditModal: () => void;
   onDelete: () => void;
+  onShare?: () => void;
+  isOwner?: boolean;
 }
 
 export const NotebookHeader: React.FC<NotebookHeaderProps> = ({
@@ -18,6 +20,8 @@ export const NotebookHeader: React.FC<NotebookHeaderProps> = ({
   onToggleBookmark,
   onOpenEditModal,
   onDelete,
+  onShare,
+  isOwner = true,
 }) => {
   const navigate = useNavigate();
 
@@ -55,6 +59,12 @@ export const NotebookHeader: React.FC<NotebookHeaderProps> = ({
           <BookmarkIcon className={`h-5 w-5 ${isBookmarked ? 'fill-amber-500' : ''}`} />
         </button>
 
+        {isOwner ? (
+          <Button variant="outline" onClick={onShare} leftIcon={<Share2 className="h-4.5 w-4.5" />}>
+            Compartilhar
+          </Button>
+        ) : null}
+
         <Button
           variant="outline"
           onClick={onOpenEditModal}
@@ -63,14 +73,16 @@ export const NotebookHeader: React.FC<NotebookHeaderProps> = ({
           Editar
         </Button>
 
-        <Button
-          variant="outline"
-          onClick={onDelete}
-          className="text-rose-500 border-rose-200 hover:bg-rose-50 dark:hover:bg-rose-950/20"
-          leftIcon={<Trash2 className="h-4.5 w-4.5" />}
-        >
-          Excluir
-        </Button>
+        {isOwner ? (
+          <Button
+            variant="outline"
+            onClick={onDelete}
+            className="text-rose-500 border-rose-200 hover:bg-rose-50 dark:hover:bg-rose-950/20"
+            leftIcon={<Trash2 className="h-4.5 w-4.5" />}
+          >
+            Excluir
+          </Button>
+        ) : null}
 
         <Button
           onClick={() => navigate(`/notebooks/${notebook.id}/study`)}

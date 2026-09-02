@@ -9,12 +9,15 @@ import {
   Trash2,
   Timer,
   GraduationCap,
+  Share2,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Card } from '../../../components/ui/Card.tsx';
 import { Button } from '../../../components/ui/Button.tsx';
 import { Input } from '../../../components/ui/Input.tsx';
 import { ConfirmDialog } from '../../../components/ui/ConfirmDialog.tsx';
+import { ShareModal } from '../../sharing/components/ShareModal.tsx';
+import { useAuth } from '../../auth/hooks/useAuth';
 import {
   useQuestions,
   useCreateQuestion,
@@ -57,6 +60,9 @@ export const QuestionsBank: React.FC<QuestionsBankProps> = ({
   initialNotebookId,
 }) => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+
+  const currentUserId = user?.id;
 
   const [filters, setFilters] = useState<{
     notebookId: string;
@@ -72,6 +78,7 @@ export const QuestionsBank: React.FC<QuestionsBankProps> = ({
   const [editing, setEditing] = useState<Question | null>(null);
   const [creatingExam, setCreatingExam] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Question | null>(null);
+  const [sharingTarget, setSharingTarget] = useState<Question | null>(null);
 
   const { data: questions = [], isLoading } = useQuestions({
     notebookId: filters.notebookId || undefined,
@@ -367,6 +374,17 @@ export const QuestionsBank: React.FC<QuestionsBankProps> = ({
                     </p>
                   </div>
                   <div className="flex items-center gap-1 flex-shrink-0">
+                    {q.userId === currentUserId && (
+                      <button
+                        type="button"
+                        onClick={() => setSharingTarget(q)}
+                        aria-label="Compartilhar questão"
+                        title="Compartilhar"
+                        className="p-2 rounded-lg text-slate-400 hover:text-brand-500 hover:bg-brand-50 dark:hover:bg-brand-950/20 transition-all cursor-pointer"
+                      >
+                        <Share2 className="h-4 w-4" />
+                      </button>
+                    )}
                     <button
                       type="button"
                       onClick={() => setEditing(q)}
@@ -434,6 +452,16 @@ export const QuestionsBank: React.FC<QuestionsBankProps> = ({
         confirmLabel="Excluir"
         variant="danger"
         isLoading={deleteQuestion.isPending}
+      />
+
+      <ShareModal
+        isOpen={!!sharingTarget}
+        onClose={() => setSharingTarget(null)}
+        resourceType="question"
+        resourceId={sharingTarget?.id || ''}
+        title={sharingTarget?.question || ''}
+        initialIsPublic={sharingTarget?.isPublic}
+        initialToken={sharingTarget?.publicToken ?? null}
       />
     </div>
   );

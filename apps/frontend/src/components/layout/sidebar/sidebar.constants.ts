@@ -8,12 +8,14 @@ import {
   Timeline,
   Target,
   Timer,
+  Share2,
 } from "lucide-react";
 import type { NavItemConfig, PlanningSubItem } from "./sidebar.types";
 
 export const DASHBOARD_PATH = "/dashboard";
 
 export const NAV_ITEMS: NavItemConfig[] = [
+  { path: "/shared", label: "Compartilhados", icon: Share2 },
   { path: "/todos", label: "Tarefas", icon: ListChecks },
   { path: "/tags", label: "Tags", icon: Tags },
   { path: "/bookmarks", label: "Marcadores", icon: BookmarkIcon },

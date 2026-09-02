@@ -1,10 +1,14 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { SharingService } from '../sharing/sharing.service';
 
 @Injectable()
 export class QuestionsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly sharing: SharingService,
+  ) {}
 
   async findAll(
     userId: string,
@@ -12,8 +16,14 @@ export class QuestionsService {
     theme?: string,
     questionType?: string,
   ) {
-    const where: Prisma.QuestionWhereInput = { userId };
-    if (notebookId) where.notebookId = notebookId;
+    const where: Prisma.QuestionWhereInput = {};
+    if (notebookId) {
+      await this.sharing.getVisibleContext(userId, 'notebook', notebookId);
+      where.notebookId = notebookId;
+    } else {
+      const sharedIds = await this.sharedQuestionIds(userId);
+      where.OR = [{ userId }, { id: { in: sharedIds } }];
+    }
     if (theme) where.theme = { contains: theme };
     if (questionType) where.questionType = questionType;
     return this.prisma.withConnection(() =>
@@ -29,9 +39,10 @@ export class QuestionsService {
   }
 
   async findOne(id: string, userId: string) {
+    await this.sharing.getVisibleContext(userId, 'question', id);
     const question = await this.prisma.withConnection(() =>
-      this.prisma.question.findFirst({
-        where: { id, userId },
+      this.prisma.question.findUnique({
+        where: { id },
         include: {
           notebook: { select: { title: true, color: true } },
           leaf: { select: { title: true } },
@@ -55,16 +66,9 @@ export class QuestionsService {
       theme?: string;
     },
   ) {
-    // Verify notebook ownership
-    const notebook = await this.prisma.withConnection(() =>
-      this.prisma.notebook.findFirst({
-        where: { id: data.notebookId, userId },
-      }),
-    );
-    if (!notebook) throw new NotFoundException('Caderno não encontrado');
+    await this.sharing.getEditableContext(userId, 'notebook', data.notebookId);
 
-    // Valida que a folha informada pertence ao caderno (e ao usuário)
-    // 🔐 SEC-03: impede apontar uma questão para a folha de outro usuário
+    // Valida que a folha informada pertence ao caderno
     if (data.leafId) {
       const leaf = await this.prisma.withConnection(() =>
         this.prisma.leaf.findFirst({
@@ -105,12 +109,7 @@ export class QuestionsService {
       theme?: string;
     },
   ) {
-    const question = await this.prisma.withConnection(() =>
-      this.prisma.question.findFirst({
-        where: { id, userId },
-      }),
-    );
-    if (!question) throw new NotFoundException('Questão não encontrada');
+    await this.sharing.getEditableContext(userId, 'question', id);
 
     const updates: Prisma.QuestionUpdateInput = {};
     if (data.question !== undefined) updates.question = data.question;
@@ -129,21 +128,40 @@ export class QuestionsService {
   }
 
   async remove(id: string, userId: string): Promise<void> {
-    const question = await this.prisma.withConnection(() =>
-      this.prisma.question.findFirst({
-        where: { id, userId },
-      }),
-    );
-    if (!question) throw new NotFoundException('Questão não encontrada');
+    await this.sharing.getOwnedContext(userId, 'question', id);
 
     await this.prisma.withConnection(() =>
       this.prisma.question.delete({ where: { id } }),
     );
   }
 
+  private async sharedQuestionIds(userId: string): Promise<string[]> {
+    const shares = await this.prisma.withConnection(() =>
+      this.prisma.share.findMany({
+        where: { sharedWithUserId: userId, resourceType: 'question' },
+        select: { resourceId: true },
+      }),
+    );
+    if (shares.length === 0) return [];
+    const ids = shares.map((s) => s.resourceId);
+    const questions = await this.prisma.withConnection(() =>
+      this.prisma.question.findMany({
+        where: { id: { in: ids } },
+        select: { id: true },
+      }),
+    );
+    return questions.map((q) => q.id);
+  }
+
   async getRandomQuestions(userId: string, limit: number = 10, notebookId?: string) {
-    const where: Prisma.QuestionWhereInput = { userId };
-    if (notebookId) where.notebookId = notebookId;
+    const where: Prisma.QuestionWhereInput = {};
+    if (notebookId) {
+      await this.sharing.getVisibleContext(userId, 'notebook', notebookId);
+      where.notebookId = notebookId;
+    } else {
+      const sharedIds = await this.sharedQuestionIds(userId);
+      where.OR = [{ userId }, { id: { in: sharedIds } }];
+    }
 
     const total = await this.prisma.withConnection(() =>
       this.prisma.question.count({ where }),
@@ -168,6 +186,8 @@ export class QuestionsService {
   }
 
   async generateFromFlashcard(flashcardId: string, userId: string) {
+    await this.sharing.getEditableContext(userId, 'flashcard', flashcardId);
+
     const flashcard = await this.prisma.withConnection(() =>
       this.prisma.flashcard.findUnique({
         where: { id: flashcardId },
@@ -175,9 +195,7 @@ export class QuestionsService {
       }),
     );
 
-    if (!flashcard || flashcard.notebook.userId !== userId) {
-      throw new NotFoundException('Flashcard não encontrado');
-    }
+    if (!flashcard) throw new NotFoundException('Flashcard não encontrado');
 
     // Converte front/back em uma questão de múltipla escolha simples
     const questionData = {

@@ -1,14 +1,24 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { SharingService } from '../sharing/sharing.service';
 
 @Injectable()
 export class MockExamsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly sharing: SharingService,
+  ) {}
 
   async findAll(userId: string, notebookId?: string) {
-    const where: Prisma.MockExamWhereInput = { userId };
-    if (notebookId) where.notebookId = notebookId;
+    const where: Prisma.MockExamWhereInput = {};
+    if (notebookId) {
+      await this.sharing.getVisibleContext(userId, 'notebook', notebookId);
+      where.notebookId = notebookId;
+    } else {
+      const sharedIds = await this.sharedExamIds(userId);
+      where.OR = [{ userId }, { id: { in: sharedIds } }];
+    }
     return this.prisma.withConnection(() =>
       this.prisma.mockExam.findMany({
         where,
@@ -23,7 +33,17 @@ export class MockExamsService {
     );
   }
 
-  /** Submete e corrige uma tentativa de simulado */
+  private async sharedExamIds(userId: string): Promise<string[]> {
+    const shares = await this.prisma.withConnection(() =>
+      this.prisma.share.findMany({
+        where: { sharedWithUserId: userId, resourceType: 'mockExam' },
+        select: { resourceId: true },
+      }),
+    );
+    return shares.map((s) => s.resourceId);
+  }
+
+  /** Submete e corrige uma tentativa de simulado (owner ou editor). */
   async submit(
     examId: string,
     userId: string,
@@ -32,9 +52,11 @@ export class MockExamsService {
       selfGrades?: Record<string, boolean>;
     },
   ) {
+    await this.sharing.getVisibleContext(userId, 'mockExam', examId);
+
     const exam = await this.prisma.withConnection(() =>
-      this.prisma.mockExam.findFirst({
-        where: { id: examId, userId },
+      this.prisma.mockExam.findUnique({
+        where: { id: examId },
         include: {
           questions: {
             orderBy: { order: 'asc' },
@@ -80,28 +102,27 @@ export class MockExamsService {
     );
   }
 
-  /** Lista as tentativas de um simulado (mais recentes primeiro) */
+  /** Lista as tentativas de um simulado (owner vê todas; editor vê as suas). */
   async findAttempts(examId: string, userId: string) {
-    const exam = await this.prisma.withConnection(() =>
-      this.prisma.mockExam.findFirst({
-        where: { id: examId, userId },
-        select: { id: true },
-      }),
-    );
-    if (!exam) throw new NotFoundException('Simulado não encontrado');
+    const level = await this.sharing.getAccessLevel(userId, 'mockExam', examId);
+    if (level === 'none') throw new NotFoundException('Simulado não encontrado');
+
+    const where: Prisma.MockExamAttemptWhereInput = { examId };
+    if (level === 'editor') where.userId = userId;
 
     return this.prisma.withConnection(() =>
       this.prisma.mockExamAttempt.findMany({
-        where: { examId },
+        where,
         orderBy: { createdAt: 'desc' },
       }),
     );
   }
 
   async findOne(id: string, userId: string) {
+    await this.sharing.getVisibleContext(userId, 'mockExam', id);
     const exam = await this.prisma.withConnection(() =>
-      this.prisma.mockExam.findFirst({
-        where: { id, userId },
+      this.prisma.mockExam.findUnique({
+        where: { id },
         include: {
           notebook: { select: { title: true, color: true } },
           questions: {
@@ -131,12 +152,7 @@ export class MockExamsService {
     },
   ) {
     if (data.notebookId) {
-      const notebook = await this.prisma.withConnection(() =>
-        this.prisma.notebook.findFirst({
-          where: { id: data.notebookId, userId },
-        }),
-      );
-      if (!notebook) throw new NotFoundException('Caderno não encontrado');
+      await this.sharing.getEditableContext(userId, 'notebook', data.notebookId);
     }
 
     return this.prisma.withConnection(() =>
@@ -153,19 +169,8 @@ export class MockExamsService {
   }
 
   async addQuestion(examId: string, questionId: string, userId: string) {
-    const exam = await this.prisma.withConnection(() =>
-      this.prisma.mockExam.findFirst({
-        where: { id: examId, userId },
-      }),
-    );
-    if (!exam) throw new NotFoundException('Simulado não encontrado');
-
-    const question = await this.prisma.withConnection(() =>
-      this.prisma.question.findFirst({
-        where: { id: questionId, userId },
-      }),
-    );
-    if (!question) throw new NotFoundException('Questão não encontrada');
+    await this.sharing.getEditableContext(userId, 'mockExam', examId);
+    await this.sharing.getEditableContext(userId, 'question', questionId);
 
     // Verifica se já existe
     const existing = await this.prisma.withConnection(() =>
@@ -202,12 +207,7 @@ export class MockExamsService {
   }
 
   async removeQuestion(examId: string, questionId: string, userId: string) {
-    const exam = await this.prisma.withConnection(() =>
-      this.prisma.mockExam.findFirst({
-        where: { id: examId, userId },
-      }),
-    );
-    if (!exam) throw new NotFoundException('Simulado não encontrado');
+    await this.sharing.getEditableContext(userId, 'mockExam', examId);
 
     await this.prisma.withConnection(() =>
       this.prisma.mockExamQuestion.delete({
@@ -229,21 +229,24 @@ export class MockExamsService {
     },
   ) {
     if (data.notebookId) {
-      const notebook = await this.prisma.withConnection(() =>
-        this.prisma.notebook.findFirst({
-          where: { id: data.notebookId, userId },
-        }),
-      );
-      if (!notebook) throw new NotFoundException('Caderno não encontrado');
+      await this.sharing.getEditableContext(userId, 'notebook', data.notebookId);
     }
 
     const ids = [...new Set(data.questionIds)];
     const found = await this.prisma.withConnection(() =>
       this.prisma.question.findMany({
-        where: { id: { in: ids }, userId },
-        select: { id: true },
+        where: { id: { in: ids } },
+        select: { id: true, notebookId: true },
       }),
     );
+
+    // Cada questão deve ser acessível (própria, compartilhada ou do caderno acessível)
+    for (const q of found) {
+      const level = await this.sharing.getAccessLevel(userId, 'question', q.id);
+      if (level === 'none') {
+        throw new NotFoundException('Uma ou mais questões não foram encontradas');
+      }
+    }
     if (found.length !== ids.length) {
       throw new NotFoundException('Uma ou mais questões não foram encontradas');
     }
@@ -274,9 +277,11 @@ export class MockExamsService {
   }
 
   async generateFromNotebook(userId: string, notebookId: string, title?: string) {
+    await this.sharing.getEditableContext(userId, 'notebook', notebookId);
+
     const questions = await this.prisma.withConnection(() =>
       this.prisma.question.findMany({
-        where: { userId, notebookId },
+        where: { notebookId },
         take: 20,
         orderBy: { createdAt: 'desc' },
       }),
@@ -287,8 +292,9 @@ export class MockExamsService {
     }
 
     const notebook = await this.prisma.withConnection(() =>
-      this.prisma.notebook.findFirst({
-        where: { id: notebookId, userId },
+      this.prisma.notebook.findUnique({
+        where: { id: notebookId },
+        select: { title: true },
       }),
     );
 
@@ -322,12 +328,7 @@ export class MockExamsService {
   }
 
   async remove(examId: string, userId: string): Promise<void> {
-    const exam = await this.prisma.withConnection(() =>
-      this.prisma.mockExam.findFirst({
-        where: { id: examId, userId },
-      }),
-    );
-    if (!exam) throw new NotFoundException('Simulado não encontrado');
+    await this.sharing.getOwnedContext(userId, 'mockExam', examId);
 
     await this.prisma.withConnection(() =>
       this.prisma.mockExam.delete({ where: { id: examId } }),

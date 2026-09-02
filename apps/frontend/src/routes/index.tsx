@@ -23,6 +23,8 @@ import FlashcardsStudyView from '../modules/study/views/FlashcardsStudyView.tsx'
 import QuestionsStudyView from '../modules/study/views/QuestionsStudyView.tsx';
 import MockExamsView from '../modules/study/views/MockExamsView.tsx';
 import ReviewsStudyView from '../modules/study/views/ReviewsStudyView.tsx';
+import SharedWithMeView from '../modules/sharing/views/SharedWithMeView.tsx';
+import PublicContentView from '../modules/sharing/views/PublicContentView.tsx';
 
 /* ─── Componentes nomeados e memoizados para cada rota ────────────── */
 
@@ -134,6 +136,16 @@ const ReviewsStudyPage = memo(function ReviewsStudyPage() {
   return <ReviewsStudyView />;
 });
 
+const SharedPage = memo(function SharedPage() {
+  return <SharedWithMeView />;
+});
+
+// Rota pública (sem login): visualização de links compartilhados.
+// NÃO usa PublicRoute — links públicos devem funcionar logados ou não.
+const PublicContentPage = memo(function PublicContentPage() {
+  return <PublicContentView />;
+});
+
 const DefaultRedirect = memo(function DefaultRedirect() {
   return <Navigate to="/dashboard" replace />;
 });
@@ -198,6 +210,10 @@ const router = createBrowserRouter([
         element: <BookmarksPage />,
       },
       {
+        path: 'shared',
+        element: <SharedPage />,
+      },
+      {
         path: 'trash',
         element: <TrashPage />,
       },
@@ -238,6 +254,10 @@ const router = createBrowserRouter([
         element: <ReviewsStudyPage />,
       },
     ],
+  },
+  {
+    path: '/public/:type/:id',
+    element: <PublicContentPage />,
   },
   {
     path: '*',

@@ -9,6 +9,10 @@ export const NotebookSchema = z.object({
   createdAt: z.string().datetime().or(z.date()),
   updatedAt: z.string().datetime().or(z.date()),
   leavesCount: z.number().int().nonnegative().default(0),
+  // Compartilhamento (presente nas listas/detalhe)
+  access: z.enum(['owner', 'editor']).optional(),
+  isPublic: z.boolean().optional(),
+  publicToken: z.string().nullable().optional(),
 });
 
 export type Notebook = z.infer<typeof NotebookSchema>;

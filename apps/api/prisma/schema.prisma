@@ -42,6 +42,27 @@ model User {
   mockExams        MockExam[]
   mockExamAttempts MockExamAttempt[]
   refreshTokens    RefreshToken[]
+  sharesOwned      Share[]           @relation("ShareOwner")
+  sharesReceived   Share[]           @relation("ShareRecipient")
+}
+
+/// Compartilhamentos de conteúdo entre usuários (item pode ser editado pelo
+/// destinatário). O dono do recurso é sempre o criador; compartilhar concede
+/// acesso a usuários específicos; deixar público gera um link sem login.
+model Share {
+  id               String   @id @default(uuid())
+  resourceType     String // "notebook" | "leaf" | "question" | "flashcard" | "mockExam"
+  resourceId       String
+  ownerId          String   // Quem compartilha (dono do recurso)
+  sharedWithUserId String
+  createdAt        DateTime @default(now())
+
+  owner          User @relation("ShareOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  sharedWithUser User @relation("ShareRecipient", fields: [sharedWithUserId], references: [id], onDelete: Cascade)
+
+  @@unique([resourceType, resourceId, sharedWithUserId])
+  @@index([sharedWithUserId])
+  @@index([resourceType, resourceId])
 }
 
 /// Refresh tokens rotacionáveis (família de tokens por sessão)
@@ -70,6 +91,8 @@ model Notebook {
   title       String
   description String?
   color       String
+  isPublic    Boolean   @default(false) // Link público (acesso sem login)
+  publicToken String?   @unique // Token do link público
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   deletedAt   DateTime? // Soft-delete: nulo = ativo, preenchido = na lixeira
@@ -97,6 +120,8 @@ model Leaf {
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
   position   Int       @default(0) // Ordenação manual (drag & drop)
+  isPublic   Boolean   @default(false) // Link público (acesso sem login)
+  publicToken String?  @unique // Token do link público
   archivedAt DateTime? // Arquivado: nulo = ativo, preenchido = arquivado
   deletedAt  DateTime? // Soft-delete: nulo = ativo, preenchido = na lixeira
 
@@ -179,6 +204,8 @@ model Question {
   explanation   String?
   questionType  String   @default("multiple_choice") // "multiple_choice" | "true_false" | "short_answer" | "dissertative"
   theme         String?
+  isPublic      Boolean  @default(false) // Link público (acesso sem login)
+  publicToken   String?  @unique // Token do link público
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -196,6 +223,8 @@ model MockExam {
   title       String
   description String?
   timeLimit   Int? // em minutos
+  isPublic    Boolean   @default(false) // Link público (acesso sem login)
+  publicToken String?   @unique // Token do link público
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -249,6 +278,8 @@ model Flashcard {
   interval       Int       @default(0)
   easeFactor     Float     @default(2.5)
   nextReviewDate DateTime
+  isPublic       Boolean   @default(false) // Link público (acesso sem login)
+  publicToken    String?   @unique // Token do link público
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
   deletedAt      DateTime? // Soft-delete: nulo = ativo, preenchido = na lixeira

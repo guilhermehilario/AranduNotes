@@ -2,9 +2,9 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
-  ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { SharingService } from '../sharing/sharing.service';
 
 export interface SM2Result {
   repetitions: number;
@@ -18,7 +18,10 @@ const MIN_EASE_FACTOR = 1.3;
 
 @Injectable()
 export class FlashcardsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly sharing: SharingService,
+  ) {}
 
   private computeSM2(
     card: {
@@ -74,16 +77,9 @@ export class FlashcardsService {
       back: string;
     },
   ) {
-    // Verify ownership via notebook
-    const notebook = await this.prisma.withConnection(() =>
-      this.prisma.notebook.findFirst({
-        where: { id: data.notebookId, userId },
-      }),
-    );
-    if (!notebook) throw new NotFoundException('Caderno não encontrado');
+    await this.sharing.getEditableContext(userId, 'notebook', data.notebookId);
 
-    // Valida que a folha pertence ao caderno (e ao usuário)
-    // 🔐 SEC-02: impede apontar um flashcard para a folha de outro usuário
+    // Valida que a folha pertence ao caderno
     const leaf = await this.prisma.withConnection(() =>
       this.prisma.leaf.findFirst({
         where: { id: data.leafId, notebookId: data.notebookId },
@@ -111,12 +107,7 @@ export class FlashcardsService {
   }
 
   async findByNotebook(notebookId: string, userId: string) {
-    const notebook = await this.prisma.withConnection(() =>
-      this.prisma.notebook.findFirst({
-        where: { id: notebookId, userId },
-      }),
-    );
-    if (!notebook) throw new NotFoundException('Caderno não encontrado');
+    await this.sharing.getVisibleContext(userId, 'notebook', notebookId);
 
     return this.prisma.withConnection(() =>
       this.prisma.flashcard.findMany({
@@ -131,6 +122,8 @@ export class FlashcardsService {
     userId: string,
     data: { front?: string; back?: string },
   ) {
+    await this.sharing.getEditableContext(userId, 'flashcard', cardId);
+
     const card = await this.prisma.withConnection(() =>
       this.prisma.flashcard.findUnique({
         where: { id: cardId },
@@ -139,9 +132,6 @@ export class FlashcardsService {
     );
 
     if (!card) throw new NotFoundException('Flashcard não encontrado');
-    if (card.notebook.userId !== userId) {
-      throw new ForbiddenException('Acesso negado');
-    }
 
     const updates: Record<string, string> = {};
     if (data.front !== undefined) updates.front = data.front;
@@ -160,6 +150,8 @@ export class FlashcardsService {
   }
 
   async review(cardId: string, userId: string, score: number) {
+    await this.sharing.getEditableContext(userId, 'flashcard', cardId);
+
     const card = await this.prisma.withConnection(() =>
       this.prisma.flashcard.findUnique({
         where: { id: cardId },
@@ -168,9 +160,6 @@ export class FlashcardsService {
     );
 
     if (!card) throw new NotFoundException('Flashcard não encontrado');
-    if (card.notebook.userId !== userId) {
-      throw new ForbiddenException('Acesso negado');
-    }
 
     const sm2Result = this.computeSM2(card, score);
 

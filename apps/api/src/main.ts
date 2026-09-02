@@ -141,8 +141,14 @@ async function bootstrap() {
     if (!req.headers.origin) {
       // Normaliza barra final (/health/ == /health) para não quebrar monitores
       const normalizedPath = req.path.replace(/\/+$/, "");
+      // Endpoints públicos (links sem login) podem ser acessados por navegação
+      // direta do browser, que não envia header Origin em GET.
+      const isPublicPath =
+        normalizedPath.startsWith("/api/public") ||
+        normalizedPath.startsWith("/public");
       const isExempt =
-        READ_METHODS.has(req.method) && NO_ORIGIN_EXEMPT_PATHS.has(normalizedPath);
+        READ_METHODS.has(req.method) &&
+        (NO_ORIGIN_EXEMPT_PATHS.has(normalizedPath) || isPublicPath);
       if (!isExempt) {
         console.warn(
           `[SEC] Requisição sem Origin bloqueada: ${req.method} ${JSON.stringify(req.path)}`,

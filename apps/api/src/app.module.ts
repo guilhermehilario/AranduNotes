@@ -16,6 +16,7 @@ import { PlanningModule } from "./planning/planning.module";
 import { QuestionsModule } from "./questions/questions.module";
 import { MockExamsModule } from "./mock-exams/mock-exams.module";
 import { StudiesModule } from "./studies/studies.module";
+import { SharingModule } from "./sharing/sharing.module";
 import { AppController } from "./app.controller";
 import { AllExceptionsFilter } from "./common/filters/http-exception.filter";
 
@@ -44,6 +45,7 @@ import { AllExceptionsFilter } from "./common/filters/http-exception.filter";
     QuestionsModule,
     MockExamsModule,
     StudiesModule,
+    SharingModule,
   ],
   controllers: [AppController],
   providers: [

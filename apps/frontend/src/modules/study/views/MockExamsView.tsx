@@ -8,6 +8,7 @@ import {
   Play,
   Plus,
   X,
+  Share2,
 } from "lucide-react";
 import { useMockExams, useDeleteMockExam, useSubmitMockExam } from "../hooks/useMockExams";
 import { PageContainer } from "../../../components/ui/PageContainer.tsx";
@@ -16,13 +17,18 @@ import { Button } from "../../../components/ui/Button.tsx";
 import { ConfirmDialog } from "../../../components/ui/ConfirmDialog.tsx";
 import { ExamTakingView } from "../components/ExamTakingView";
 import { ExamResultView } from "../components/ExamResultView";
+import { ShareModal } from "../../sharing/components/ShareModal.tsx";
+import { useAuth } from "../../auth/hooks/useAuth";
 import type { MockExam } from "../types";
 
 export const MockExamsView: React.FC = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const currentUserId = user?.id;
   const [searchParams] = useSearchParams();
   const notebookId = searchParams.get("notebookId");
   const [examToDelete, setExamToDelete] = useState<string | null>(null);
+  const [examToShare, setExamToShare] = useState<MockExam | null>(null);
   const [activeExam, setActiveExam] = useState<MockExam | null>(null);
   const [examAnswers, setExamAnswers] = useState<Record<string, string>>({});
   const [examStep, setExamStep] = useState<"list" | "taking" | "result">("list");
@@ -198,13 +204,28 @@ export const MockExamsView: React.FC = () => {
                   >
                     Iniciar
                   </Button>
-                  <button
-                    type="button"
-                    onClick={() => setExamToDelete(exam.id)}
-                    className="p-2 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-all cursor-pointer"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
+                  {exam.userId === currentUserId && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setExamToShare(exam)}
+                        className="p-2 rounded-lg text-slate-400 hover:text-brand-500 hover:bg-brand-50 dark:hover:bg-brand-950/20 transition-all cursor-pointer"
+                        title="Compartilhar"
+                        aria-label="Compartilhar simulado"
+                      >
+                        <Share2 className="h-4 w-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setExamToDelete(exam.id)}
+                        className="p-2 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-all cursor-pointer"
+                        title="Excluir"
+                        aria-label="Excluir simulado"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
             </Card>
@@ -220,6 +241,16 @@ export const MockExamsView: React.FC = () => {
         message="Tem certeza que deseja excluir este simulado? Esta ação não pode ser desfeita."
         confirmLabel="Excluir"
         isLoading={deleteExam.isPending}
+      />
+
+      <ShareModal
+        isOpen={!!examToShare}
+        onClose={() => setExamToShare(null)}
+        resourceType="mockExam"
+        resourceId={examToShare?.id || ''}
+        title={examToShare?.title || ''}
+        initialIsPublic={examToShare?.isPublic}
+        initialToken={examToShare?.publicToken ?? null}
       />
     </PageContainer>
   );

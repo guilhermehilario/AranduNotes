@@ -1,4 +1,5 @@
 import { useParams, Link } from "react-router-dom";
+import { useState } from "react";
 import { Plus, FileText, Loader2 } from "lucide-react";
 import { useNotebookData } from "../hooks/useNotebookData";
 import { useNotebookActions } from "../hooks/useNotebookActions";
@@ -14,9 +15,11 @@ import { CreateFlashcardModal } from "../components/CreateFlashcardModal";
 import { EditFlashcardModal } from "../components/EditFlashcardModal";
 import { EditNotebookModal } from "../components/EditNotebookModal";
 import { ConfirmDialog } from "../../../components/ui/ConfirmDialog.tsx";
+import { ShareModal } from "../../sharing/components/ShareModal.tsx";
 
 export const NotebookView: React.FC = () => {
   const { notebookId } = useParams<{ notebookId: string }>();
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
   // ── Data fetching centralizado ──
   const {
@@ -123,6 +126,19 @@ export const NotebookView: React.FC = () => {
         onToggleBookmark={toggleBookmark}
         onOpenEditModal={handleOpenEditModal}
         onDelete={() => setConfirmDeleteOpen(true)}
+        onShare={() => setIsShareModalOpen(true)}
+        isOwner={notebook.access !== 'editor'}
+      />
+
+      {/* Share Modal */}
+      <ShareModal
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        resourceType="notebook"
+        resourceId={notebook.id}
+        title={notebook.title}
+        initialIsPublic={notebook.isPublic}
+        initialToken={notebook.publicToken ?? null}
       />
 
       {/* Listagem de Folhas */}

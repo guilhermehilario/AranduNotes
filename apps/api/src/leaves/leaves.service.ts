@@ -1,13 +1,13 @@
 import {
   Injectable,
   NotFoundException,
-  ForbiddenException,
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { EditHistoryService } from '../trash/edit-history.service';
 import { buildTree } from '../prisma/utils/build-tree.util';
 import { AiLeavesService } from './ai-leaves.service';
+import { SharingService } from '../sharing/sharing.service';
 
 @Injectable()
 export class LeavesService {
@@ -15,31 +15,11 @@ export class LeavesService {
     private readonly prisma: PrismaService,
     private readonly editHistory: EditHistoryService,
     private readonly aiLeaves: AiLeavesService,
+    private readonly sharing: SharingService,
   ) {}
 
-  private async verifyLeafOwnership(leafId: string, userId: string) {
-    const leaf = await this.prisma.withConnection(() =>
-      this.prisma.leaf.findUnique({
-        where: { id: leafId },
-        include: { notebook: true },
-      }),
-    );
-
-    if (!leaf) return { leaf: null, error: 'Folha não encontrada' };
-    if (leaf.notebook.userId !== userId) {
-      return { leaf: null, error: 'Acesso negado' };
-    }
-
-    return { leaf, error: null };
-  }
-
   async findByNotebook(notebookId: string, userId: string) {
-    const notebook = await this.prisma.withConnection(() =>
-      this.prisma.notebook.findFirst({
-        where: { id: notebookId, userId, deletedAt: null },
-      }),
-    );
-    if (!notebook) throw new NotFoundException('Caderno não encontrado');
+    await this.sharing.getVisibleContext(userId, 'notebook', notebookId);
 
     return this.prisma.withConnection(() =>
       this.prisma.leaf.findMany({
@@ -65,11 +45,7 @@ export class LeavesService {
   }
 
   async findOne(leafId: string, userId: string) {
-    const { error } = await this.verifyLeafOwnership(leafId, userId);
-    if (error) {
-      if (error === 'Acesso negado') throw new ForbiddenException(error);
-      throw new NotFoundException(error);
-    }
+    await this.sharing.getVisibleContext(userId, 'leaf', leafId);
 
     const leafWithParents = await this.prisma.withConnection(() =>
       this.prisma.leaf.findUnique({
@@ -92,6 +68,7 @@ export class LeavesService {
       }),
     );
 
+    if (!leafWithParents) throw new NotFoundException('Folha não encontrada');
     return leafWithParents;
   }
 
@@ -100,9 +77,12 @@ export class LeavesService {
     userId: string,
     data: { title: string; content?: string; rawText?: string; parentId?: string },
   ) {
+    await this.sharing.getEditableContext(userId, 'notebook', notebookId);
+
     const notebook = await this.prisma.withConnection(() =>
-      this.prisma.notebook.findFirst({
-        where: { id: notebookId, userId },
+      this.prisma.notebook.findUnique({
+        where: { id: notebookId },
+        select: { id: true },
       }),
     );
     if (!notebook) throw new NotFoundException('Caderno não encontrado');
@@ -169,11 +149,14 @@ export class LeavesService {
       parentId?: string | null;
     },
   ) {
-    const { leaf, error } = await this.verifyLeafOwnership(leafId, userId);
-    if (error) {
-      if (error === 'Acesso negado') throw new ForbiddenException(error);
-      throw new NotFoundException(error);
-    }
+    const leaf = await this.sharing.getEditableContext(userId, 'leaf', leafId);
+
+    const current = await this.prisma.withConnection(() =>
+      this.prisma.leaf.findUnique({
+        where: { id: leafId },
+        select: { title: true, notebookId: true },
+      }),
+    );
 
     const updated = await this.prisma.withConnection(() =>
       this.prisma.leaf.update({
@@ -188,13 +171,13 @@ export class LeavesService {
       }),
     );
 
-    if (data.title !== undefined && data.title !== leaf?.title) {
+    if (data.title !== undefined && data.title !== current?.title) {
       await this.editHistory.record(userId, {
         leafId,
-        notebookId: leaf!.notebookId,
+        notebookId: leaf.notebookId ?? undefined,
         action: 'updated',
         fieldName: 'title',
-        oldValue: leaf?.title,
+        oldValue: current?.title,
         newValue: data.title,
       });
     }
@@ -211,11 +194,7 @@ export class LeavesService {
   }
 
   async findFlashcards(leafId: string, userId: string) {
-    const { error } = await this.verifyLeafOwnership(leafId, userId);
-    if (error) {
-      if (error === 'Acesso negado') throw new ForbiddenException(error);
-      throw new NotFoundException(error);
-    }
+    await this.sharing.getEditableContext(userId, 'leaf', leafId);
 
     return this.prisma.withConnection(() =>
       this.prisma.flashcard.findMany({
@@ -226,11 +205,7 @@ export class LeavesService {
   }
 
   async archive(leafId: string, userId: string) {
-    const { error } = await this.verifyLeafOwnership(leafId, userId);
-    if (error) {
-      if (error === 'Acesso negado') throw new ForbiddenException(error);
-      throw new NotFoundException(error);
-    }
+    await this.sharing.getEditableContext(userId, 'leaf', leafId);
 
     const now = new Date();
     return this.prisma.withConnection(() =>
@@ -242,11 +217,7 @@ export class LeavesService {
   }
 
   async unarchive(leafId: string, userId: string) {
-    const { error } = await this.verifyLeafOwnership(leafId, userId);
-    if (error) {
-      if (error === 'Acesso negado') throw new ForbiddenException(error);
-      throw new NotFoundException(error);
-    }
+    await this.sharing.getEditableContext(userId, 'leaf', leafId);
 
     return this.prisma.withConnection(() =>
       this.prisma.leaf.update({
@@ -279,12 +250,23 @@ export class LeavesService {
   ) {
     const { orderedIds } = data;
 
-    // Verifica se todas as folhas pertencem ao usuário
+    // Determina o caderno (primeira folha) e exige permissão de edição
+    const first = await this.prisma.withConnection(() =>
+      this.prisma.leaf.findUnique({
+        where: { id: orderedIds[0] },
+        select: { notebookId: true },
+      }),
+    );
+    if (first) {
+      await this.sharing.getEditableContext(userId, 'notebook', first.notebookId);
+    }
+
+    // Verifica se todas as folhas pertencem ao mesmo caderno acessível
     const leaves = await this.prisma.withConnection(() =>
       this.prisma.leaf.findMany({
         where: {
           id: { in: orderedIds },
-          notebook: { userId },
+          notebookId: first?.notebookId,
         },
       }),
     );
@@ -306,12 +288,7 @@ export class LeavesService {
   }
 
   async getLeafHierarchy(notebookId: string, userId: string) {
-    const notebook = await this.prisma.withConnection(() =>
-      this.prisma.notebook.findFirst({
-        where: { id: notebookId, userId },
-      }),
-    );
-    if (!notebook) throw new NotFoundException('Caderno não encontrado');
+    await this.sharing.getVisibleContext(userId, 'notebook', notebookId);
 
     const allLeaves = await this.prisma.withConnection(() =>
       this.prisma.leaf.findMany({
