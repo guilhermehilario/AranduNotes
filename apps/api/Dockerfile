@@ -52,14 +52,14 @@ COPY --from=build /app /app
 
 EXPOSE 3000
 
-# 🔐 BAIXO-40: Rodar como usuário não-root
-RUN groupadd -r app && useradd -r -g app -d /app -s /sbin/nologin app && \
-    chown -R app:app /app
-USER app
-
 # Entrypoint prepares the database (runs Prisma migrations, then starts the app)
 COPY apps/api/docker-entrypoint.js /app/docker-entrypoint.js
 RUN chmod +x /app/docker-entrypoint.js
+
+# 🔐 BAIXO-40: Rodar como usuário não-root (cópia/chown do entrypoint já feita como root)
+RUN groupadd -r app && useradd -r -g app -d /app -s /sbin/nologin app && \
+    chown -R app:app /app
+USER app
 
 ENTRYPOINT ["node", "/app/docker-entrypoint.js"]
 CMD ["node", "apps/api/dist/main.js"]
