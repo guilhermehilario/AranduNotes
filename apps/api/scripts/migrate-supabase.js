@@ -61,6 +61,27 @@ function log(msg) {
 }
 
 /**
+ * Monta a configuração SSL do pg.
+ *
+ * - sslmode=disable => sem TLS (apenas testes locais)
+ * - PGSSLROOTCERT (caminho para um PEM com a(s) CA(s) raiz/chain) => valida o
+ *   certificado contra essa âncora, permitindo CAs privadas como a da Supabase
+ *   (conexão direta db.<ref>.supabase.co) sem desativar a validação.
+ * - default => sslmode=require com validação contra o trust store do sistema
+ *   (compatível com o pooler do Supabase, que usa CA pública).
+ */
+function buildSslConfig(urlWantsDisable) {
+  if (urlWantsDisable) return undefined;
+
+  if (process.env.PGSSLROOTCERT) {
+    const ca = fs.readFileSync(process.env.PGSSLROOTCERT, "utf8");
+    return { rejectUnauthorized: true, ca };
+  }
+
+  return { rejectUnauthorized: true };
+}
+
+/**
  * Le e ordena as migrations por nome de pasta (timestamp).
  */
 function getMigrationDirs() {
@@ -94,7 +115,9 @@ function getMigrationDirs() {
 }
 
 /**
- * Cria a tabela _prisma_migrations se nao existir.
+ * Cria a tabela _prisma_migrations se nao existir e a deixa em estado
+ * utilizável (o startMigration usa ON CONFLICT em migration_name, que exige
+ * uma constraint UNIQUE).
  */
 async function ensureMigrationsTable(client) {
   await client.query(`
@@ -108,6 +131,25 @@ async function ensureMigrationsTable(client) {
       "started_at"              TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
       "applied_steps_count"     INTEGER NOT NULL DEFAULT 0
     );
+  `);
+
+  // Auto-cura de tabelas antigas criadas sem UNIQUE: remove registros órfãos
+  // (started sem finished) que duplicam uma linha já concluída da mesma
+  // migration. São sobras de execuções abortadas; a linha concluída fica.
+  await client.query(`
+    DELETE FROM "_prisma_migrations" AS a
+    USING "_prisma_migrations" AS b
+    WHERE a."migration_name" = b."migration_name"
+      AND a."finished_at" IS NULL
+      AND b."finished_at" IS NOT NULL
+  `);
+
+  // Garante a constraint de unicidade (mesmo nome usado pelo `prisma migrate`),
+  // exigida pelo ON CONFLICT do startMigration. Se ainda existir duplicata sem
+  // linha concluída, a criação falhará de forma visível (não silenciosa).
+  await client.query(`
+    CREATE UNIQUE INDEX IF NOT EXISTS "_prisma_migrations_migration_name_key"
+    ON "_prisma_migrations"("migration_name")
   `);
 }
 
@@ -165,6 +207,89 @@ function isSqliteMigration(sqlPath) {
   );
 }
 
+/**
+ * Divide um script SQL em statements individuais, ignorando o caractere ";" 
+ * dentro de strings entre aspas simples e dentro de blocos $-quoted ($$...$$),
+ * que aparecem em plpgsql (funções/procedures/blocos DO).
+ */
+function splitStatements(sql) {
+  const statements = [];
+  let current = "";
+  let i = 0;
+  const n = sql.length;
+
+  while (i < n) {
+    const ch = sql[i];
+
+    // Comentário de linha (-- ...) até o fim da linha
+    if (ch === "-" && sql[i + 1] === "-") {
+      while (i < n && sql[i] !== "\n") {
+        current += sql[i];
+        i++;
+      }
+      continue;
+    }
+
+    // String entre aspas simples ('' = escape)
+    if (ch === "'") {
+      current += ch;
+      i++;
+      while (i < n) {
+        if (sql[i] === "'") {
+          current += sql[i];
+          i++;
+          if (sql[i] === "'") {
+            // '' escapado
+            current += sql[i];
+            i++;
+            continue;
+          }
+          break;
+        }
+        current += sql[i];
+        i++;
+      }
+      continue;
+    }
+
+    // Bloco $-quoted ($$ ou $tag$)
+    if (ch === "$") {
+      const match = /^\$[A-Za-z0-9_]*\$/.exec(sql.slice(i));
+      if (match) {
+        const tag = match[0];
+        current += tag;
+        i += tag.length;
+        const endTag = sql.indexOf(tag, i);
+        if (endTag === -1) {
+          current += sql.slice(i);
+          i = n;
+        } else {
+          current += sql.slice(i, endTag + tag.length);
+          i = endTag + tag.length;
+        }
+        continue;
+      }
+    }
+
+    // Fim de statement
+    if (ch === ";") {
+      const trimmed = current.trim();
+      if (trimmed.length > 0) statements.push(trimmed);
+      current = "";
+      i++;
+      continue;
+    }
+
+    current += ch;
+    i++;
+  }
+
+  const trimmed = current.trim();
+  if (trimmed.length > 0) statements.push(trimmed);
+
+  return statements;
+}
+
 async function main() {
   log("🔄 Iniciando migracao Supabase...");
 
@@ -172,15 +297,15 @@ async function main() {
   // rejectUnauthorized: false permite MITM; sslmode=require valida o certificado
   // sem precisar do CA bundle (compatível com PgBouncer do Supabase).
   const dbUrl = new URL(DATABASE_URL);
-  if (!dbUrl.searchParams.has("sslmode")) {
-    dbUrl.searchParams.set("sslmode", "require");
-  }
+  const urlWantsDisable = dbUrl.searchParams.get("sslmode") === "disable";
+  // O TLS é controlado pela opção `ssl` do Pool (buildSslConfig). Remover o
+  // parâmetro da URL evita que o pg-connection-string monte uma config SSL
+  // própria (ssl: {}) e sobrescreva a nossa (incl. `ca` quando PGSSLROOTCERT).
+  dbUrl.searchParams.delete("sslmode");
 
   const pool = new Pool({
     connectionString: dbUrl.toString(),
-    ssl: dbUrl.searchParams.get("sslmode") === "disable"
-      ? undefined
-      : { rejectUnauthorized: true },
+    ssl: buildSslConfig(urlWantsDisable),
     max: 2,
   });
 
@@ -254,11 +379,9 @@ async function main() {
         continue;
       }
 
-      // Divide em statements
-      const statements = cleanedSql
-        .split(";")
-        .map((s) => s.trim())
-        .filter((s) => s.length > 0);
+      // Divide em statements, respeitando strings entre aspas simples e blocos
+      // dollar-quoted ($$...$$) para não quebrar plpgsql (procedures/DO).
+      const statements = splitStatements(cleanedSql);
 
       await startMigration(client, migrationId, migration.name, migration.hash);
 

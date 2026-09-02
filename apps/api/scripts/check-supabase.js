@@ -48,6 +48,24 @@ if (!DATABASE_URL) {
   process.exit(1);
 }
 
+/**
+ * Monta a configuração SSL do pg (mesma lógica do migrate-supabase.js):
+ * - sslmode=disable => sem TLS
+ * - PGSSLROOTCERT => valida contra a CA/chain informada (ex.: CA privada da
+ *   Supabase na conexão direta) sem desativar a validação
+ * - default => sslmode=require contra o trust store do sistema
+ */
+function buildSslConfig(urlWantsDisable) {
+  if (urlWantsDisable) return undefined;
+
+  if (process.env.PGSSLROOTCERT) {
+    const ca = fs.readFileSync(process.env.PGSSLROOTCERT, "utf8");
+    return { rejectUnauthorized: true, ca };
+  }
+
+  return { rejectUnauthorized: true };
+}
+
 // Tabelas esperadas pelo schema.prisma (entidades principais)
 const EXPECTED_TABLES = [
   "User",
@@ -88,15 +106,15 @@ const BASELINED_MIGRATIONS = [
 
 async function main() {
   const dbUrl = new URL(DATABASE_URL);
-  if (!dbUrl.searchParams.has("sslmode")) {
-    dbUrl.searchParams.set("sslmode", "require");
-  }
+  const urlWantsDisable = dbUrl.searchParams.get("sslmode") === "disable";
+  // O TLS é controlado pela opção `ssl` do Pool (buildSslConfig). Remover o
+  // parâmetro da URL evita que o pg-connection-string monte uma config SSL
+  // própria e sobrescreva a nossa (incl. `ca` quando PGSSLROOTCERT).
+  dbUrl.searchParams.delete("sslmode");
 
   const pool = new Pool({
     connectionString: dbUrl.toString(),
-    ssl: dbUrl.searchParams.get("sslmode") === "disable"
-      ? undefined
-      : { rejectUnauthorized: true },
+    ssl: buildSslConfig(urlWantsDisable),
     max: 2,
   });
 
