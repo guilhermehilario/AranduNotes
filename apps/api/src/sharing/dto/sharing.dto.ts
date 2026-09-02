@@ -1,4 +1,4 @@
-import { IsBoolean, IsEmail, IsIn, IsOptional, IsString, IsUUID, MinLength } from "class-validator";
+import { IsArray, IsBoolean, IsEmail, IsIn, IsOptional, IsString, IsUUID, MinLength } from "class-validator";
 import { SHAREABLE_TYPES } from "../sharing.types";
 
 export class CreateShareDto {
@@ -15,6 +15,17 @@ export class CreateShareDto {
   @IsOptional()
   @IsEmail()
   email?: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsUUID("all", { each: true })
+  leafIds?: string[];
+}
+
+export class SetShareScopeDto {
+  @IsArray()
+  @IsUUID("all", { each: true })
+  leafIds: string[];
 }
 
 export class ListSharesDto {

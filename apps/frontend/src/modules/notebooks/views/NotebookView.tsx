@@ -1,6 +1,6 @@
 import { useParams, Link } from "react-router-dom";
 import { useState } from "react";
-import { Plus, FileText, Loader2 } from "lucide-react";
+import { Plus, FileText, Loader2, Share2, LayoutGrid } from "lucide-react";
 import { useNotebookData } from "../hooks/useNotebookData";
 import { useNotebookActions } from "../hooks/useNotebookActions";
 import { useNotebookLeafCreation } from "../hooks/useNotebookLeafCreation";
@@ -15,11 +15,13 @@ import { CreateFlashcardModal } from "../components/CreateFlashcardModal";
 import { EditFlashcardModal } from "../components/EditFlashcardModal";
 import { EditNotebookModal } from "../components/EditNotebookModal";
 import { ConfirmDialog } from "../../../components/ui/ConfirmDialog.tsx";
-import { ShareModal } from "../../sharing/components/ShareModal.tsx";
+import { NotebookShareSettings } from "../../sharing/components/NotebookShareSettings.tsx";
+
+type NotebookTab = 'conteudo' | 'compartilhar';
 
 export const NotebookView: React.FC = () => {
   const { notebookId } = useParams<{ notebookId: string }>();
-  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [tab, setTab] = useState<NotebookTab>('conteudo');
 
   // ── Data fetching centralizado ──
   const {
@@ -126,22 +128,55 @@ export const NotebookView: React.FC = () => {
         onToggleBookmark={toggleBookmark}
         onOpenEditModal={handleOpenEditModal}
         onDelete={() => setConfirmDeleteOpen(true)}
-        onShare={() => setIsShareModalOpen(true)}
+        onShare={() => setTab('compartilhar')}
         isOwner={notebook.access !== 'editor'}
       />
 
-      {/* Share Modal */}
-      <ShareModal
-        isOpen={isShareModalOpen}
-        onClose={() => setIsShareModalOpen(false)}
-        resourceType="notebook"
-        resourceId={notebook.id}
-        title={notebook.title}
-        initialIsPublic={notebook.isPublic}
-        initialToken={notebook.publicToken ?? null}
-      />
+      {/* Abas */}
+      <div
+        className="flex items-center gap-2 mt-4 rounded-2xl p-1 w-fit"
+        style={{ background: 'var(--bg-surface-hover)' }}
+      >
+        <button
+          type="button"
+          onClick={() => setTab('conteudo')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all cursor-pointer ${
+            tab === 'conteudo'
+              ? 'text-white bg-brand-500'
+              : 'text-slate-500 dark:text-dark-400 hover:text-brand-500'
+          }`}
+        >
+          <LayoutGrid className="h-4 w-4" />
+          Conteúdo
+        </button>
+        {notebook.access !== 'editor' && (
+          <button
+            type="button"
+            onClick={() => setTab('compartilhar')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all cursor-pointer ${
+              tab === 'compartilhar'
+                ? 'text-white bg-brand-500'
+                : 'text-slate-500 dark:text-dark-400 hover:text-brand-500'
+            }`}
+          >
+            <Share2 className="h-4 w-4" />
+            Compartilhar
+          </button>
+        )}
+      </div>
 
-      {/* Listagem de Folhas */}
+      {tab === 'compartilhar' && notebook.access !== 'editor' ? (
+        <div className="mt-6 rounded-2xl p-5" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)' }}>
+          <NotebookShareSettings
+            notebookId={notebook.id}
+            isPublic={notebook.isPublic}
+            publicToken={notebook.publicToken ?? null}
+            leaves={leaves}
+          />
+        </div>
+      ) : (
+        <>
+          {/* Listagem de Folhas */}
       <div className="flex flex-col gap-4 mt-4">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
           <h2 className="text-lg sm:text-xl font-heading font-bold text-slate-800 dark:text-dark-100 m-0">
@@ -210,6 +245,8 @@ export const NotebookView: React.FC = () => {
         onEditFlashcard={onEditFlashcard}
         onDeleteFlashcard={onDeleteFlashcard}
       />
+        </>
+      )}
 
       {/* Modal: Criar Folha */}
       <CreateLeafModal

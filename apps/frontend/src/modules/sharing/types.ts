@@ -17,12 +17,19 @@ export const ResourceUserSchema = z.object({
 });
 export type ResourceUser = z.infer<typeof ResourceUserSchema>;
 
+export const ShareScopeItemSchema = z.object({
+  id: z.string().uuid(),
+  leafId: z.string().uuid(),
+});
+export type ShareScopeItem = z.infer<typeof ShareScopeItemSchema>;
+
 export const ShareSchema = z.object({
   id: z.string().uuid(),
   resourceType: z.enum(SHAREABLE_RESOURCE_TYPES),
   resourceId: z.string().uuid(),
   user: ResourceUserSchema,
   createdAt: z.string().datetime().or(z.date()),
+  scope: z.array(ShareScopeItemSchema).optional().default([]),
 });
 export type Share = z.infer<typeof ShareSchema>;
 

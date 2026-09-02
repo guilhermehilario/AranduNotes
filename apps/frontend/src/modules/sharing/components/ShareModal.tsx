@@ -53,7 +53,7 @@ const ShareModalContent: React.FC<ShareModalProps> = ({
     }
     setEmailError(undefined);
     try {
-      await createShare(value);
+      await createShare({ email: value });
       setEmail('');
       useToastStore.getState().addToast('Acesso compartilhado.', 'success');
     } catch (error) {

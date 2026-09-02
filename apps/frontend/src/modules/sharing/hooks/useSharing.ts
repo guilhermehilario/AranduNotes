@@ -12,8 +12,15 @@ export function useShares(resourceType: ShareResourceType, resourceId: string) {
   });
 
   const createMutation = useMutation({
-    mutationFn: (email: string) =>
-      sharingService.createShare(resourceType, resourceId, email),
+    mutationFn: ({ email, leafIds }: { email: string; leafIds?: string[] }) =>
+      sharingService.createShare(resourceType, resourceId, email, leafIds),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ['shares', resourceType, resourceId] }),
+  });
+
+  const setScopeMutation = useMutation({
+    mutationFn: ({ shareId, leafIds }: { shareId: string; leafIds: string[] }) =>
+      sharingService.setShareScope(shareId, leafIds),
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: ['shares', resourceType, resourceId] }),
   });
@@ -45,6 +52,8 @@ export function useShares(resourceType: ShareResourceType, resourceId: string) {
     isRemoving: removeMutation.isPending,
     setPublic: setPublicMutation.mutateAsync,
     isSettingPublic: setPublicMutation.isPending,
+    setShareScope: setScopeMutation.mutateAsync,
+    isSettingScope: setScopeMutation.isPending,
   };
 }
 

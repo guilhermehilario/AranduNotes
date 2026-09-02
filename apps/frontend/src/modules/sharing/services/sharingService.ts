@@ -21,11 +21,23 @@ export const sharingService = {
     resourceType: ShareResourceType,
     resourceId: string,
     email: string,
+    leafIds?: string[],
   ): Promise<Share> {
     const response = await api.post<Share>('/shares', {
       resourceType,
       resourceId,
       email,
+      ...(leafIds?.length ? { leafIds } : {}),
+    });
+    return response.data;
+  },
+
+  async setShareScope(
+    shareId: string,
+    leafIds: string[],
+  ): Promise<Share> {
+    const response = await api.patch<Share>(`/shares/${shareId}/scope`, {
+      leafIds,
     });
     return response.data;
   },

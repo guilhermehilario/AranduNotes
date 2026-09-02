@@ -241,37 +241,7 @@ export class SharingService {
     ctx: ShareContext,
     userId: string,
   ): Promise<boolean> {
-    if (ctx.notebookId) {
-      const notebookResourceId = ctx.notebookId;
-      const notebookShare = await this.prisma.withConnection(() =>
-        this.prisma.share.findFirst({
-          where: {
-            resourceType: "notebook",
-            resourceId: notebookResourceId,
-            sharedWithUserId: userId,
-          },
-          select: { id: true },
-        }),
-      );
-      if (notebookShare) return true;
-    }
-
-    if (ctx.leafId) {
-      const leafResourceId = ctx.leafId;
-      const leafShare = await this.prisma.withConnection(() =>
-        this.prisma.share.findFirst({
-          where: {
-            resourceType: "leaf",
-            resourceId: leafResourceId,
-            sharedWithUserId: userId,
-          },
-          select: { id: true },
-        }),
-      );
-      if (leafShare) return true;
-    }
-
-    return false;
+    return (await this.getAncestorLevel(ctx, userId, "")) !== "none";
   }
 
   /**
@@ -289,8 +259,85 @@ export class SharingService {
     if (ctx.deletedAt) return "none";
     if (ctx.ownerId === userId) return "owner";
     if (await this.hasDirectShare(type, resourceId, userId)) return "editor";
-    if (await this.hasAncestorShare(ctx, userId)) return "editor";
+    const ancestorLevel = await this.getAncestorLevel(ctx, userId, resourceId);
+    if (ancestorLevel !== "none") return ancestorLevel;
     return "none";
+  }
+
+  /**
+   * Nível de acesso herdado de ancestrais (caderno/folha) atribuído a um
+   * usuário. Para compartilhamentos de caderno com escopo, considera se o
+   * recurso (folha) está dentro do conjunto de folhas compartilhadas.
+   */
+  private async getAncestorLevel(
+    ctx: ShareContext,
+    userId: string,
+    resourceId: string,
+  ): Promise<AccessLevel> {
+    if (ctx.notebookId) {
+      const notebookScope = await this.getNotebookShareScope(
+        ctx.notebookId,
+        userId,
+      );
+      if (notebookScope === null) {
+        // Sem compartilhamento de caderno -> nenhum acesso de ancestral
+        return "none";
+      }
+      if (notebookScope === "all" || notebookScope.includes(resourceId)) {
+        // Acesso total ao caderno, ou o recurso (folha) está no escopo.
+        return "editor";
+      }
+      return "none";
+    }
+    return "none";
+  }
+
+  /**
+   * Retorna o escopo de acesso a um caderno para um usuário:
+   *  - 'all'      -> acesso a todas as folhas (share sem escopo)
+   *  - string[]   -> lista de leafIds permitidos (share com escopo)
+   *  - null       -> sem compartilhamento de caderno
+   */
+  async getNotebookShareScope(
+    notebookId: string,
+    userId: string,
+  ): Promise<"all" | string[] | null> {
+    const shares = await this.prisma.withConnection(() =>
+      this.prisma.share.findMany({
+        where: { resourceType: "notebook", resourceId: notebookId, sharedWithUserId: userId },
+        select: { id: true, _count: { select: { scope: true } } },
+      }),
+    );
+    if (shares.length === 0) return null;
+    // Se qualquer share do notebook for sem escopo -> acesso total.
+    if (shares.some((s) => s._count.scope === 0)) return "all";
+    const scope = await this.prisma.withConnection(() =>
+      this.prisma.notebookShareScope.findMany({
+        where: { shareId: { in: shares.map((s) => s.id) } },
+        select: { leafId: true },
+      }),
+    );
+    return [...new Set(scope.map((s) => s.leafId))];
+  }
+
+  /**
+   * Nível de acesso de um usuário a um caderno, retornando também o escopo
+   * de folhas visíveis (para filtrar listagens no frontend).
+   *  - scopedLeafIds === null          -> acesso total (owner ou editor sem escopo)
+   *  - scopedLeafIds: string[]         -> editor com escopo (apenas essas folhas)
+   *  - level === 'none'                -> sem acesso
+   */
+  async getNotebookAccess(
+    userId: string,
+    notebookId: string,
+  ): Promise<{ level: AccessLevel; scopedLeafIds: string[] | null }> {
+    const ctx = await this.resolveContext("notebook", notebookId);
+    if (!ctx || ctx.deletedAt) return { level: "none", scopedLeafIds: null };
+    if (ctx.ownerId === userId) return { level: "owner", scopedLeafIds: null };
+    const scope = await this.getNotebookShareScope(notebookId, userId);
+    if (scope === null) return { level: "none", scopedLeafIds: null };
+    if (scope === "all") return { level: "editor", scopedLeafIds: null };
+    return { level: "editor", scopedLeafIds: scope };
   }
 
   /** Permite visualizar (owner ou editor). Lança NotFound se não existe/privado. */
@@ -339,7 +386,10 @@ export class SharingService {
       this.prisma.share.findMany({
         where: { resourceType: type, resourceId },
         orderBy: { createdAt: "asc" },
-        include: { sharedWithUser: { select: { id: true, name: true, email: true } } },
+        include: {
+          sharedWithUser: { select: { id: true, name: true, email: true } },
+          scope: { select: { id: true, leafId: true } },
+        },
       }),
     );
     return shares.map((s) => ({
@@ -348,6 +398,7 @@ export class SharingService {
       resourceId: s.resourceId,
       user: s.sharedWithUser,
       createdAt: s.createdAt,
+      scope: s.scope.map((sc) => ({ id: sc.id, leafId: sc.leafId })),
     }));
   }
 
@@ -356,6 +407,7 @@ export class SharingService {
     type: ResourceType,
     resourceId: string,
     target: { email?: string; userId?: string },
+    leafIds?: string[],
   ) {
     await this.getOwnedContext(userId, type, resourceId);
 
@@ -392,18 +444,109 @@ export class SharingService {
       throw new BadRequestException("Este usuário já tem acesso ao recurso");
     }
 
-    return this.prisma.withConnection(() =>
+    const scopedLeafIds =
+      type === "notebook" && leafIds?.length ? await this.validateLeafScope(type, resourceId, leafIds) : [];
+
+    const share = await this.prisma.withConnection(() =>
       this.prisma.share.create({
         data: {
           resourceType: type,
           resourceId,
           ownerId: userId,
           sharedWithUserId: targetUser.id,
+          ...(scopedLeafIds.length
+            ? {
+                scope: {
+                  create: scopedLeafIds.map((leafId) => ({ leafId })),
+                },
+              }
+            : {}),
         },
-        include: { sharedWithUser: { select: { id: true, name: true, email: true } } },
+        include: {
+          sharedWithUser: { select: { id: true, name: true, email: true } },
+          scope: { select: { id: true, leafId: true } },
+        },
       }),
     );
+
+    return {
+      id: share.id,
+      resourceType: share.resourceType,
+      resourceId: share.resourceId,
+      user: share.sharedWithUser,
+      createdAt: share.createdAt,
+      scope: share.scope.map((sc) => ({ id: sc.id, leafId: sc.leafId })),
+    };
   }
+
+  /** Valida que todos os leafIds pertencem ao caderno do recurso. */
+  private async validateLeafScope(
+    type: ResourceType,
+    resourceId: string,
+    leafIds: string[],
+  ): Promise<string[]> {
+    const unique = [...new Set(leafIds)];
+    const leaves = await this.prisma.withConnection(() =>
+      this.prisma.leaf.findMany({
+        where: { id: { in: unique }, notebookId: resourceId },
+        select: { id: true },
+      }),
+    );
+    const found = new Set(leaves.map((l) => l.id));
+    const invalid = unique.filter((id) => !found.has(id));
+    if (invalid.length) {
+      throw new BadRequestException("Algumas folhas não pertencem a este caderno");
+    }
+    return unique;
+  }
+
+  /** Define o escopo (lista de folhas) de um compartilhamento de caderno. */
+  async setShareScope(
+    shareId: string,
+    userId: string,
+    leafIds: string[],
+  ) {
+    const share = await this.prisma.withConnection(() =>
+      this.prisma.share.findUnique({
+        where: { id: shareId },
+        select: { id: true, resourceType: true, resourceId: true },
+      }),
+    );
+    if (!share) throw new NotFoundException("Compartilhamento não encontrado");
+    if (share.resourceType !== "notebook") {
+      throw new BadRequestException("Apenas cadernos possuem escopo de folhas");
+    }
+
+    await this.getOwnedContext(userId, share.resourceType as ResourceType, share.resourceId);
+
+    const validLeafIds =
+      leafIds.length ? await this.validateLeafScope("notebook", share.resourceId, leafIds) : [];
+
+    return this.prisma.$transaction(async (tx) => {
+      await tx.notebookShareScope.deleteMany({ where: { shareId } });
+      if (validLeafIds.length) {
+        await tx.notebookShareScope.createMany({
+          data: validLeafIds.map((leafId) => ({ shareId, leafId })),
+        });
+      }
+      const updated = await tx.share.findUnique({
+        where: { id: shareId },
+        include: {
+          sharedWithUser: { select: { id: true, name: true, email: true } },
+          scope: { select: { id: true, leafId: true } },
+        },
+      });
+      return {
+        id: updated!.id,
+        resourceType: updated!.resourceType,
+        resourceId: updated!.resourceId,
+        user: updated!.sharedWithUser,
+        createdAt: updated!.createdAt,
+        scope: updated!.scope.map((sc) => ({ id: sc.id, leafId: sc.leafId })),
+      };
+    });
+  }
+
 
   async removeShare(shareId: string, userId: string) {
     const share = await this.prisma.withConnection(() =>

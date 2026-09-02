@@ -17,6 +17,7 @@ import {
   CreateShareDto,
   ListSharesDto,
   SetPublicDto,
+  SetShareScopeDto,
 } from "./dto/sharing.dto";
 import { ResourceType } from "./sharing.types";
 
@@ -36,6 +37,7 @@ export class SharingController {
       dto.resourceType as ResourceType,
       dto.resourceId,
       { email: dto.email, userId: dto.userId },
+      dto.leafIds,
     );
   }
 
@@ -60,6 +62,15 @@ export class SharingController {
   async remove(@CurrentUser("id") userId: string, @Param("id") shareId: string) {
     await this.sharingService.removeShare(shareId, userId);
     return { success: true };
+  }
+
+  @Patch(":id/scope")
+  async setScope(
+    @CurrentUser("id") userId: string,
+    @Param("id") shareId: string,
+    @Body() dto: SetShareScopeDto,
+  ) {
+    return this.sharingService.setShareScope(shareId, userId, dto.leafIds);
   }
 
   @Patch(":type/:id/public")

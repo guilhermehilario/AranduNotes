@@ -20,10 +20,20 @@ export class LeavesService {
 
   async findByNotebook(notebookId: string, userId: string) {
     await this.sharing.getVisibleContext(userId, 'notebook', notebookId);
+    const { scopedLeafIds } = await this.sharing.getNotebookAccess(
+      userId,
+      notebookId,
+    );
 
     return this.prisma.withConnection(() =>
       this.prisma.leaf.findMany({
-        where: { notebookId, parentId: null, deletedAt: null, archivedAt: null },
+        where: {
+          notebookId,
+          parentId: null,
+          deletedAt: null,
+          archivedAt: null,
+          ...(scopedLeafIds ? { id: { in: scopedLeafIds } } : {}),
+        },
         orderBy: [{ position: 'asc' }, { createdAt: 'desc' }],
         include: {
           children: {

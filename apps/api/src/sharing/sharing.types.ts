@@ -19,3 +19,19 @@ export interface ShareContext {
   /** Cadeia [recurso, ancestral mais próximo...] para acesso público. */
   publicChain: { type: ResourceType; id: string; isPublic: boolean; token: string | null }[];
 }
+
+/** Escopo de acesso para compartilhamentos de caderno. */
+export interface NotebookShareScopeItem {
+  id: string;
+  leafId: string;
+}
+
+/** Share com informações de scope (para cadernos). */
+export interface ShareWithScope {
+  id: string;
+  resourceType: ResourceType;
+  resourceId: string;
+  user: { id: string; name: string; email: string };
+  createdAt: Date;
+  scope: NotebookShareScopeItem[];
+}

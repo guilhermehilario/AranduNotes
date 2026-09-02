@@ -49,6 +49,8 @@ model User {
 /// Compartilhamentos de conteúdo entre usuários (item pode ser editado pelo
 /// destinatário). O dono do recurso é sempre o criador; compartilhar concede
 /// acesso a usuários específicos; deixar público gera um link sem login.
+/// Para cadernos, o scope (via NotebookShareScope) controla quais folhas
+/// o destinatário pode ver/editar — sem scope = acesso total.
 model Share {
   id               String   @id @default(uuid())
   resourceType     String // "notebook" | "leaf" | "question" | "flashcard" | "mockExam"
@@ -57,12 +59,30 @@ model Share {
   sharedWithUserId String
   createdAt        DateTime @default(now())
 
-  owner          User @relation("ShareOwner", fields: [ownerId], references: [id], onDelete: Cascade)
-  sharedWithUser User @relation("ShareRecipient", fields: [sharedWithUserId], references: [id], onDelete: Cascade)
+  owner          User    @relation("ShareOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  sharedWithUser User    @relation("ShareRecipient", fields: [sharedWithUserId], references: [id], onDelete: Cascade)
+  scope          NotebookShareScope[]
 
   @@unique([resourceType, resourceId, sharedWithUserId])
   @@index([sharedWithUserId])
   @@index([resourceType, resourceId])
+}
+
+/// Escopo de acesso para compartilhamentos de caderno — lista de folhas que
+/// o destinatário pode ver/editar. Se vazio (= sem registros para o Share),
+/// o destinatário tem acesso a todas as folhas do caderno.
+model NotebookShareScope {
+  id       String @id @default(uuid())
+  shareId  String
+  leafId   String
+  createdAt DateTime @default(now())
+
+  share Share @relation(fields: [shareId], references: [id], onDelete: Cascade)
+  leaf  Leaf  @relation(fields: [leafId], references: [id], onDelete: Cascade)
+
+  @@unique([shareId, leafId])
+  @@index([shareId])
+  @@index([leafId])
 }
 
 /// Refresh tokens rotacionáveis (família de tokens por sessão)
@@ -133,6 +153,7 @@ model Leaf {
   bookmarks   Bookmark[]
   editHistory EditHistory[]
   questions   Question[]
+  shareScopes NotebookShareScope[]
 }
 
 /// Histórico de edições de folhas e cadernos
