@@ -86,7 +86,6 @@ const ShareModalContent: React.FC<ShareModalProps> = ({
     useShares(resourceType, resourceId);
   const [email, setEmail] = useState('');
   const [emailError, setEmailError] = useState<string>();
-  const [addPermission, setAddPermission] = useState<SharePermission>('viewer');
   const [permissionPendingId, setPermissionPendingId] = useState<string | null>(null);
   const [suggestions, setSuggestions] = useState<SearchResult[]>([]);
   const [suggestOpen, setSuggestOpen] = useState(false);
@@ -140,7 +139,7 @@ const ShareModalContent: React.FC<ShareModalProps> = ({
     }
     setEmailError(undefined);
     try {
-      await createShare({ email: value, permission: addPermission });
+      await createShare({ email: value, permission: 'viewer' });
       setEmail('');
       setSuggestions([]);
       setSuggestOpen(false);
@@ -341,10 +340,6 @@ const ShareModalContent: React.FC<ShareModalProps> = ({
                 </div>
               )}
             </div>
-            <PermissionPicker
-              value={addPermission}
-              onChange={setAddPermission}
-            />
             <Button onClick={handleAdd} disabled={isCreating} className="flex-shrink-0">
               {isCreating ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Adicionar'}
             </Button>
