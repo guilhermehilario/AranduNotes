@@ -8,6 +8,7 @@ import {
   Check,
   ChevronDown,
   FileText,
+  Pencil,
 } from 'lucide-react';
 import { Button } from '../../../components/ui/Button.tsx';
 import { Input } from '../../../components/ui/Input.tsx';
@@ -60,6 +61,8 @@ export const NotebookShareSettings: React.FC<NotebookShareSettingsProps> = ({
     isSettingPublic,
     setShareScope,
     isSettingScope,
+    updatePermission,
+    isUpdatingPermission,
   } = useShares('notebook', notebookId);
 
   const flatLeaves = useMemo(() => flattenLeaves(leaves), [leaves]);
@@ -168,7 +171,6 @@ export const NotebookShareSettings: React.FC<NotebookShareSettingsProps> = ({
   };
 
   const saveScope = async (shareId: string) => {
-    setSavingScope(true);
     try {
       const leafIds = currentScopeIds(shareId);
       await setShareScope({ shareId, leafIds });
