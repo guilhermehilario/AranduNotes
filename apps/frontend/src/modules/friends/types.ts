@@ -94,5 +94,10 @@ export type Conversation = z.infer<typeof ConversationSchema>;
 export interface SendMessageInput {
   content?: string;
   contentType?: 'text' | 'content_link';
-  contentRef?: { resourceType: string; resourceId: string; title: string };
+  contentRef?: {
+    resourceType: string;
+    resourceId: string;
+    title: string;
+    permission?: 'viewer' | 'editor';
+  };
 }

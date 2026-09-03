@@ -6,7 +6,7 @@ import {
 } from "@nestjs/common";
 import { randomBytes } from "crypto";
 import { PrismaService } from "../prisma/prisma.service";
-import { AccessLevel, ResourceType, ShareContext } from "./sharing.types";
+import { AccessLevel, ResourceType, ShareContext, SharePermission } from "./sharing.types";
 import { Notebook } from "@prisma/client";
 
 const RESOURCE_LABEL: Record<ResourceType, string> = {
@@ -222,6 +222,16 @@ export class SharingService {
     resourceId: string,
     userId: string,
   ): Promise<boolean> {
+    return (await this.getDirectSharePermission(type, resourceId, userId)) !== null;
+  }
+
+  /** Permissão do compartilhamento direto do recurso para um usuário, ou
+   *  null se não houver. */
+  private async getDirectSharePermission(
+    type: ResourceType,
+    resourceId: string,
+    userId: string,
+  ): Promise<SharePermission | null> {
     const share = await this.prisma.withConnection(() =>
       this.prisma.share.findUnique({
         where: {
@@ -231,10 +241,11 @@ export class SharingService {
             sharedWithUserId: userId,
           },
         },
-        select: { id: true },
+        select: { id: true, permission: true },
       }),
     );
-    return Boolean(share);
+    if (!share) return null;
+    return (share.permission === "editor" ? "editor" : "viewer");
   }
 
   private async hasAncestorShare(
@@ -258,7 +269,8 @@ export class SharingService {
     if (!ctx) return "none";
     if (ctx.deletedAt) return "none";
     if (ctx.ownerId === userId) return "owner";
-    if (await this.hasDirectShare(type, resourceId, userId)) return "editor";
+    const direct = await this.getDirectSharePermission(type, resourceId, userId);
+    if (direct) return direct;
     const ancestorLevel = await this.getAncestorLevel(ctx, userId, resourceId);
     if (ancestorLevel !== "none") return ancestorLevel;
     return "none";
@@ -275,17 +287,20 @@ export class SharingService {
     resourceId: string,
   ): Promise<AccessLevel> {
     if (ctx.notebookId) {
-      const notebookScope = await this.getNotebookShareScope(
+      const notebookAccess = await this.getNotebookAccessForUser(
         ctx.notebookId,
         userId,
       );
-      if (notebookScope === null) {
+      if (notebookAccess === null) {
         // Sem compartilhamento de caderno -> nenhum acesso de ancestral
         return "none";
       }
-      if (notebookScope === "all" || notebookScope.includes(resourceId)) {
-        // Acesso total ao caderno, ou o recurso (folha) está no escopo.
-        return "editor";
+      if (
+        notebookAccess.scope === "all" ||
+        notebookAccess.scope.includes(resourceId)
+      ) {
+        // Acesso ao caderno (total ou à folha em questão) pelo ancestral.
+        return notebookAccess.permission;
       }
       return "none";
     }
@@ -293,31 +308,50 @@ export class SharingService {
   }
 
   /**
-   * Retorna o escopo de acesso a um caderno para um usuário:
-   *  - 'all'      -> acesso a todas as folhas (share sem escopo)
-   *  - string[]   -> lista de leafIds permitidos (share com escopo)
-   *  - null       -> sem compartilhamento de caderno
+   * Escopo + permissão do compartilhamento de caderno para um usuário.
+   *  - scope 'all'      -> acesso a todas as folhas (share sem escopo)
+   *  - scope string[]   -> lista de leafIds permitidos (share com escopo)
+   *  - null             -> sem compartilhamento de caderno
    */
   async getNotebookShareScope(
     notebookId: string,
     userId: string,
   ): Promise<"all" | string[] | null> {
+    const access = await this.getNotebookAccessForUser(notebookId, userId);
+    return access === null ? null : access.scope;
+  }
+
+  private async getNotebookAccessForUser(
+    notebookId: string,
+    userId: string,
+  ): Promise<{ permission: SharePermission; scope: "all" | string[] } | null> {
     const shares = await this.prisma.withConnection(() =>
       this.prisma.share.findMany({
         where: { resourceType: "notebook", resourceId: notebookId, sharedWithUserId: userId },
-        select: { id: true, _count: { select: { scope: true } } },
+        select: { id: true, permission: true, _count: { select: { scope: true } } },
       }),
     );
     if (shares.length === 0) return null;
     // Se qualquer share do notebook for sem escopo -> acesso total.
-    if (shares.some((s) => s._count.scope === 0)) return "all";
+    if (shares.some((s) => s._count.scope === 0)) {
+      const perm = shares.some((s) => s.permission === "editor")
+        ? "editor"
+        : "viewer";
+      return { permission: perm, scope: "all" };
+    }
     const scope = await this.prisma.withConnection(() =>
       this.prisma.notebookShareScope.findMany({
         where: { shareId: { in: shares.map((s) => s.id) } },
         select: { leafId: true },
       }),
     );
-    return [...new Set(scope.map((s) => s.leafId))];
+    const perm = shares.some((s) => s.permission === "editor")
+      ? "editor"
+      : "viewer";
+    return {
+      permission: perm,
+      scope: [...new Set(scope.map((s) => s.leafId))],
+    };
   }
 
   /**
@@ -334,13 +368,14 @@ export class SharingService {
     const ctx = await this.resolveContext("notebook", notebookId);
     if (!ctx || ctx.deletedAt) return { level: "none", scopedLeafIds: null };
     if (ctx.ownerId === userId) return { level: "owner", scopedLeafIds: null };
-    const scope = await this.getNotebookShareScope(notebookId, userId);
-    if (scope === null) return { level: "none", scopedLeafIds: null };
-    if (scope === "all") return { level: "editor", scopedLeafIds: null };
-    return { level: "editor", scopedLeafIds: scope };
+    const access = await this.getNotebookAccessForUser(notebookId, userId);
+    if (access === null) return { level: "none", scopedLeafIds: null };
+    if (access.scope === "all")
+      return { level: access.permission, scopedLeafIds: null };
+    return { level: access.permission, scopedLeafIds: access.scope };
   }
 
-  /** Permite visualizar (owner ou editor). Lança NotFound se não existe/privado. */
+  /** Permite visualizar (owner, editor ou viewer). Lança NotFound se não existe/privado. */
   async getVisibleContext(
     userId: string,
     type: ResourceType,
@@ -351,11 +386,11 @@ export class SharingService {
       throw new NotFoundException("Recurso não encontrado");
     }
     const level = await this.getAccessLevel(userId, type, resourceId);
-    if (level === "owner" || level === "editor") return ctx;
+    if (level === "owner" || level === "editor" || level === "viewer") return ctx;
     throw new NotFoundException("Recurso não encontrado");
   }
 
-  /** Permite editar (owner ou editor). Lança Forbidden se não puder. */
+  /** Permite editar (owner ou editor). Lança Forbidden se não puder (ex.: viewer). */
   async getEditableContext(
     userId: string,
     type: ResourceType,
@@ -397,6 +432,7 @@ export class SharingService {
       resourceType: s.resourceType,
       resourceId: s.resourceId,
       user: s.sharedWithUser,
+      permission: (s.permission === "editor" ? "editor" : "viewer") as SharePermission,
       createdAt: s.createdAt,
       scope: s.scope.map((sc) => ({ id: sc.id, leafId: sc.leafId })),
     }));
@@ -408,6 +444,7 @@ export class SharingService {
     resourceId: string,
     target: { email?: string; userId?: string },
     leafIds?: string[],
+    permission: SharePermission = "viewer",
   ) {
     await this.getOwnedContext(userId, type, resourceId);
 
@@ -454,6 +491,7 @@ export class SharingService {
           resourceId,
           ownerId: userId,
           sharedWithUserId: targetUser.id,
+          permission,
           ...(scopedLeafIds.length
             ? {
                 scope: {
@@ -474,9 +512,52 @@ export class SharingService {
       resourceType: share.resourceType,
       resourceId: share.resourceId,
       user: share.sharedWithUser,
+      permission: (share.permission === "editor" ? "editor" : "viewer") as SharePermission,
       createdAt: share.createdAt,
       scope: share.scope.map((sc) => ({ id: sc.id, leafId: sc.leafId })),
     };
+  }
+
+  /**
+   * Cria um compartilhamento disparado por um link de conteúdo (chat).
+   * Diferente do createShare, não lança erro se o destinatário já tem acesso
+   * e não faz downgrade de permissão de um compartilhamento já existente.
+   */
+  async createShareViaLink(
+    ownerId: string,
+    type: ResourceType,
+    resourceId: string,
+    friendId: string,
+    permission: SharePermission,
+  ): Promise<void> {
+    // Só o dono do recurso pode compartilhar.
+    await this.getOwnedContext(ownerId, type, resourceId);
+
+    const existing = await this.prisma.withConnection(() =>
+      this.prisma.share.findUnique({
+        where: {
+          resourceType_resourceId_sharedWithUserId: {
+            resourceType: type,
+            resourceId,
+            sharedWithUserId: friendId,
+          },
+        },
+        select: { id: true },
+      }),
+    );
+    if (existing) return; // já tem acesso — mantém a permissão atual.
+
+    await this.prisma.withConnection(() =>
+      this.prisma.share.create({
+        data: {
+          resourceType: type,
+          resourceId,
+          ownerId,
+          sharedWithUserId: friendId,
+          permission,
+        },
+      }),
+    );
   }
 
   /** Valida que todos os leafIds pertencem ao caderno do recurso. */
@@ -541,12 +622,54 @@ export class SharingService {
         resourceType: updated!.resourceType,
         resourceId: updated!.resourceId,
         user: updated!.sharedWithUser,
+        permission: (updated!.permission === "editor" ? "editor" : "viewer") as SharePermission,
         createdAt: updated!.createdAt,
         scope: updated!.scope.map((sc) => ({ id: sc.id, leafId: sc.leafId })),
       };
     });
   }
 
+
+  /** Altera a permissão (visualizar/editar) de um compartilhamento. */
+  async updatePermission(
+    shareId: string,
+    userId: string,
+    permission: SharePermission,
+  ) {
+    const share = await this.prisma.withConnection(() =>
+      this.prisma.share.findUnique({
+        where: { id: shareId },
+        select: { id: true, resourceType: true, resourceId: true },
+      }),
+    );
+    if (!share) throw new NotFoundException("Compartilhamento não encontrado");
+
+    await this.getOwnedContext(
+      userId,
+      share.resourceType as ResourceType,
+      share.resourceId,
+    );
+
+    const updated = await this.prisma.withConnection(() =>
+      this.prisma.share.update({
+        where: { id: shareId },
+        data: { permission },
+        include: {
+          sharedWithUser: { select: { id: true, name: true, email: true } },
+          scope: { select: { id: true, leafId: true } },
+        },
+      }),
+    );
+    return {
+      id: updated.id,
+      resourceType: updated.resourceType,
+      resourceId: updated.resourceId,
+      user: updated.sharedWithUser,
+      permission: (updated.permission === "editor" ? "editor" : "viewer") as SharePermission,
+      createdAt: updated.createdAt,
+      scope: updated.scope.map((sc) => ({ id: sc.id, leafId: sc.leafId })),
+    };
+  }
 
   async removeShare(shareId: string, userId: string) {
     const share = await this.prisma.withConnection(() =>

@@ -52,6 +52,10 @@ export class ContentRefDto {
   @IsString()
   @IsNotEmpty()
   title: string;
+
+  @IsOptional()
+  @IsIn(["viewer", "editor"])
+  permission?: "viewer" | "editor";
 }
 
 export class SendMessageDto {

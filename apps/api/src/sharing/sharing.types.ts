@@ -10,6 +10,9 @@ export type ResourceType = (typeof SHAREABLE_TYPES)[number];
 
 export type AccessLevel = "owner" | "editor" | "viewer" | "none";
 
+/** Permissão concedida a um destinatário de compartilhamento. */
+export type SharePermission = "viewer" | "editor";
+
 /** Contexto de um recurso compartilhável resolvido no banco. */
 export interface ShareContext {
   ownerId: string;
@@ -32,6 +35,7 @@ export interface ShareWithScope {
   resourceType: ResourceType;
   resourceId: string;
   user: { id: string; name: string; email: string };
+  permission: SharePermission;
   createdAt: Date;
   scope: NotebookShareScopeItem[];
 }

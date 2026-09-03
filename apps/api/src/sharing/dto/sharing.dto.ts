@@ -1,6 +1,8 @@
 import { IsArray, IsBoolean, IsEmail, IsIn, IsOptional, IsString, IsUUID, MinLength } from "class-validator";
 import { SHAREABLE_TYPES } from "../sharing.types";
 
+export const SHARE_PERMISSIONS = ["viewer", "editor"] as const;
+
 export class CreateShareDto {
   @IsIn(SHAREABLE_TYPES as unknown as string[])
   resourceType: string;
@@ -17,9 +19,18 @@ export class CreateShareDto {
   email?: string;
 
   @IsOptional()
+  @IsIn(SHARE_PERMISSIONS as unknown as string[])
+  permission?: "viewer" | "editor";
+
+  @IsOptional()
   @IsArray()
   @IsUUID("all", { each: true })
   leafIds?: string[];
+}
+
+export class UpdateSharePermissionDto {
+  @IsIn(SHARE_PERMISSIONS as unknown as string[])
+  permission: "viewer" | "editor";
 }
 
 export class SetShareScopeDto {

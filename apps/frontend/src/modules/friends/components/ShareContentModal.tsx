@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { BookOpen, X, Share2 } from 'lucide-react';
 import { notebookService } from '../../notebooks/services/notebookService';
@@ -9,6 +9,7 @@ export interface ContentRef {
   resourceType: string;
   resourceId: string;
   title: string;
+  permission?: 'viewer' | 'editor';
 }
 
 interface ShareContentModalProps {
@@ -28,6 +29,7 @@ export const ShareContentModal: React.FC<ShareContentModalProps> = ({
     enabled: open,
     staleTime: 30_000,
   });
+  const [permission, setPermission] = useState<'viewer' | 'editor'>('viewer');
 
   if (!open) return null;
 
@@ -58,6 +60,20 @@ export const ShareContentModal: React.FC<ShareContentModalProps> = ({
             <p className="text-sm text-slate-500 dark:text-dark-400 mb-3">
               Escolha um caderno para enviar o link no chat.
             </p>
+            <div className="flex items-center gap-2 mb-4 px-3 py-2.5 rounded-xl border border-[var(--border-color)]">
+              <span className="text-xs text-slate-500 dark:text-dark-400 flex-1">
+                Permissão ao compartilhar
+              </span>
+              <select
+                value={permission}
+                onChange={(e) => setPermission(e.target.value as 'viewer' | 'editor')}
+                className="rounded-lg border border-slate-200 dark:border-dark-700 bg-white dark:bg-dark-900 px-2 py-1 text-xs text-slate-700 dark:text-dark-100 focus:outline-none focus:ring-2 focus:ring-brand-500/40 cursor-pointer"
+                aria-label="Permissão ao compartilhar"
+              >
+                <option value="viewer">Visualizar</option>
+                <option value="editor">Editar</option>
+              </select>
+            </div>
             {isLoading ? (
               <p className="text-sm text-slate-500 py-4">Carregando...</p>
             ) : error ? (
@@ -79,6 +95,7 @@ export const ShareContentModal: React.FC<ShareContentModalProps> = ({
                           resourceType: 'notebook',
                           resourceId: n.id,
                           title: n.title,
+                          permission,
                         })
                       }
                       className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border border-[var(--border-color)] hover:border-brand-400 hover:bg-brand-50 dark:hover:bg-brand-900/20 transition-colors text-left cursor-pointer group"

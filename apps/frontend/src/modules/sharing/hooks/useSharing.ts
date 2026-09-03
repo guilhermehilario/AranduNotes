@@ -12,8 +12,29 @@ export function useShares(resourceType: ShareResourceType, resourceId: string) {
   });
 
   const createMutation = useMutation({
-    mutationFn: ({ email, leafIds }: { email: string; leafIds?: string[] }) =>
-      sharingService.createShare(resourceType, resourceId, email, leafIds),
+    mutationFn: ({
+      email,
+      leafIds,
+      permission,
+    }: {
+      email: string;
+      leafIds?: string[];
+      permission?: 'viewer' | 'editor';
+    }) =>
+      sharingService.createShare(
+        resourceType,
+        resourceId,
+        email,
+        leafIds,
+        permission,
+      ),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ['shares', resourceType, resourceId] }),
+  });
+
+  const updatePermissionMutation = useMutation({
+    mutationFn: ({ shareId, permission }: { shareId: string; permission: 'viewer' | 'editor' }) =>
+      sharingService.updateSharePermission(shareId, permission),
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: ['shares', resourceType, resourceId] }),
   });
@@ -48,6 +69,8 @@ export function useShares(resourceType: ShareResourceType, resourceId: string) {
     isLoadingShares: sharesQuery.isLoading,
     createShare: createMutation.mutateAsync,
     isCreating: createMutation.isPending,
+    updatePermission: updatePermissionMutation.mutateAsync,
+    isUpdatingPermission: updatePermissionMutation.isPending,
     removeShare: removeMutation.mutateAsync,
     isRemoving: removeMutation.isPending,
     setPublic: setPublicMutation.mutateAsync,

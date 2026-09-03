@@ -10,6 +10,14 @@ export const SHAREABLE_RESOURCE_TYPES = [
 
 export type ShareResourceType = (typeof SHAREABLE_RESOURCE_TYPES)[number];
 
+export const SHARE_PERMISSIONS = ['viewer', 'editor'] as const;
+export type SharePermission = (typeof SHARE_PERMISSIONS)[number];
+
+export const SHARE_PERMISSION_LABELS: Record<SharePermission, string> = {
+  viewer: 'Visualizar',
+  editor: 'Editar',
+};
+
 export const ResourceUserSchema = z.object({
   id: z.string().uuid(),
   name: z.string(),
@@ -28,6 +36,7 @@ export const ShareSchema = z.object({
   resourceType: z.enum(SHAREABLE_RESOURCE_TYPES),
   resourceId: z.string().uuid(),
   user: ResourceUserSchema,
+  permission: z.enum(SHARE_PERMISSIONS).default('viewer'),
   createdAt: z.string().datetime().or(z.date()),
   scope: z.array(ShareScopeItemSchema).optional().default([]),
 });

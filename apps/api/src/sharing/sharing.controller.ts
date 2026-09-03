@@ -18,6 +18,7 @@ import {
   ListSharesDto,
   SetPublicDto,
   SetShareScopeDto,
+  UpdateSharePermissionDto,
 } from "./dto/sharing.dto";
 import { ResourceType } from "./sharing.types";
 
@@ -38,6 +39,7 @@ export class SharingController {
       dto.resourceId,
       { email: dto.email, userId: dto.userId },
       dto.leafIds,
+      dto.permission,
     );
   }
 
@@ -71,6 +73,15 @@ export class SharingController {
     @Body() dto: SetShareScopeDto,
   ) {
     return this.sharingService.setShareScope(shareId, userId, dto.leafIds);
+  }
+
+  @Patch(":id/permission")
+  async setPermission(
+    @CurrentUser("id") userId: string,
+    @Param("id") shareId: string,
+    @Body() dto: UpdateSharePermissionDto,
+  ) {
+    return this.sharingService.updatePermission(shareId, userId, dto.permission);
   }
 
   @Patch(":type/:id/public")

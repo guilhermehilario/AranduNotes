@@ -2,8 +2,10 @@ import {
   BadRequestException,
   ForbiddenException,
   Injectable,
+  Logger,
 } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
+import { SharingService } from "../sharing/sharing.service";
 import { ChatMessage } from "./friends.types";
 
 const DEFAULT_LIMIT = 50;
@@ -11,7 +13,12 @@ const MAX_LIMIT = 100;
 
 @Injectable()
 export class MessagesService {
-  constructor(private readonly prisma: PrismaService) {}
+  private readonly logger = new Logger(MessagesService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly sharing: SharingService,
+  ) {}
 
   /** Valida que dois usuários são amigos (relação bilateral). */
   private async assertFriendship(userId: string, friendId: string) {
@@ -83,9 +90,29 @@ export class MessagesService {
   async sendContentLink(
     userId: string,
     friendId: string,
-    ref: { resourceType: string; resourceId: string; title: string },
+    ref: { resourceType: string; resourceId: string; title: string; permission?: "viewer" | "editor" },
   ) {
     await this.assertFriendship(userId, friendId);
+
+    // Concede acesso ao conteúdo do amigo (só se o remetente for o dono),
+    // criando o registro de compartilhamento. A falha aqui não impede o envio
+    // da mensagem (best-effort).
+    if (ref.resourceType && ref.resourceId) {
+      try {
+        await this.sharing.createShareViaLink(
+          userId,
+          ref.resourceType as Parameters<SharingService["createShareViaLink"]>[1],
+          ref.resourceId,
+          friendId,
+          ref.permission ?? "viewer",
+        );
+      } catch (e) {
+        this.logger.warn(
+          `Falha ao criar compartilhamento via link: ${(e as Error).message}`,
+        );
+      }
+    }
+
     return this.prisma.withConnection(() =>
       this.prisma.directMessage.create({
         data: {

@@ -7,7 +7,7 @@ import { useShares } from '../hooks/useSharing';
 import { useToastStore } from '../../../store/toastStore';
 import { extractApiError } from '../../../utils/api-errors';
 import { buildPublicUrl, RESOURCE_TYPE_LABELS } from '../types';
-import type { ShareResourceType } from '../types';
+import type { ShareResourceType, SharePermission } from '../types';
 
 interface ShareModalProps {
   isOpen: boolean;
@@ -20,6 +20,39 @@ interface ShareModalProps {
 }
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+interface PermissionPickerProps {
+  value: SharePermission;
+  onChange: (p: SharePermission) => void;
+  disabled?: boolean;
+  size?: 'sm' | 'md';
+}
+
+const PermissionPicker: React.FC<PermissionPickerProps> = ({
+  value,
+  onChange,
+  disabled,
+  size = 'md',
+}) => {
+  const base =
+    'rounded-lg border border-slate-200 dark:border-dark-700 bg-white dark:bg-dark-900 focus:outline-none focus:ring-2 focus:ring-brand-500/40 text-slate-700 dark:text-dark-100 cursor-pointer';
+  const dim = size === 'sm' ? 'px-2 py-1 text-xs' : 'px-3 py-1.5 text-sm';
+  return (
+    <div className="flex items-center gap-1.5" title="Permissão de acesso">
+      <select
+        value={value}
+        disabled={disabled}
+        onChange={(e) => onChange(e.target.value as SharePermission)}
+        className={`${base} ${dim}`}
+        aria-label="Permissão de acesso"
+      >
+        <option value="viewer">Visualizar</option>
+        <option value="editor">Editar</option>
+      </select>
+    </div>
+  );
+};
+
 
 export const ShareModal: React.FC<ShareModalProps> = (props) => {
   // `key` alterna a cada abertura/fechamento, remontando o conteúdo — o
@@ -36,10 +69,12 @@ const ShareModalContent: React.FC<ShareModalProps> = ({
   initialIsPublic = false,
   initialToken = null,
 }) => {
-  const { shares, isLoadingShares, createShare, isCreating, removeShare, isRemoving, setPublic, isSettingPublic } =
+  const { shares, isLoadingShares, createShare, isCreating, updatePermission, isUpdatingPermission, removeShare, isRemoving, setPublic, isSettingPublic } =
     useShares(resourceType, resourceId);
   const [email, setEmail] = useState('');
   const [emailError, setEmailError] = useState<string>();
+  const [addPermission, setAddPermission] = useState<SharePermission>('viewer');
+  const [permissionPendingId, setPermissionPendingId] = useState<string | null>(null);
   const [isPublic, setIsPublic] = useState(initialIsPublic);
   const [publicToken, setPublicToken] = useState<string | null>(initialToken);
   const [isLinkCopied, setIsLinkCopied] = useState(false);
@@ -53,7 +88,7 @@ const ShareModalContent: React.FC<ShareModalProps> = ({
     }
     setEmailError(undefined);
     try {
-      await createShare({ email: value });
+      await createShare({ email: value, permission: addPermission });
       setEmail('');
       useToastStore.getState().addToast('Acesso compartilhado.', 'success');
     } catch (error) {
@@ -61,6 +96,21 @@ const ShareModalContent: React.FC<ShareModalProps> = ({
         extractApiError(error, 'Não foi possível compartilhar.'),
         'error',
       );
+    }
+  };
+
+  const handleChangePermission = async (shareId: string, permission: SharePermission) => {
+    setPermissionPendingId(shareId);
+    try {
+      await updatePermission({ shareId, permission });
+      useToastStore.getState().addToast('Permissão atualizada.', 'success');
+    } catch (error) {
+      useToastStore.getState().addToast(
+        extractApiError(error, 'Não foi possível alterar a permissão.'),
+        'error',
+      );
+    } finally {
+      setPermissionPendingId(null);
     }
   };
 
@@ -186,6 +236,10 @@ const ShareModalContent: React.FC<ShareModalProps> = ({
                 error={emailError}
               />
             </div>
+            <PermissionPicker
+              value={addPermission}
+              onChange={setAddPermission}
+            />
             <Button onClick={handleAdd} disabled={isCreating} className="flex-shrink-0">
               {isCreating ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Adicionar'}
             </Button>
@@ -230,20 +284,28 @@ const ShareModalContent: React.FC<ShareModalProps> = ({
                       </p>
                     </div>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => handleRemove(share.id)}
-                    disabled={isRemoving && removingId === share.id}
-                    className="p-2 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-all cursor-pointer"
-                    title="Remover acesso"
-                    aria-label={`Remover acesso de ${share.user.name}`}
-                  >
-                    {isRemoving && removingId === share.id ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <UserX className="h-4 w-4" />
-                    )}
-                  </button>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <PermissionPicker
+                      value={share.permission === 'editor' ? 'editor' : 'viewer'}
+                      onChange={(p) => handleChangePermission(share.id, p)}
+                      disabled={isUpdatingPermission && permissionPendingId === share.id}
+                      size="sm"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleRemove(share.id)}
+                      disabled={isRemoving && removingId === share.id}
+                      className="p-2 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-all cursor-pointer"
+                      title="Remover acesso"
+                      aria-label={`Remover acesso de ${share.user.name}`}
+                    >
+                      {isRemoving && removingId === share.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <UserX className="h-4 w-4" />
+                      )}
+                    </button>
+                  </div>
                 </div>
               ))
             )}

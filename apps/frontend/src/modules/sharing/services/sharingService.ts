@@ -2,6 +2,7 @@ import { api } from '../../../core/api/client';
 import type {
   Share,
   ShareResourceType,
+  SharePermission,
   InboxItem,
   SetPublicResult,
 } from '../types';
@@ -22,12 +23,24 @@ export const sharingService = {
     resourceId: string,
     email: string,
     leafIds?: string[],
+    permission: SharePermission = 'viewer',
   ): Promise<Share> {
     const response = await api.post<Share>('/shares', {
       resourceType,
       resourceId,
       email,
+      permission,
       ...(leafIds?.length ? { leafIds } : {}),
+    });
+    return response.data;
+  },
+
+  async updateSharePermission(
+    shareId: string,
+    permission: SharePermission,
+  ): Promise<Share> {
+    const response = await api.patch<Share>(`/shares/${shareId}/permission`, {
+      permission,
     });
     return response.data;
   },

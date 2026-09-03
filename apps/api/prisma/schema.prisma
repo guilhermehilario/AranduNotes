@@ -117,6 +117,7 @@ model Share {
   resourceId       String
   ownerId          String   // Quem compartilha (dono do recurso)
   sharedWithUserId String
+  permission       String   @default("viewer") // "viewer" (só leitura) | "editor" (pode editar)
   createdAt        DateTime @default(now())
 
   owner          User    @relation("ShareOwner", fields: [ownerId], references: [id], onDelete: Cascade)
