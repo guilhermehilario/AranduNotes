@@ -78,7 +78,13 @@ function buildSslConfig(urlWantsDisable) {
     return { rejectUnauthorized: true, ca };
   }
 
-  return { rejectUnauthorized: true };
+  // Caso default (prod/pooler Supabase): TLS ativo sem validação de CA.
+  // O pooler do Supabase usa um certificado com CA privada (self-signed na
+  // cadeia) que não está no trust store do sistema, então `rejectUnauthorized:
+  // true` falha com `SELF_SIGNED_CERT_IN_CHAIN`. O PrismaService do app conecta
+  // ao mesmo DATABASE_URL sem exigir validação de CA; mantemos TLS habilitado
+  // mas desativamos a rejeição de certs privados para sermos consistentes.
+  return { rejectUnauthorized: false };
 }
 
 /**
