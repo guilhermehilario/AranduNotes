@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Plus, BookOpen, BarChart3, ArrowDown, ArrowUp } from 'lucide-react';
+import { Plus, BookOpen, BarChart3, ArrowDown, ArrowUp, Eye, EyeOff } from 'lucide-react';
 import { useNotebooks } from '../hooks/useNotebooks';
 import { CreateNotebookSchema } from '../types';
 import type { CreateNotebookInput, Notebook } from '../types';
@@ -41,9 +41,14 @@ export const DashboardView: React.FC = () => {
   // Default: último criado na frente (createdAt desc)
   const [sortField, setSortField] = useState<SortField>('createdAt');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  // ── Filtro ──
+  // Quando ativo, esconde os cadernos compartilhados comigo (access !== owner)
+  const [hideShared, setHideShared] = useState(false);
 
   const sortedNotebooks = useMemo(() => {
-    const list = [...notebooks];
+    const list = hideShared
+      ? notebooks.filter((n) => n.access !== 'editor')
+      : [...notebooks];
     list.sort((a, b) => {
       const cmp =
         sortField === 'title'
@@ -55,7 +60,7 @@ export const DashboardView: React.FC = () => {
       return sortDirection === 'asc' ? cmp : -cmp;
     });
     return list;
-  }, [notebooks, sortField, sortDirection]);
+  }, [notebooks, sortField, sortDirection, hideShared]);
 
   const handleSortFieldChange = (field: SortField) => {
     setSortField(field);
@@ -140,7 +145,8 @@ export const DashboardView: React.FC = () => {
 
       {/* Notebook Grid */}
       <div className="mt-6">
-        {notebooks.length === 0 ? (
+        {sortedNotebooks.length === 0 ? (
+          notebooks.length === 0 ? (
           <EmptyState
             icon={<BookOpen className="h-8 w-8" />}
             title="Nenhum caderno criado"
@@ -155,14 +161,52 @@ export const DashboardView: React.FC = () => {
               </Button>
             }
           />
+          ) : (
+            <EmptyState
+              icon={<EyeOff className="h-8 w-8" />}
+              title="Nenhum caderno visível"
+              description="Todos os cadernos desta lista são compartilhados com você. Desative o filtro 'Ocultar compartilhados' para vê-los."
+              action={
+                <Button
+                  variant="outline"
+                  onClick={() => setHideShared(false)}
+                  leftIcon={<Eye className="h-4 w-4" />}
+                >
+                  Mostrar compartilhados
+                </Button>
+              }
+            />
+          )
         ) : (
           <div className="flex flex-col gap-6">
             {/* Sort Bar */}
             <div className="flex flex-wrap items-center justify-between gap-3">
               <p className="text-xs font-semibold text-slate-400 dark:text-dark-400">
-                {notebooks.length} {notebooks.length === 1 ? 'caderno' : 'cadernos'}
+                {sortedNotebooks.length} {sortedNotebooks.length === 1 ? 'caderno' : 'cadernos'}
               </p>
               <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  aria-pressed={hideShared}
+                  onClick={() => setHideShared((v) => !v)}
+                  title={
+                    hideShared
+                      ? 'Mostrar também os cadernos compartilhados com você'
+                      : 'Esconder os cadernos compartilhados com você'
+                  }
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all duration-200 cursor-pointer border ${
+                    hideShared
+                      ? 'border-brand-300 dark:border-brand-700 text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-900/20'
+                      : 'border-slate-200 dark:border-dark-700 text-slate-500 dark:text-dark-400 hover:text-slate-700 dark:hover:text-dark-200 hover:border-brand-300 dark:hover:border-brand-700'
+                  }`}
+                >
+                  {hideShared ? (
+                    <EyeOff className="h-3.5 w-3.5" />
+                  ) : (
+                    <Eye className="h-3.5 w-3.5" />
+                  )}
+                  {hideShared ? 'Ocultando compartilhados' : 'Ocultar compartilhados'}
+                </button>
                 <span className="text-xs font-semibold text-slate-400 dark:text-dark-400">
                   Ordenar por
                 </span>
