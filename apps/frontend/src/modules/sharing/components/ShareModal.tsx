@@ -1,5 +1,5 @@
 import React, { useCallback, useRef, useState } from 'react';
-import { Globe, Link2, Mail, UserX, Loader2, Users } from 'lucide-react';
+import { Globe, Link2, Mail, UserX, Loader2, Users, Pencil } from 'lucide-react';
 import { Modal } from '../../../components/ui/Modal.tsx';
 import { Button } from '../../../components/ui/Button.tsx';
 import { Input } from '../../../components/ui/Input.tsx';
@@ -36,22 +36,33 @@ const PermissionPicker: React.FC<PermissionPickerProps> = ({
   disabled,
   size = 'md',
 }) => {
+  const isEditor = value === 'editor';
+  const dim = size === 'sm' ? 'px-2.5 py-1.5 text-xs' : 'px-3 py-1.5 text-sm';
   const base =
-    'rounded-lg border border-slate-200 dark:border-dark-700 bg-white dark:bg-dark-900 focus:outline-none focus:ring-2 focus:ring-brand-500/40 text-slate-700 dark:text-dark-100 cursor-pointer';
-  const dim = size === 'sm' ? 'px-2 py-1 text-xs' : 'px-3 py-1.5 text-sm';
+    'rounded-lg border font-medium inline-flex items-center gap-1.5 transition-all cursor-pointer select-none focus:outline-none focus:ring-2 focus:ring-brand-500/40 disabled:opacity-60 disabled:cursor-not-allowed';
+  const tone = isEditor
+    ? 'border-brand-500/70 bg-brand-500/15 text-brand-600 dark:text-brand-400'
+    : 'border-slate-200 dark:border-dark-700 bg-white dark:bg-dark-900 text-slate-500 dark:text-dark-400 hover:text-slate-700 dark:hover:text-dark-200';
   return (
-    <div className="flex items-center gap-1.5" title="Permissão de acesso">
-      <select
-        value={value}
-        disabled={disabled}
-        onChange={(e) => onChange(e.target.value as SharePermission)}
-        className={`${base} ${dim}`}
-        aria-label="Permissão de acesso"
-      >
-        <option value="viewer">Visualizar</option>
-        <option value="editor">Editar</option>
-      </select>
-    </div>
+    <button
+      type="button"
+      role="switch"
+      aria-checked={isEditor}
+      disabled={disabled}
+      onClick={() => onChange(isEditor ? 'viewer' : 'editor')}
+      className={`${base} ${tone} ${dim}`}
+      title={
+        isEditor
+          ? 'Esta pessoa pode editar. Clique para remover a edição.'
+          : 'Esta pessoa só visualiza. Clique para permitir a edição.'
+      }
+      aria-label={
+        isEditor ? 'Remover permissão de edição' : 'Permitir edição'
+      }
+    >
+      <Pencil className={`h-3.5 w-3.5 ${isEditor ? '' : 'opacity-60'}`} />
+      {isEditor ? 'Pode editar' : 'Permitir edição'}
+    </button>
   );
 };
 
