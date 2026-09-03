@@ -229,6 +229,7 @@ export const AvatarSelector: React.FC<AvatarSelectorProps> = ({
           borderColor: 'var(--border-color)',
           background: 'var(--bg-surface)',
         }}
+        onClick={() => fileInputRef.current?.click()}
         onMouseEnter={(e) => {
           e.currentTarget.style.borderColor = 'var(--border-active)';
         }}
@@ -250,14 +251,12 @@ export const AvatarSelector: React.FC<AvatarSelectorProps> = ({
           <Upload className="h-5 w-5" />
         </div>
         <div className="flex-1 min-w-0">
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            className="text-sm font-bold transition-colors cursor-pointer"
+          <span
+            className="text-sm font-bold"
             style={{ color: 'var(--primary)' }}
           >
             Enviar foto própria
-          </button>
+          </span>
           <p className="text-[10px] mt-0.5" style={{ color: 'var(--text-secondary)' }}>
             PNG, JPG ou GIF · Máx. 5MB
           </p>
