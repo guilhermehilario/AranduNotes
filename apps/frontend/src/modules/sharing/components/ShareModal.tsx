@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Globe, Link2, Mail, UserX, Loader2 } from 'lucide-react';
+import React, { useCallback, useRef, useState } from 'react';
+import { Globe, Link2, Mail, UserX, Loader2, Users } from 'lucide-react';
 import { Modal } from '../../../components/ui/Modal.tsx';
 import { Button } from '../../../components/ui/Button.tsx';
 import { Input } from '../../../components/ui/Input.tsx';
@@ -7,6 +7,8 @@ import { useShares } from '../hooks/useSharing';
 import { useToastStore } from '../../../store/toastStore';
 import { extractApiError } from '../../../utils/api-errors';
 import { buildPublicUrl, RESOURCE_TYPE_LABELS } from '../types';
+import { friendsService } from '../../friends/services/friendsService';
+import type { SearchResult } from '../../friends/types';
 import type { ShareResourceType, SharePermission } from '../types';
 
 interface ShareModalProps {
@@ -75,13 +77,52 @@ const ShareModalContent: React.FC<ShareModalProps> = ({
   const [emailError, setEmailError] = useState<string>();
   const [addPermission, setAddPermission] = useState<SharePermission>('viewer');
   const [permissionPendingId, setPermissionPendingId] = useState<string | null>(null);
+  const [suggestions, setSuggestions] = useState<SearchResult[]>([]);
+  const [suggestOpen, setSuggestOpen] = useState(false);
+  const [searching, setSearching] = useState(false);
   const [isPublic, setIsPublic] = useState(initialIsPublic);
   const [publicToken, setPublicToken] = useState<string | null>(initialToken);
   const [isLinkCopied, setIsLinkCopied] = useState(false);
   const [removingId, setRemovingId] = useState<string | null>(null);
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const handleAdd = async () => {
-    const value = email.trim();
+  const runSearch = useCallback(async (query: string) => {
+    const q = query.trim();
+    if (!q) {
+      setSuggestions([]);
+      setSuggestOpen(false);
+      return;
+    }
+    setSearching(true);
+    try {
+      const results = await friendsService.searchUsers(q);
+      const friends = results.filter((r) => r.relationship === 'friend');
+      setSuggestions(friends);
+      setSuggestOpen(friends.length > 0);
+    } catch {
+      setSuggestions([]);
+      setSuggestOpen(false);
+    } finally {
+      setSearching(false);
+    }
+  }, []);
+
+  const handleEmailChange = (value: string) => {
+    setEmail(value);
+    setEmailError(undefined);
+    if (searchTimer.current) clearTimeout(searchTimer.current);
+    searchTimer.current = setTimeout(() => runSearch(value), 250);
+  };
+
+  const selectFriend = (friend: SearchResult) => {
+    setEmail(friend.email);
+    setSuggestOpen(false);
+    setSuggestions([]);
+    handleAddWith(friend.email);
+  };
+
+  const handleAddWith = async (emailValue: string) => {
+    const value = emailValue.trim();
     if (!EMAIL_REGEX.test(value)) {
       setEmailError('Digite um e-mail válido.');
       return;
@@ -90,6 +131,8 @@ const ShareModalContent: React.FC<ShareModalProps> = ({
     try {
       await createShare({ email: value, permission: addPermission });
       setEmail('');
+      setSuggestions([]);
+      setSuggestOpen(false);
       useToastStore.getState().addToast('Acesso compartilhado.', 'success');
     } catch (error) {
       useToastStore.getState().addToast(
@@ -98,6 +141,8 @@ const ShareModalContent: React.FC<ShareModalProps> = ({
       );
     }
   };
+
+  const handleAdd = () => handleAddWith(email);
 
   const handleChangePermission = async (shareId: string, permission: SharePermission) => {
     setPermissionPendingId(shareId);
@@ -221,20 +266,69 @@ const ShareModalContent: React.FC<ShareModalProps> = ({
             </p>
           </div>
 
-          <div className="flex gap-2">
-            <div className="flex-1">
+          <div className="flex gap-2 items-start">
+            <div className="flex-1 relative">
               <Input
-                placeholder="E-mail do usuário..."
+                placeholder="Nome ou e-mail (amigos sugeridos)..."
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => handleEmailChange(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
                     e.preventDefault();
                     handleAdd();
                   }
                 }}
+                onBlur={() => setTimeout(() => setSuggestOpen(false), 150)}
                 error={emailError}
               />
+              {suggestOpen && (
+                <div className="absolute z-20 left-0 right-0 top-full mt-1 rounded-xl border border-slate-200 dark:border-dark-700 bg-white dark:bg-dark-900 shadow-lg overflow-hidden">
+                  {searching ? (
+                    <div className="flex items-center justify-center gap-2 px-3 py-3 text-xs text-slate-400">
+                      <Loader2 className="h-4 w-4 animate-spin" /> Buscando amigos...
+                    </div>
+                  ) : (
+                    <ul className="max-h-56 overflow-y-auto">
+                      {suggestions.map((s) => (
+                        <li key={s.id}>
+                          <button
+                            type="button"
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              selectFriend(s);
+                            }}
+                            className="w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-brand-50 dark:hover:bg-brand-900/20 transition-colors cursor-pointer"
+                          >
+                            <div
+                              className="w-8 h-8 rounded-full bg-brand-500/10 flex items-center justify-center flex-shrink-0"
+                            >
+                              <span className="text-xs font-bold text-brand-500">
+                                {s.name
+                                  .split(' ')
+                                  .map((p) => p[0])
+                                  .slice(0, 2)
+                                  .join('')
+                                  .toUpperCase()}
+                              </span>
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium text-slate-800 dark:text-dark-50 truncate">
+                                {s.name}
+                              </p>
+                              <p className="text-xs text-slate-400 dark:text-dark-500 truncate">
+                                {s.email}
+                              </p>
+                            </div>
+                            <span className="ml-auto flex items-center gap-1 text-[10px] font-medium text-brand-500 flex-shrink-0">
+                              <Users className="h-3 w-3" /> Amigo
+                            </span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
             </div>
             <PermissionPicker
               value={addPermission}
