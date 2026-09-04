@@ -6,7 +6,15 @@ import {
 } from "@nestjs/common";
 import { randomBytes } from "crypto";
 import { PrismaService } from "../prisma/prisma.service";
-import { AccessLevel, ResourceType, ShareContext, SharePermission } from "./sharing.types";
+import {
+  AccessLevel,
+  ResourceType,
+  ShareCapabilities,
+  ShareContext,
+  SharePermission,
+  FULL_CAPABILITIES,
+  NO_CAPABILITIES,
+} from "./sharing.types";
 import { Notebook } from "@prisma/client";
 
 const RESOURCE_LABEL: Record<ResourceType, string> = {
@@ -248,6 +256,146 @@ export class SharingService {
     return (share.permission === "editor" ? "editor" : "viewer");
   }
 
+  // ════════════════════════════════════════════════════════════════════
+  //  CAPACIDADES DE EDIÇÃO (sub-menu de permissões do compartilhamento)
+  // ════════════════════════════════════════════════════════════════════
+
+  /** Serializa um registro Share (com campos de capacidade) para a API. */
+  private serializeShare(share: {
+    id: string;
+    resourceType: string;
+    resourceId: string;
+    permission: string;
+    createdAt: Date;
+    canEditContent: boolean;
+    canCreateLeaves: boolean;
+    canUploadFiles: boolean;
+    sharedWithUser: { id: string; name: string; email: string };
+    scope: { id: string; leafId: string }[];
+  }) {
+    return {
+      id: share.id,
+      resourceType: share.resourceType,
+      resourceId: share.resourceId,
+      user: share.sharedWithUser,
+      permission: (share.permission === "editor" ? "editor" : "viewer") as SharePermission,
+      canEditContent: share.canEditContent,
+      canCreateLeaves: share.canCreateLeaves,
+      canUploadFiles: share.canUploadFiles,
+      createdAt: share.createdAt,
+      scope: share.scope.map((sc) => ({ id: sc.id, leafId: sc.leafId })),
+    };
+  }
+
+  /**
+   * Capacidades de um compartilhamento de caderno para um usuário.
+   * Retorna null se não houver compartilhamento de caderno.
+   */
+  private async getNotebookCapsForUser(
+    notebookId: string,
+    userId: string,
+  ): Promise<ShareCapabilities | null> {
+    const shares = await this.prisma.withConnection(() =>
+      this.prisma.share.findMany({
+        where: {
+          resourceType: "notebook",
+          resourceId: notebookId,
+          sharedWithUserId: userId,
+        },
+        select: {
+          permission: true,
+          canEditContent: true,
+          canCreateLeaves: true,
+          canUploadFiles: true,
+        },
+      }),
+    );
+    if (shares.length === 0) return null;
+
+    // Apenas compartilhamentos 'editor' concedem capacidades; sem nenhum
+    // editor, o usuário é viewer e fica sem capacidade alguma.
+    const editors = shares.filter((s) => s.permission === "editor");
+    if (editors.length === 0) return NO_CAPABILITIES;
+
+    return {
+      // Capacidade é concedida se QUALQUER share 'editor' a autorizar.
+      canEditContent: editors.some((s) => s.canEditContent),
+      canCreateLeaves: editors.some((s) => s.canCreateLeaves),
+      canUploadFiles: editors.some((s) => s.canUploadFiles),
+    };
+  }
+
+  /**
+   * Capacidades de edição de um usuário autenticado sobre um recurso
+   * (resolvidas sempre pelo caderno ancestral). O dono tem tudo.
+   */
+  async getUserCapabilities(
+    userId: string,
+    type: ResourceType,
+    resourceId: string,
+  ): Promise<ShareCapabilities> {
+    const ctx = await this.resolveContext(type, resourceId);
+    if (!ctx || ctx.deletedAt) return NO_CAPABILITIES;
+    if (ctx.ownerId === userId) return FULL_CAPABILITIES;
+    if (!ctx.notebookId) return NO_CAPABILITIES;
+    const caps = await this.getNotebookCapsForUser(ctx.notebookId, userId);
+    return caps ?? NO_CAPABILITIES;
+  }
+
+  /** Lança Forbidden se o usuário não puder editar textos de folhas. */
+  async assertCanEditContent(
+    userId: string,
+    type: ResourceType,
+    resourceId: string,
+  ): Promise<void> {
+    const ctx = await this.resolveContext(type, resourceId);
+    if (!ctx || ctx.deletedAt) {
+      throw new NotFoundException("Recurso não encontrado");
+    }
+    if (ctx.ownerId === userId) return;
+    if (!ctx.notebookId) throw new ForbiddenException("Acesso negado");
+    const caps = await this.getNotebookCapsForUser(ctx.notebookId, userId);
+    if (!caps?.canEditContent) {
+      throw new ForbiddenException("Sem permissão para editar textos");
+    }
+  }
+
+  /** Lança Forbidden se o usuário não puder criar folhas/sub-folhas. */
+  async assertCanCreateLeaves(
+    userId: string,
+    type: ResourceType,
+    resourceId: string,
+  ): Promise<void> {
+    const ctx = await this.resolveContext(type, resourceId);
+    if (!ctx || ctx.deletedAt) {
+      throw new NotFoundException("Recurso não encontrado");
+    }
+    if (ctx.ownerId === userId) return;
+    if (!ctx.notebookId) throw new ForbiddenException("Acesso negado");
+    const caps = await this.getNotebookCapsForUser(ctx.notebookId, userId);
+    if (!caps?.canCreateLeaves) {
+      throw new ForbiddenException("Sem permissão para criar folhas");
+    }
+  }
+
+  /** Lança Forbidden se o usuário não puder enviar arquivos. */
+  async assertCanUploadFiles(
+    userId: string,
+    type: ResourceType,
+    resourceId: string,
+  ): Promise<void> {
+    const ctx = await this.resolveContext(type, resourceId);
+    if (!ctx || ctx.deletedAt) {
+      throw new NotFoundException("Recurso não encontrado");
+    }
+    if (ctx.ownerId === userId) return;
+    if (!ctx.notebookId) throw new ForbiddenException("Acesso negado");
+    const caps = await this.getNotebookCapsForUser(ctx.notebookId, userId);
+    if (!caps?.canUploadFiles) {
+      throw new ForbiddenException("Sem permissão para enviar arquivos");
+    }
+  }
+
   private async hasAncestorShare(
     ctx: ShareContext,
     userId: string,
@@ -324,20 +472,41 @@ export class SharingService {
   private async getNotebookAccessForUser(
     notebookId: string,
     userId: string,
-  ): Promise<{ permission: SharePermission; scope: "all" | string[] } | null> {
+  ): Promise<{
+    permission: SharePermission;
+    scope: "all" | string[];
+    capabilities: ShareCapabilities;
+  } | null> {
     const shares = await this.prisma.withConnection(() =>
       this.prisma.share.findMany({
         where: { resourceType: "notebook", resourceId: notebookId, sharedWithUserId: userId },
-        select: { id: true, permission: true, _count: { select: { scope: true } } },
+        select: {
+          id: true,
+          permission: true,
+          canEditContent: true,
+          canCreateLeaves: true,
+          canUploadFiles: true,
+          _count: { select: { scope: true } },
+        },
       }),
     );
     if (shares.length === 0) return null;
+    const perm = shares.some((s) => s.permission === "editor")
+      ? "editor"
+      : "viewer";
+    // Capacidades: apenas compartilhamentos 'editor' concedem; viewers não têm nada.
+    const editors = shares.filter((s) => s.permission === "editor");
+    const capabilities: ShareCapabilities =
+      editors.length === 0
+        ? NO_CAPABILITIES
+        : {
+            canEditContent: editors.some((s) => s.canEditContent),
+            canCreateLeaves: editors.some((s) => s.canCreateLeaves),
+            canUploadFiles: editors.some((s) => s.canUploadFiles),
+          };
     // Se qualquer share do notebook for sem escopo -> acesso total.
     if (shares.some((s) => s._count.scope === 0)) {
-      const perm = shares.some((s) => s.permission === "editor")
-        ? "editor"
-        : "viewer";
-      return { permission: perm, scope: "all" };
+      return { permission: perm, scope: "all", capabilities };
     }
     const scope = await this.prisma.withConnection(() =>
       this.prisma.notebookShareScope.findMany({
@@ -345,12 +514,10 @@ export class SharingService {
         select: { leafId: true },
       }),
     );
-    const perm = shares.some((s) => s.permission === "editor")
-      ? "editor"
-      : "viewer";
     return {
       permission: perm,
       scope: [...new Set(scope.map((s) => s.leafId))],
+      capabilities,
     };
   }
 
@@ -364,15 +531,30 @@ export class SharingService {
   async getNotebookAccess(
     userId: string,
     notebookId: string,
-  ): Promise<{ level: AccessLevel; scopedLeafIds: string[] | null }> {
+  ): Promise<{
+    level: AccessLevel;
+    scopedLeafIds: string[] | null;
+    capabilities: ShareCapabilities;
+  }> {
     const ctx = await this.resolveContext("notebook", notebookId);
-    if (!ctx || ctx.deletedAt) return { level: "none", scopedLeafIds: null };
-    if (ctx.ownerId === userId) return { level: "owner", scopedLeafIds: null };
+    if (!ctx || ctx.deletedAt)
+      return { level: "none", scopedLeafIds: null, capabilities: NO_CAPABILITIES };
+    if (ctx.ownerId === userId)
+      return {
+        level: "owner",
+        scopedLeafIds: null,
+        capabilities: FULL_CAPABILITIES,
+      };
     const access = await this.getNotebookAccessForUser(notebookId, userId);
-    if (access === null) return { level: "none", scopedLeafIds: null };
+    if (access === null)
+      return { level: "none", scopedLeafIds: null, capabilities: NO_CAPABILITIES };
     if (access.scope === "all")
-      return { level: access.permission, scopedLeafIds: null };
-    return { level: access.permission, scopedLeafIds: access.scope };
+      return { level: access.permission, scopedLeafIds: null, capabilities: access.capabilities };
+    return {
+      level: access.permission,
+      scopedLeafIds: access.scope,
+      capabilities: access.capabilities,
+    };
   }
 
   /** Permite visualizar (owner, editor ou viewer). Lança NotFound se não existe/privado. */
@@ -427,15 +609,7 @@ export class SharingService {
         },
       }),
     );
-    return shares.map((s) => ({
-      id: s.id,
-      resourceType: s.resourceType,
-      resourceId: s.resourceId,
-      user: s.sharedWithUser,
-      permission: (s.permission === "editor" ? "editor" : "viewer") as SharePermission,
-      createdAt: s.createdAt,
-      scope: s.scope.map((sc) => ({ id: sc.id, leafId: sc.leafId })),
-    }));
+    return shares.map((s) => this.serializeShare(s));
   }
 
   async createShare(
@@ -445,6 +619,7 @@ export class SharingService {
     target: { email?: string; userId?: string },
     leafIds?: string[],
     permission: SharePermission = "viewer",
+    capabilities: Partial<ShareCapabilities> = {},
   ) {
     await this.getOwnedContext(userId, type, resourceId);
 
@@ -492,6 +667,10 @@ export class SharingService {
           ownerId: userId,
           sharedWithUserId: targetUser.id,
           permission,
+          // Capacidades só são concedidas em compartilhamentos 'editor'.
+          canEditContent: permission === "editor" ? (capabilities.canEditContent ?? false) : false,
+          canCreateLeaves: permission === "editor" ? (capabilities.canCreateLeaves ?? false) : false,
+          canUploadFiles: permission === "editor" ? (capabilities.canUploadFiles ?? false) : false,
           ...(scopedLeafIds.length
             ? {
                 scope: {
@@ -507,15 +686,7 @@ export class SharingService {
       }),
     );
 
-    return {
-      id: share.id,
-      resourceType: share.resourceType,
-      resourceId: share.resourceId,
-      user: share.sharedWithUser,
-      permission: (share.permission === "editor" ? "editor" : "viewer") as SharePermission,
-      createdAt: share.createdAt,
-      scope: share.scope.map((sc) => ({ id: sc.id, leafId: sc.leafId })),
-    };
+    return this.serializeShare(share);
   }
 
   /**
@@ -617,24 +788,17 @@ export class SharingService {
           scope: { select: { id: true, leafId: true } },
         },
       });
-      return {
-        id: updated!.id,
-        resourceType: updated!.resourceType,
-        resourceId: updated!.resourceId,
-        user: updated!.sharedWithUser,
-        permission: (updated!.permission === "editor" ? "editor" : "viewer") as SharePermission,
-        createdAt: updated!.createdAt,
-        scope: updated!.scope.map((sc) => ({ id: sc.id, leafId: sc.leafId })),
-      };
+      return this.serializeShare(updated!);
     });
   }
 
 
-  /** Altera a permissão (visualizar/editar) de um compartilhamento. */
+  /** Altera a permissão (visualizar/editar) e capacidades de um compartilhamento. */
   async updatePermission(
     shareId: string,
     userId: string,
     permission: SharePermission,
+    capabilities: Partial<ShareCapabilities> = {},
   ) {
     const share = await this.prisma.withConnection(() =>
       this.prisma.share.findUnique({
@@ -653,22 +817,33 @@ export class SharingService {
     const updated = await this.prisma.withConnection(() =>
       this.prisma.share.update({
         where: { id: shareId },
-        data: { permission },
+        data:
+          permission === "editor"
+            ? {
+                permission,
+                ...(capabilities.canEditContent !== undefined && {
+                  canEditContent: capabilities.canEditContent,
+                }),
+                ...(capabilities.canCreateLeaves !== undefined && {
+                  canCreateLeaves: capabilities.canCreateLeaves,
+                }),
+                ...(capabilities.canUploadFiles !== undefined && {
+                  canUploadFiles: capabilities.canUploadFiles,
+                }),
+              }
+            : {
+                permission,
+                canEditContent: false,
+                canCreateLeaves: false,
+                canUploadFiles: false,
+              },
         include: {
           sharedWithUser: { select: { id: true, name: true, email: true } },
           scope: { select: { id: true, leafId: true } },
         },
       }),
     );
-    return {
-      id: updated.id,
-      resourceType: updated.resourceType,
-      resourceId: updated.resourceId,
-      user: updated.sharedWithUser,
-      permission: (updated.permission === "editor" ? "editor" : "viewer") as SharePermission,
-      createdAt: updated.createdAt,
-      scope: updated.scope.map((sc) => ({ id: sc.id, leafId: sc.leafId })),
-    };
+    return this.serializeShare(updated);
   }
 
   async removeShare(shareId: string, userId: string) {

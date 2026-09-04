@@ -111,6 +111,11 @@ model DirectMessage {
 /// acesso a usuários específicos; deixar público gera um link sem login.
 /// Para cadernos, o scope (via NotebookShareScope) controla quais folhas
 /// o destinatário pode ver/editar — sem scope = acesso total.
+///
+/// Capacidades (canEditContent / canCreateLeaves / canUploadFiles):
+/// quando permission = "editor", o dono pode granularizar o que o editor
+/// pode fazer. Se permission = "viewer", NENHUMA capacidade é concedida
+/// (o destinatário apenas visualiza) e todas ficam false.
 model Share {
   id               String   @id @default(uuid())
   resourceType     String // "notebook" | "leaf" | "question" | "flashcard" | "mockExam"
@@ -118,6 +123,10 @@ model Share {
   ownerId          String   // Quem compartilha (dono do recurso)
   sharedWithUserId String
   permission       String   @default("viewer") // "viewer" (só leitura) | "editor" (pode editar)
+  // 🔧 Capacidades de edição (só têm efeito quando permission = "editor")
+  canEditContent   Boolean  @default(false) // Editar textos das folhas
+  canCreateLeaves  Boolean  @default(false) // Criar folhas e sub-folhas
+  canUploadFiles   Boolean  @default(false) // Enviar arquivos (imagem/texto/áudio)
   createdAt        DateTime @default(now())
 
   owner          User    @relation("ShareOwner", fields: [ownerId], references: [id], onDelete: Cascade)
@@ -206,15 +215,34 @@ model Leaf {
   archivedAt DateTime? // Arquivado: nulo = ativo, preenchido = arquivado
   deletedAt  DateTime? // Soft-delete: nulo = ativo, preenchido = na lixeira
 
-  notebook    Notebook      @relation(fields: [notebookId], references: [id], onDelete: Cascade)
+  notebook    Notebook        @relation(fields: [notebookId], references: [id], onDelete: Cascade)
   flashcards  Flashcard[]
-  parent      Leaf?         @relation("LeafChildren", fields: [parentId], references: [id], onDelete: SetNull)
-  children    Leaf[]        @relation("LeafChildren")
+  parent      Leaf?           @relation("LeafChildren", fields: [parentId], references: [id], onDelete: SetNull)
+  children    Leaf[]          @relation("LeafChildren")
   tags        LeafTag[]
   bookmarks   Bookmark[]
   editHistory EditHistory[]
   questions   Question[]
   shareScopes NotebookShareScope[]
+  attachments LeafAttachment[]
+}
+
+/// Arquivos anexados a uma folha (imagem, texto, áudio — até 5MB).
+/// O conteúdo é armazenado como BLOB/bytea no banco; a permissão de upload
+/// é controlada pela capacidade canUploadFiles do compartilhamento do caderno.
+model LeafAttachment {
+  id         String   @id @default(uuid())
+  leafId     String
+  uploadedBy String
+  fileName   String
+  mimeType   String
+  size       Int
+  data       Bytes
+  createdAt  DateTime @default(now())
+
+  leaf Leaf @relation(fields: [leafId], references: [id], onDelete: Cascade)
+
+  @@index([leafId])
 }
 
 /// Histórico de edições de folhas e cadernos

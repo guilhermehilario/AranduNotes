@@ -17,7 +17,7 @@ export class AiLeavesService {
   ) {}
 
   private async getLeafForEdit(leafId: string, userId: string) {
-    await this.sharing.getEditableContext(userId, 'leaf', leafId);
+    await this.sharing.assertCanEditContent(userId, 'leaf', leafId);
     const leaf = await this.prisma.withConnection(() =>
       this.prisma.leaf.findUnique({
         where: { id: leafId },

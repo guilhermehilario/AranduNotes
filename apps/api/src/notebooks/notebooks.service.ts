@@ -68,7 +68,12 @@ export class NotebooksService {
     if (!notebook) throw new NotFoundException('Caderno não encontrado');
 
     const access = await this.sharing.getAccessLevel(userId, 'notebook', id);
-    return { ...notebook, leavesCount, access };
+    const capabilities = await this.sharing.getUserCapabilities(
+      userId,
+      'notebook',
+      id,
+    );
+    return { ...notebook, leavesCount, access, permissions: capabilities };
   }
 
   async create(

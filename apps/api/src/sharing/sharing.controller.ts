@@ -40,6 +40,11 @@ export class SharingController {
       { email: dto.email, userId: dto.userId },
       dto.leafIds,
       dto.permission,
+      {
+        canEditContent: dto.canEditContent,
+        canCreateLeaves: dto.canCreateLeaves,
+        canUploadFiles: dto.canUploadFiles,
+      },
     );
   }
 
@@ -81,7 +86,16 @@ export class SharingController {
     @Param("id") shareId: string,
     @Body() dto: UpdateSharePermissionDto,
   ) {
-    return this.sharingService.updatePermission(shareId, userId, dto.permission);
+    return this.sharingService.updatePermission(
+      shareId,
+      userId,
+      dto.permission,
+      {
+        canEditContent: dto.canEditContent,
+        canCreateLeaves: dto.canCreateLeaves,
+        canUploadFiles: dto.canUploadFiles,
+      },
+    );
   }
 
   @Patch(":type/:id/public")

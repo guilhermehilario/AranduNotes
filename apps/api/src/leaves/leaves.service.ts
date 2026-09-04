@@ -79,7 +79,14 @@ export class LeavesService {
     );
 
     if (!leafWithParents) throw new NotFoundException('Folha não encontrada');
-    return leafWithParents;
+
+    // Permissões de edição resolvidas pelo caderno (para UI read-only/read-write)
+    const permissions = await this.sharing.getUserCapabilities(
+      userId,
+      'leaf',
+      leafId,
+    );
+    return { ...leafWithParents, permissions };
   }
 
   async create(
@@ -87,7 +94,7 @@ export class LeavesService {
     userId: string,
     data: { title: string; content?: string; rawText?: string; parentId?: string },
   ) {
-    await this.sharing.getEditableContext(userId, 'notebook', notebookId);
+    await this.sharing.assertCanCreateLeaves(userId, 'notebook', notebookId);
 
     const notebook = await this.prisma.withConnection(() =>
       this.prisma.notebook.findUnique({
@@ -159,7 +166,9 @@ export class LeavesService {
       parentId?: string | null;
     },
   ) {
-    const leaf = await this.sharing.getEditableContext(userId, 'leaf', leafId);
+    await this.sharing.assertCanEditContent(userId, 'leaf', leafId);
+
+    const leaf = await this.sharing.getVisibleContext(userId, 'leaf', leafId);
 
     const current = await this.prisma.withConnection(() =>
       this.prisma.leaf.findUnique({
@@ -196,15 +205,17 @@ export class LeavesService {
   }
 
   async generateSummary(leafId: string, userId: string) {
+    await this.sharing.assertCanEditContent(userId, 'leaf', leafId);
     return this.aiLeaves.generateSummary(leafId, userId);
   }
 
   async generateFlashcards(leafId: string, userId: string) {
+    await this.sharing.assertCanEditContent(userId, 'leaf', leafId);
     return this.aiLeaves.generateFlashcards(leafId, userId);
   }
 
   async findFlashcards(leafId: string, userId: string) {
-    await this.sharing.getEditableContext(userId, 'leaf', leafId);
+    await this.sharing.assertCanEditContent(userId, 'leaf', leafId);
 
     return this.prisma.withConnection(() =>
       this.prisma.flashcard.findMany({
@@ -215,7 +226,7 @@ export class LeavesService {
   }
 
   async archive(leafId: string, userId: string) {
-    await this.sharing.getEditableContext(userId, 'leaf', leafId);
+    await this.sharing.assertCanEditContent(userId, 'leaf', leafId);
 
     const now = new Date();
     return this.prisma.withConnection(() =>
@@ -227,7 +238,7 @@ export class LeavesService {
   }
 
   async unarchive(leafId: string, userId: string) {
-    await this.sharing.getEditableContext(userId, 'leaf', leafId);
+    await this.sharing.assertCanEditContent(userId, 'leaf', leafId);
 
     return this.prisma.withConnection(() =>
       this.prisma.leaf.update({
@@ -268,7 +279,7 @@ export class LeavesService {
       }),
     );
     if (first) {
-      await this.sharing.getEditableContext(userId, 'notebook', first.notebookId);
+      await this.sharing.assertCanEditContent(userId, 'notebook', first.notebookId);
     }
 
     // Verifica se todas as folhas pertencem ao mesmo caderno acessível

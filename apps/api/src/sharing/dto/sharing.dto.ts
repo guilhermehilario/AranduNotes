@@ -23,6 +23,18 @@ export class CreateShareDto {
   permission?: "viewer" | "editor";
 
   @IsOptional()
+  @IsBoolean()
+  canEditContent?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  canCreateLeaves?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  canUploadFiles?: boolean;
+
+  @IsOptional()
   @IsArray()
   @IsUUID("all", { each: true })
   leafIds?: string[];
@@ -31,6 +43,18 @@ export class CreateShareDto {
 export class UpdateSharePermissionDto {
   @IsIn(SHARE_PERMISSIONS as unknown as string[])
   permission: "viewer" | "editor";
+
+  @IsOptional()
+  @IsBoolean()
+  canEditContent?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  canCreateLeaves?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  canUploadFiles?: boolean;
 }
 
 export class SetShareScopeDto {
