@@ -6,8 +6,8 @@ import {
 import { PrismaService } from "../prisma/prisma.service";
 import { SharingService } from "../sharing/sharing.service";
 
-/** Tamanho máximo de arquivo: 5 MB */
-export const MAX_FILE_SIZE = 5 * 1024 * 1024;
+/** Tamanho máximo de arquivo: 10 MB */
+export const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
 /** Tipos permitidos: texto, imagem e áudio (sem SVG por risco de XSS). */
 export const ALLOWED_MIME_TYPES = new Set<string>([
@@ -85,7 +85,9 @@ export class AttachmentsService {
           fileName: file.originalname,
           mimeType: file.mimetype,
           size: file.size,
-          data: file.buffer,
+          // Prisma 7 (Bytes tipado como Uint8Array<ArrayBuffer>) não aceita
+          // Buffer<ArrayBufferLike> diretamente.
+          data: file.buffer as unknown as Uint8Array<ArrayBuffer>,
         },
       }),
     );
@@ -131,7 +133,7 @@ export class AttachmentsService {
     );
     if (!attachment) throw new NotFoundException("Arquivo não encontrado");
 
-    const dataUrl = `data:${attachment.mimeType};base64,${attachment.data.toString("base64")}`;
+    const dataUrl = `data:${attachment.mimeType};base64,${Buffer.from(attachment.data).toString("base64")}`;
     return {
       id: attachment.id,
       leafId: attachment.leafId,

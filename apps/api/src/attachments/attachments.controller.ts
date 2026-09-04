@@ -29,7 +29,12 @@ export class AttachmentsController {
   upload(
     @Param("leafId") leafId: string,
     @CurrentUser("id") userId: string,
-    @UploadedFile() file: Express.Multer.File,
+    @UploadedFile() file: {
+      originalname: string;
+      mimetype: string;
+      size: number;
+      buffer: Buffer;
+    },
   ) {
     return this.attachmentsService.upload(leafId, userId, file);
   }

@@ -18,6 +18,34 @@ export const SHARE_PERMISSION_LABELS: Record<SharePermission, string> = {
   editor: 'Editar',
 };
 
+/**
+ * Capacidades de edição de um destinatário (caderno).
+ * Só têm efeito quando permission === 'editor'; viewers ficam com tudo false.
+ */
+export interface NotebookPermissions {
+  canEditContent: boolean;
+  canCreateLeaves: boolean;
+  canUploadFiles: boolean;
+}
+
+export const NO_PERMISSIONS: NotebookPermissions = {
+  canEditContent: false,
+  canCreateLeaves: false,
+  canUploadFiles: false,
+};
+
+export const FULL_PERMISSIONS: NotebookPermissions = {
+  canEditContent: true,
+  canCreateLeaves: true,
+  canUploadFiles: true,
+};
+
+export const NotebookPermissionsSchema = z.object({
+  canEditContent: z.boolean(),
+  canCreateLeaves: z.boolean(),
+  canUploadFiles: z.boolean(),
+});
+
 export const ResourceUserSchema = z.object({
   id: z.string().uuid(),
   name: z.string(),
@@ -37,6 +65,9 @@ export const ShareSchema = z.object({
   resourceId: z.string().uuid(),
   user: ResourceUserSchema,
   permission: z.enum(SHARE_PERMISSIONS).default('viewer'),
+  canEditContent: z.boolean().optional().default(false),
+  canCreateLeaves: z.boolean().optional().default(false),
+  canUploadFiles: z.boolean().optional().default(false),
   createdAt: z.string().datetime().or(z.date()),
   scope: z.array(ShareScopeItemSchema).optional().default([]),
 });
