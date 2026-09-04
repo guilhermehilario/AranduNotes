@@ -17,6 +17,8 @@ export function usePageConfig() {
     if (path.includes('/todos')) return PAGE_CONFIG['/todos'];
     if (path.includes('/planning')) return PAGE_CONFIG['/planning'];
     if (path.includes('/studies')) return PAGE_CONFIG['/studies'];
+    if (path.includes('/shared')) return PAGE_CONFIG['/shared'];
+    if (path.includes('/friends')) return PAGE_CONFIG['/friends'];
     return DEFAULT_PAGE;
   }, [location.pathname]);
 }

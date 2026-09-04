@@ -8,6 +8,8 @@ import {
   Archive,
   ListChecks,
   Calendar,
+  Users,
+  Share2,
 } from 'lucide-react';
 
 export const PAGE_CONFIG: Record<string, { title: string; icon: React.ComponentType<{ className?: string }>; subtitle: string }> = {
@@ -21,6 +23,8 @@ export const PAGE_CONFIG: Record<string, { title: string; icon: React.ComponentT
   '/todos': { title: 'Tarefas', icon: ListChecks, subtitle: 'Gerencie suas tarefas pendentes' },
   '/planning': { title: 'Planejamento', icon: Calendar, subtitle: 'Organize seus estudos' },
   '/studies': { title: 'Estudos', icon: GraduationCap, subtitle: 'Escolha como estudar hoje' },
+  '/friends': { title: 'Amigos', icon: Users, subtitle: 'Gerencie seus amigos e convites' },
+  '/shared': { title: 'Compartilhados', icon: Share2, subtitle: 'Conteúdo compartilhado com você' },
 };
 
 export const PLANNING_TAB_LABELS: Record<string, string> = {

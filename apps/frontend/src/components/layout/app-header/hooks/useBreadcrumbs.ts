@@ -36,6 +36,15 @@ export function useBreadcrumbs(): Breadcrumb[] {
 
     if (path === '/dashboard' || path === '/') return [];
 
+    if (path.includes('/friends') || path === '/friends') {
+      parts.push({ label: 'Amigos', path: '/friends' });
+      return parts;
+    }
+    if (path.includes('/shared') || path === '/shared') {
+      parts.push({ label: 'Compartilhados', path: '/shared' });
+      return parts;
+    }
+
     parts.push({ label: 'Cadernos', path: '/dashboard' });
 
     if (pathIds.notebookId) {

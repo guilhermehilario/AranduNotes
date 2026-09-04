@@ -102,9 +102,10 @@ export const FriendsView: React.FC = () => {
   const incoming = requests.filter((r) => r.direction === 'incoming');
   const outgoing = requests.filter((r) => r.direction === 'outgoing');
 
-  const currentStatus: PresenceStatus = myPresence?.online
-    ? (myPresence.status as PresenceStatus)
-    : 'offline';
+  // O modo "offline" será implementado no futuro; por ora o status reflete
+  // diretamente o valor salvo (available/busy/invisible).
+  const currentStatus: PresenceStatus =
+    (myPresence?.status as PresenceStatus) ?? 'available';
 
   return (
     <PageContainer gap="6">
@@ -132,7 +133,6 @@ export const FriendsView: React.FC = () => {
             <option value="available">Disponível</option>
             <option value="busy">Ocupado</option>
             <option value="invisible">Invisível</option>
-            <option value="offline">Offline</option>
           </select>
         </div>
       </div>
