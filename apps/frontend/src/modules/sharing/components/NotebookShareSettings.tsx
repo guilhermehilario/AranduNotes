@@ -84,11 +84,18 @@ export const NotebookShareSettings: React.FC<NotebookShareSettingsProps> = ({
     return share ? share.scope.map((s) => s.leafId) : [];
   };
 
+  const scopeIdsFrom = (shareId: string, draft: Record<string, string[]>): string[] => {
+    const d = draft[shareId];
+    if (d) return d;
+    const share = shares.find((s) => s.id === shareId);
+    return share ? share.scope.map((s) => s.leafId) : [];
+  };
+
   const isScoped = (shareId: string) => currentScopeIds(shareId).length > 0;
 
   const toggleLeaf = (shareId: string, leafId: string) => {
     setDraftScope((prev) => {
-      const cur = currentScopeIds(shareId);
+      const cur = scopeIdsFrom(shareId, prev);
       const next = cur.includes(leafId)
         ? cur.filter((id) => id !== leafId)
         : [...cur, leafId];
@@ -102,7 +109,7 @@ export const NotebookShareSettings: React.FC<NotebookShareSettingsProps> = ({
 
   const setScoped = (shareId: string) => {
     setDraftScope((prev) => {
-      const cur = currentScopeIds(shareId);
+      const cur = scopeIdsFrom(shareId, prev);
       if (cur.length > 0) return prev;
       return { ...prev, [shareId]: flatLeaves.map((l) => l.id) };
     });
@@ -171,6 +178,7 @@ export const NotebookShareSettings: React.FC<NotebookShareSettingsProps> = ({
   };
 
   const saveScope = async (shareId: string) => {
+    setSavingScope(true);
     try {
       const leafIds = currentScopeIds(shareId);
       await setShareScope({ shareId, leafIds });
@@ -193,6 +201,26 @@ export const NotebookShareSettings: React.FC<NotebookShareSettingsProps> = ({
       );
     } finally {
       setSavingScope(false);
+    }
+  };
+
+  const handleChangePermission = async (shareId: string) => {
+    const share = shares.find((s) => s.id === shareId);
+    if (!share) return;
+    const next = share.permission === 'editor' ? 'viewer' : 'editor';
+    try {
+      await updatePermission({ shareId, permission: next });
+      useToastStore.getState().addToast(
+        next === 'editor'
+          ? 'Edição permitida para esta pessoa.'
+          : 'Edição removida (somente visualização).',
+        'success',
+      );
+    } catch (error) {
+      useToastStore.getState().addToast(
+        extractApiError(error, 'Não foi possível alterar a permissão.'),
+        'error',
+      );
     }
   };
 
@@ -364,41 +392,68 @@ export const NotebookShareSettings: React.FC<NotebookShareSettingsProps> = ({
                   {isExpanded && (
                     <div className="mt-3 pl-11 flex flex-col gap-3 border-t border-[var(--border-color)] pt-3">
                       <div className="flex flex-col gap-2">
-                        <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-dark-200 cursor-pointer">
-                          <button
-                            type="button"
-                            onClick={() => setFullAccess(share.id)}
-                            disabled={isSettingScope}
-                            className={`relative w-9 h-5 rounded-full transition-colors cursor-pointer flex-shrink-0 ${
+                        <button
+                          type="button"
+                          onClick={() => setFullAccess(share.id)}
+                          disabled={isSettingScope}
+                          className="flex items-center gap-2 text-sm text-slate-700 dark:text-dark-200 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                        >
+                          <span
+                            className={`relative w-9 h-5 rounded-full transition-colors flex-shrink-0 ${
                               !scoped ? 'bg-brand-500' : 'bg-slate-300 dark:bg-dark-700'
                             }`}
                           >
                             <span
-                              className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${
-                                !scoped ? 'translate-x-[18px]' : 'translate-x-0.5'
+                              className={`absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-transform ${
+                                !scoped ? 'translate-x-[14px]' : 'translate-x-0'
                               }`}
                             />
-                          </button>
+                          </span>
                           <span className="font-medium">Acesso a todas as folhas</span>
-                        </label>
+                        </button>
 
-                        <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-dark-200 cursor-pointer">
-                          <button
-                            type="button"
-                            onClick={() => setScoped(share.id)}
-                            disabled={isSettingScope}
-                            className={`relative w-9 h-5 rounded-full transition-colors cursor-pointer flex-shrink-0 ${
+                        <button
+                          type="button"
+                          onClick={() => setScoped(share.id)}
+                          disabled={isSettingScope}
+                          className="flex items-center gap-2 text-sm text-slate-700 dark:text-dark-200 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                        >
+                          <span
+                            className={`relative w-9 h-5 rounded-full transition-colors flex-shrink-0 ${
                               scoped ? 'bg-brand-500' : 'bg-slate-300 dark:bg-dark-700'
                             }`}
                           >
                             <span
-                              className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${
-                                scoped ? 'translate-x-[18px]' : 'translate-x-0.5'
+                              className={`absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-transform ${
+                                scoped ? 'translate-x-[14px]' : 'translate-x-0'
                               }`}
                             />
-                          </button>
+                          </span>
                           <span className="font-medium">Apenas folhas selecionadas</span>
-                        </label>
+                        </button>
+
+                        <button
+                          type="button"
+                          role="switch"
+                          aria-checked={share.permission === 'editor'}
+                          onClick={() => handleChangePermission(share.id)}
+                          disabled={isUpdatingPermission}
+                          className="flex items-center gap-2 text-sm text-slate-700 dark:text-dark-200 cursor-pointer pt-1 disabled:opacity-60 disabled:cursor-not-allowed"
+                        >
+                          <span
+                            className={`relative w-9 h-5 rounded-full transition-colors flex-shrink-0 ${
+                              share.permission === 'editor' ? 'bg-brand-500' : 'bg-slate-300 dark:bg-dark-700'
+                            }`}
+                          >
+                            <span
+                              className={`absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-transform ${
+                                share.permission === 'editor' ? 'translate-x-[14px]' : 'translate-x-0'
+                              }`}
+                            />
+                          </span>
+                          <Pencil className="h-4 w-4 text-slate-400 flex-shrink-0" />
+                          <span className="font-medium">Permitir edição</span>
+                        </button>
                       </div>
 
                       {scoped && (
