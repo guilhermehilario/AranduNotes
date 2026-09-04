@@ -46,6 +46,12 @@ export const EditorView: React.FC = () => {
   const editorStatus = useEditorStatusStore();
   const isArchived = leaf?.archivedAt != null;
 
+  // ── Permissões de edição (do backend via leaf.permissions) ──
+  const canEditContent = leaf?.permissions?.canEditContent ?? true;
+  const canCreateLeaves = leaf?.permissions?.canCreateLeaves ?? true;
+  const canUploadFiles = leaf?.permissions?.canUploadFiles ?? true;
+  const readOnly = !canEditContent;
+
   // ── Hooks extraídos ──
   const {
     editor,
@@ -57,6 +63,7 @@ export const EditorView: React.FC = () => {
     leafId: leafId || "",
     updateLeaf,
     editorStatus,
+    editable: canEditContent,
   });
 
   const queryClient = useQueryClient();
@@ -196,6 +203,7 @@ export const EditorView: React.FC = () => {
         isArchived={isArchived}
         aiSidebarOpen={aiSidebarOpen}
         aiButtonHint={aiButtonHint}
+        readOnly={readOnly}
         onToggleBookmark={toggleBookmark}
         onArchiveToggle={handleArchiveToggle}
         onDelete={() => setConfirmDeleteOpen(true)}
@@ -216,6 +224,7 @@ export const EditorView: React.FC = () => {
           setLocalTitle={setLocalTitle}
           setSaveStatus={editorStatus.setSaveStatus}
           annotationTrigger={annotationTrigger}
+          readOnly={readOnly}
           className={`max-lg:transition-all max-lg:duration-300 max-lg:ease-in-out ${
             // opacity/translate controladas por editorHidden || aiSidebarOpen para que,
             // ao fechar, o editor volte ao fluxo já com opacidade 0 e o fade-in funcione
@@ -244,6 +253,8 @@ export const EditorView: React.FC = () => {
             flashcards={flashcards}
             leafId={leafId || ""}
             notebookId={notebookId || ""}
+            canEdit={canEditContent}
+            canUploadFiles={canUploadFiles}
             isGeneratingSummary={isGeneratingSummary}
             isGeneratingFlashcards={isGeneratingFlashcards}
             onCreateManualFlashcard={() => setIsFlashcardModalOpen(true)}
@@ -268,6 +279,7 @@ export const EditorView: React.FC = () => {
           leaf={leaf}
           notebookId={notebookId || ""}
           leafId={leafId || ""}
+          canEdit={canCreateLeaves}
         />
       )}
 

@@ -29,6 +29,10 @@ interface AISidebarProps {
   flashcards: Flashcard[];
   leafId: string;
   notebookId: string;
+  /** Permissão para criar/editar resumo e flashcards */
+  canEdit?: boolean;
+  /** Permissão para enviar arquivos */
+  canUploadFiles?: boolean;
   isGeneratingSummary: boolean;
   isGeneratingFlashcards: boolean;
   onCreateManualFlashcard: () => void;
@@ -59,6 +63,8 @@ const AISidebarComponent: React.FC<AISidebarProps> = ({
   flashcards,
   leafId,
   notebookId,
+  canEdit = true,
+  canUploadFiles = true,
   isGeneratingSummary,
   isGeneratingFlashcards,
   onCreateManualFlashcard,
@@ -169,56 +175,68 @@ const AISidebarComponent: React.FC<AISidebarProps> = ({
 
         {activeTab === "summary" && (
           <div className="flex flex-col h-full gap-4">
-            {/* Botão Criar Resumo Manual — sempre visível */}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onCreateManualSummary}
-              leftIcon={<Plus className="h-3.5 w-3.5" />}
-              className="w-full"
-            >
-              {summary ? 'Editar Resumo Manual' : 'Criar Resumo Manual'}
-            </Button>
+            {/* Botão Criar Resumo Manual — apenas com permissão */}
+            {canEdit && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onCreateManualSummary}
+                leftIcon={<Plus className="h-3.5 w-3.5" />}
+                className="w-full"
+              >
+                {summary ? 'Editar Resumo Manual' : 'Criar Resumo Manual'}
+              </Button>
+            )}
 
             {summary ? (
               <div className="flex flex-col gap-4 relative group">
                 {/* Delete button — aparece no hover, mesmo estilo do flashcard */}
-                <div className="absolute top-2 right-2 flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-200 z-10">
-                  <button
-                    onClick={onDeleteSummary}
-                    disabled={isDeletingSummary}
-                    className="p-1.5 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
-                    title="Excluir resumo"
-                  >
-                    <Trash2 className="h-3 w-3" />
-                  </button>
-                </div>
+                {canEdit && (
+                  <div className="absolute top-2 right-2 flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-200 z-10">
+                    <button
+                      onClick={onDeleteSummary}
+                      disabled={isDeletingSummary}
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
+                      title="Excluir resumo"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </button>
+                  </div>
+                )}
                 <div className="ai-summary-block">
                   {summary}
                 </div>
-                <Button
-                  variant="outline"
-                  onClick={onGenerateSummary}
-                  isLoading={isGeneratingSummary}
-                  leftIcon={<Sparkles className="h-4 w-4" />}
-                >
-                  Atualizar Resumo
-                </Button>
+                {canEdit && (
+                  <Button
+                    variant="outline"
+                    onClick={onGenerateSummary}
+                    isLoading={isGeneratingSummary}
+                    leftIcon={<Sparkles className="h-4 w-4" />}
+                  >
+                    Atualizar Resumo
+                  </Button>
+                )}
               </div>
             ) : (
               <EmptyState
                 icon={<Sparkles className="h-6 w-6" />}
                 title="Nenhum resumo gerado"
-                description="Escreva suas anotações no editor e clique abaixo para gerar um resumo automático (conteúdo de exemplo)."
+                description={
+                  canEdit
+                    ? "Escreva suas anotações no editor e clique abaixo para gerar um resumo automático (conteúdo de exemplo)."
+                    : "O dono do caderno ainda não gerou um resumo para esta folha."
+                }
                 action={
-                  <Button
-                    onClick={onGenerateSummary}
-                    isLoading={isGeneratingSummary}
-                    leftIcon={<Sparkles className="h-4.5 w-4.5" />}
-                    disabled={!editor?.getText()?.trim()}
-                  >
-                    Gerar Resumo
-                  </Button>
+                  canEdit ? (
+                    <Button
+                      onClick={onGenerateSummary}
+                      isLoading={isGeneratingSummary}
+                      leftIcon={<Sparkles className="h-4.5 w-4.5" />}
+                      disabled={!editor?.getText()?.trim()}
+                    >
+                      Gerar Resumo
+                    </Button>
+                  ) : undefined
                 }
               />
             )}
@@ -227,30 +245,38 @@ const AISidebarComponent: React.FC<AISidebarProps> = ({
 
         {activeTab === "flashcards" && (
           <div className="flex flex-col h-full gap-4">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onCreateManualFlashcard}
-              leftIcon={<Plus className="h-3.5 w-3.5" />}
-              className="w-full"
-            >
-              Criar Flashcard Manual
-            </Button>
+            {canEdit && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onCreateManualFlashcard}
+                leftIcon={<Plus className="h-3.5 w-3.5" />}
+                className="w-full"
+              >
+                Criar Flashcard Manual
+              </Button>
+            )}
 
             {flashcards.length === 0 ? (
               <EmptyState
                 icon={<HelpCircle className="h-6 w-6" />}
                 title="Nenhum flashcard"
-                description="Crie flashcards manualmente ou gere automaticamente (conteúdo de exemplo)."
+                description={
+                  canEdit
+                    ? "Crie flashcards manualmente ou gere automaticamente (conteúdo de exemplo)."
+                    : "O dono do caderno ainda não criou flashcards para esta folha."
+                }
                 action={
-                  <Button
-                    onClick={onGenerateFlashcards}
-                    isLoading={isGeneratingFlashcards}
-                    leftIcon={<Sparkles className="h-4.5 w-4.5" />}
-                    disabled={!editor?.getText()?.trim()}
-                  >
-                    Gerar Flashcards
-                  </Button>
+                  canEdit ? (
+                    <Button
+                      onClick={onGenerateFlashcards}
+                      isLoading={isGeneratingFlashcards}
+                      leftIcon={<Sparkles className="h-4.5 w-4.5" />}
+                      disabled={!editor?.getText()?.trim()}
+                    >
+                      Gerar Flashcards
+                    </Button>
+                  ) : undefined
                 }
               />
             ) : (
@@ -278,23 +304,25 @@ const AISidebarComponent: React.FC<AISidebarProps> = ({
                       className="p-4 bg-slate-50/50 dark:bg-dark-950/30 border border-slate-100 dark:border-dark-800 flex flex-col gap-2.5 relative group"
                     >
                       {/* Action buttons */}
-                      <div className="absolute top-2 right-2 flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-200">
-                        <button
-                          onClick={() => onEditFlashcard(card)}
-                          className="p-1.5 rounded-lg text-slate-400 hover:text-brand-500 hover:bg-brand-50 dark:hover:bg-brand-950/30 transition-all duration-150"
-                          title="Editar flashcard"
-                        >
-                          <Pencil className="h-3 w-3" />
-                        </button>
-                        <button
-                          onClick={() => onDeleteFlashcard(card.id)}
-                          disabled={isDeletingFlashcard}
-                          className="p-1.5 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
-                          title="Mover para lixeira"
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </button>
-                      </div>
+                      {canEdit && (
+                        <div className="absolute top-2 right-2 flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-200">
+                          <button
+                            onClick={() => onEditFlashcard(card)}
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-brand-500 hover:bg-brand-50 dark:hover:bg-brand-950/30 transition-all duration-150"
+                            title="Editar flashcard"
+                          >
+                            <Pencil className="h-3 w-3" />
+                          </button>
+                          <button
+                            onClick={() => onDeleteFlashcard(card.id)}
+                            disabled={isDeletingFlashcard}
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
+                            title="Mover para lixeira"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </button>
+                        </div>
+                      )}
                       <div className="text-xs font-bold text-brand-500 tracking-wide uppercase">
                         Pergunta:
                       </div>
@@ -311,14 +339,16 @@ const AISidebarComponent: React.FC<AISidebarProps> = ({
                   ))}
                 </div>
 
-                <Button
-                  variant="outline"
-                  onClick={onGenerateFlashcards}
-                  isLoading={isGeneratingFlashcards}
-                  leftIcon={<Sparkles className="h-4 w-4" />}
-                >
-                  Recriar Flashcards
-                </Button>
+                {canEdit && (
+                  <Button
+                    variant="outline"
+                    onClick={onGenerateFlashcards}
+                    isLoading={isGeneratingFlashcards}
+                    leftIcon={<Sparkles className="h-4 w-4" />}
+                  >
+                    Recriar Flashcards
+                  </Button>
+                )}
               </div>
             )}
           </div>
@@ -326,39 +356,51 @@ const AISidebarComponent: React.FC<AISidebarProps> = ({
 
         {activeTab === "arquivos" && (
           <div className="flex flex-col h-full gap-4">
-            {/* Área de drag & drop */}
-            <div
-              onDrop={handleDrop}
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onClick={() => fileInputRef.current?.click()}
-              className={`flex flex-col items-center justify-center gap-3 p-6 rounded-2xl border-2 border-dashed cursor-pointer transition-all ${
-                isDragOver
-                  ? "border-brand-500 bg-brand-50 dark:bg-brand-950/20"
-                  : "border-slate-200 dark:border-dark-700 hover:border-brand-400 hover:bg-slate-50 dark:hover:bg-dark-800/50"
-              }`}
-            >
-              <Upload
-                className={`h-6 w-6 ${isDragOver ? "text-brand-500" : "text-slate-400 dark:text-dark-400"}`}
-              />
-              <div className="text-center">
-                <p className="text-sm font-semibold text-slate-700 dark:text-dark-200">
-                  {isDragOver ? "Solte aqui" : "Arraste arquivos ou clique"}
+            {/* Área de drag & drop — apenas com permissão de upload */}
+            {canUploadFiles ? (
+              <div
+                onDrop={handleDrop}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onClick={() => fileInputRef.current?.click()}
+                className={`flex flex-col items-center justify-center gap-3 p-6 rounded-2xl border-2 border-dashed cursor-pointer transition-all ${
+                  isDragOver
+                    ? "border-brand-500 bg-brand-50 dark:bg-brand-950/20"
+                    : "border-slate-200 dark:border-dark-700 hover:border-brand-400 hover:bg-slate-50 dark:hover:bg-dark-800/50"
+                }`}
+              >
+                <Upload
+                  className={`h-6 w-6 ${isDragOver ? "text-brand-500" : "text-slate-400 dark:text-dark-400"}`}
+                />
+                <div className="text-center">
+                  <p className="text-sm font-semibold text-slate-700 dark:text-dark-200">
+                    {isDragOver ? "Solte aqui" : "Arraste arquivos ou clique"}
+                  </p>
+                  <p className="text-xs text-slate-400 dark:text-dark-400 mt-1">
+                    PDF, DOCX, PNG, JPEG, áudio (até 10 MB)
+                  </p>
+                </div>
+                <input
+                  ref={fileInputRef}
+                  id={uploadId}
+                  type="file"
+                  multiple
+                  accept=".pdf,.doc,.docx,.txt,.md,.csv,.html,.png,.jpg,.jpeg,.gif,.webp,.mp3,.wav,.ogg,.webm,.m4a,.aac,.flac"
+                  className="hidden"
+                  onChange={handleFileChange}
+                />
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center gap-2 p-6 rounded-2xl border-2 border-dashed border-slate-200 dark:border-dark-700">
+                <Upload className="h-6 w-6 text-slate-300 dark:text-dark-500" />
+                <p className="text-sm font-semibold text-slate-500 dark:text-dark-300">
+                  Sem permissão para enviar arquivos
                 </p>
-                <p className="text-xs text-slate-400 dark:text-dark-400 mt-1">
-                  PDF, DOCX, PNG, JPEG, áudio (até 10 MB)
+                <p className="text-xs text-slate-400 dark:text-dark-400 text-center">
+                  Você pode visualizar os arquivos já anexados pelo dono do caderno.
                 </p>
               </div>
-              <input
-                ref={fileInputRef}
-                id={uploadId}
-                type="file"
-                multiple
-                accept=".pdf,.doc,.docx,.txt,.md,.csv,.html,.png,.jpg,.jpeg,.gif,.webp,.mp3,.wav,.ogg,.webm,.m4a,.aac,.flac"
-                className="hidden"
-                onChange={handleFileChange}
-              />
-            </div>
+            )}
 
             {/* Barra de progresso */}
             {isUploading && Object.keys(uploadProgress).length > 0 && (
@@ -404,14 +446,16 @@ const AISidebarComponent: React.FC<AISidebarProps> = ({
                           {formatSize(att.size)}
                         </p>
                       </div>
-                      <button
-                        onClick={() => deleteAttachment(att.id)}
-                        disabled={isDeleting}
-                        className="flex-shrink-0 p-1.5 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-all duration-150 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                        title="Remover arquivo"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
+                      {canUploadFiles && (
+                        <button
+                          onClick={() => deleteAttachment(att.id)}
+                          disabled={isDeleting}
+                          className="flex-shrink-0 p-1.5 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-all duration-150 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                          title="Remover arquivo"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      )}
                     </div>
                   ))}
                 </div>

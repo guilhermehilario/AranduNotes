@@ -85,7 +85,10 @@ export function useLeaf(leafId: string) {
     queryFn: () => leafService.getLeaf(leafId),
     enabled: !!leafId,
     staleTime: 30_000,
-    refetchOnMount: false,
+    // "always": ao entrar na folha, sempre busca permissões/conteúdo do
+    // servidor. Permissões podem mudar (ex.: viewer → editor) e, sem isso,
+    // o cache manteria a folha presa no modo somente leitura.
+    refetchOnMount: "always",
     refetchOnReconnect: false,
     refetchOnWindowFocus: false, // Evita refetch ao focar janela durante edição
   });

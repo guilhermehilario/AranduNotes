@@ -35,11 +35,14 @@ import { formatDate } from '../../../utils/dateFormatUtils';
 interface SubLeafCardProps {
   subLeaf: Leaf;
   onNavigate: (id: string) => void;
+  /** Esconde o handle de arrastar (modo somente leitura) */
+  dragDisabled?: boolean;
 }
 
 const SortableSubLeafCard: React.FC<SubLeafCardProps> = ({
   subLeaf,
   onNavigate,
+  dragDisabled = false,
 }) => {
   const {
     attributes,
@@ -65,15 +68,17 @@ const SortableSubLeafCard: React.FC<SubLeafCardProps> = ({
     >
       <div className="flex items-stretch">
         {/* Área de drag handle */}
-        <button
-          type="button"
-          className="flex items-center justify-center w-8 min-h-full bg-slate-50 dark:bg-dark-950/30 hover:bg-slate-100 dark:hover:bg-dark-800 text-slate-400 hover:text-slate-600 dark:hover:text-dark-300 transition-colors cursor-grab active:cursor-grabbing flex-shrink-0"
-          {...attributes}
-          {...listeners}
-          title="Arrastar para reordenar"
-        >
-          <GripVertical className="h-4 w-4" />
-        </button>
+        {!dragDisabled && (
+          <button
+            type="button"
+            className="flex items-center justify-center w-8 min-h-full bg-slate-50 dark:bg-dark-950/30 hover:bg-slate-100 dark:hover:bg-dark-800 text-slate-400 hover:text-slate-600 dark:hover:text-dark-300 transition-colors cursor-grab active:cursor-grabbing flex-shrink-0"
+            {...attributes}
+            {...listeners}
+            title="Arrastar para reordenar"
+          >
+            <GripVertical className="h-4 w-4" />
+          </button>
+        )}
 
         {/* Conteúdo do card */}
         <button
@@ -106,12 +111,15 @@ interface SubLeavesSectionProps {
   leaf: Leaf;
   notebookId: string;
   leafId: string;
+  /** Modo somente leitura: esconde "Nova" e o drag para reordenar */
+  canEdit?: boolean;
 }
 
 export const SubLeavesSection: React.FC<SubLeavesSectionProps> = ({
   leaf,
   notebookId,
   leafId,
+  canEdit = true,
 }) => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -273,16 +281,18 @@ export const SubLeavesSection: React.FC<SubLeavesSectionProps> = ({
           )}
         </button>
 
-        <button
-          type="button"
-          onClick={handleCreateSubLeaf}
-          disabled={creatingSubLeaf}
-          className="flex items-center gap-1 text-xs font-semibold text-brand-500 hover:text-brand-600 dark:hover:text-brand-400 transition-colors py-1 px-2 rounded-lg hover:bg-brand-50 dark:hover:bg-brand-900/20 cursor-pointer disabled:opacity-50"
-          title="Criar sub-folha"
-        >
-          <Plus className="h-3.5 w-3.5" />
-          Nova
-        </button>
+        {canEdit && (
+          <button
+            type="button"
+            onClick={handleCreateSubLeaf}
+            disabled={creatingSubLeaf}
+            className="flex items-center gap-1 text-xs font-semibold text-brand-500 hover:text-brand-600 dark:hover:text-brand-400 transition-colors py-1 px-2 rounded-lg hover:bg-brand-50 dark:hover:bg-brand-900/20 cursor-pointer disabled:opacity-50"
+            title="Criar sub-folha"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            Nova
+          </button>
+        )}
       </div>
 
       <div
@@ -311,6 +321,7 @@ export const SubLeavesSection: React.FC<SubLeavesSectionProps> = ({
                       onNavigate={(id) =>
                         navigate(`/notebooks/${notebookId}/leaves/${id}`)
                       }
+                      dragDisabled={!canEdit}
                     />
                   ))}
                 </div>
@@ -318,7 +329,9 @@ export const SubLeavesSection: React.FC<SubLeavesSectionProps> = ({
             </DndContext>
           ) : (
             <p className="text-xs text-slate-400 dark:text-dark-400 pb-2">
-              Nenhuma sub-folha ainda. Clique em "Nova" acima para criar uma.
+              {canEdit
+                ? 'Nenhuma sub-folha ainda. Clique em "Nova" acima para criar uma.'
+                : 'Nenhuma sub-folha nesta folha.'}
             </p>
           )}
         </div>

@@ -317,6 +317,21 @@ export class SharingService {
     const editors = shares.filter((s) => s.permission === "editor");
     if (editors.length === 0) return NO_CAPABILITIES;
 
+    // Um compartilhamento 'editor' SEM permissões granulares explícitas significa
+    // "edição completa" — caso contrário, o usuário edita apenas aquilo que alguma
+    // share 'editor' autorizar explicitamente. Isso mantém o comportamento quando
+    // a UI envia apenas editor/viewer (sem sub-permissões).
+    const hasExplicitCaps = editors.some(
+      (s) => s.canEditContent || s.canCreateLeaves || s.canUploadFiles,
+    );
+    if (!hasExplicitCaps) {
+      return {
+        canEditContent: true,
+        canCreateLeaves: true,
+        canUploadFiles: true,
+      };
+    }
+
     return {
       // Capacidade é concedida se QUALQUER share 'editor' a autorizar.
       canEditContent: editors.some((s) => s.canEditContent),
@@ -496,14 +511,23 @@ export class SharingService {
       : "viewer";
     // Capacidades: apenas compartilhamentos 'editor' concedem; viewers não têm nada.
     const editors = shares.filter((s) => s.permission === "editor");
+    const hasExplicitCaps = editors.some(
+      (s) => s.canEditContent || s.canCreateLeaves || s.canUploadFiles,
+    );
     const capabilities: ShareCapabilities =
       editors.length === 0
         ? NO_CAPABILITIES
-        : {
-            canEditContent: editors.some((s) => s.canEditContent),
-            canCreateLeaves: editors.some((s) => s.canCreateLeaves),
-            canUploadFiles: editors.some((s) => s.canUploadFiles),
-          };
+        : hasExplicitCaps
+          ? {
+              canEditContent: editors.some((s) => s.canEditContent),
+              canCreateLeaves: editors.some((s) => s.canCreateLeaves),
+              canUploadFiles: editors.some((s) => s.canUploadFiles),
+            }
+          : {
+              canEditContent: true,
+              canCreateLeaves: true,
+              canUploadFiles: true,
+            };
     // Se qualquer share do notebook for sem escopo -> acesso total.
     if (shares.some((s) => s._count.scope === 0)) {
       return { permission: perm, scope: "all", capabilities };

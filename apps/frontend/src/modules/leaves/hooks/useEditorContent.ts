@@ -48,6 +48,8 @@ interface UseEditorContentParams {
     setSaveStatus: (status: "idle" | "saving" | "saved" | "error") => void;
     setLastUpdate: (timestamp: string) => void;
   };
+  /** Quando false, o editor fica em modo somente leitura (sem salvar). */
+  editable?: boolean;
 }
 
 interface UseEditorContentReturn {
@@ -74,6 +76,7 @@ export function useEditorContent({
   leafId,
   updateLeaf,
   editorStatus,
+  editable = true,
 }: UseEditorContentParams): UseEditorContentReturn {
   const [localTitle, setLocalTitle] = useState("");
   const [localContent, setLocalContent] = useState("");
@@ -104,6 +107,7 @@ export function useEditorContent({
   const editor = useEditor({
     extensions,
     content: "",
+    editable,
     onUpdate: handleEditorUpdate,
     immediatelyRender: false,
     editorProps: {
@@ -136,6 +140,15 @@ export function useEditorContent({
       },
     },
   });
+
+  // Força o modo somente leitura de forma reativa (muda junto com as
+  // permissões carregadas do caderno).
+  useEffect(() => {
+    if (!editor) return;
+    if (editor.isEditable !== editable) {
+      editor.setEditable(editable);
+    }
+  }, [editor, editable]);
 
   // Força os estilos de quebra de texto diretamente via JS no DOM do ProseMirror
   useEffect(() => {

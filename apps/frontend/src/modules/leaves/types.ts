@@ -30,6 +30,11 @@ export interface Leaf {
   archivedAt?: string | null;
   deletedAt?: string | null;
   position?: number;
+  permissions?: {
+    canEditContent: boolean;
+    canCreateLeaves: boolean;
+    canUploadFiles: boolean;
+  };
 }
 
 // Sem anotação explícita de propósito: uma anotação `: z.ZodType<Leaf>` falha
@@ -54,6 +59,13 @@ export const LeafSchema = z.object({
   archivedAt: z.string().datetime().nullable().optional(),
   deletedAt: z.string().datetime().nullable().optional(),
   position: z.number().optional(),
+  permissions: z
+    .object({
+      canEditContent: z.boolean(),
+      canCreateLeaves: z.boolean(),
+      canUploadFiles: z.boolean(),
+    })
+    .optional(),
 });
 
 export const CreateLeafSchema = z.object({
