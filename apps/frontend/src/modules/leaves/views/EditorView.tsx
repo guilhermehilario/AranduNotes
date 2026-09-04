@@ -242,6 +242,7 @@ export const EditorView: React.FC = () => {
             editor={editor}
             summary={leaf?.summary}
             flashcards={flashcards}
+            leafId={leafId || ""}
             notebookId={notebookId || ""}
             isGeneratingSummary={isGeneratingSummary}
             isGeneratingFlashcards={isGeneratingFlashcards}

@@ -74,3 +74,16 @@ export const UpdateLeafSchema = z.object({
 });
 
 export type UpdateLeafInput = z.infer<typeof UpdateLeafSchema>;
+
+export interface Attachment {
+  id: string;
+  leafId: string;
+  fileName: string;
+  mimeType: string;
+  size: number;
+  createdAt: string | Date;
+}
+
+export interface AttachmentWithData extends Attachment {
+  dataUrl: string;
+}

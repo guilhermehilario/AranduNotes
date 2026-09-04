@@ -1,4 +1,4 @@
-import { useState, memo, useId } from "react";
+import { useState, memo, useId, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import type { Editor } from "@tiptap/react";
 import {
@@ -9,17 +9,25 @@ import {
   Upload,
   Pencil,
   Trash2,
+  FileText,
+  Image as ImageIcon,
+  Music,
+  File,
+  Loader2,
+  X,
 } from "lucide-react";
 import { AnnotationSidebar } from "./AnnotationSidebar";
 import { Card } from "../../../components/ui/Card.tsx";
 import { Button } from "../../../components/ui/Button.tsx";
 import { EmptyState } from "../../../components/ui/EmptyState.tsx";
+import { useAttachments } from "../hooks/useAttachments";
 import type { Flashcard } from "../../study/types";
 
 interface AISidebarProps {
   editor: Editor | null;
   summary: string | null | undefined;
   flashcards: Flashcard[];
+  leafId: string;
   notebookId: string;
   isGeneratingSummary: boolean;
   isGeneratingFlashcards: boolean;
@@ -49,6 +57,7 @@ const AISidebarComponent: React.FC<AISidebarProps> = ({
   editor,
   summary,
   flashcards,
+  leafId,
   notebookId,
   isGeneratingSummary,
   isGeneratingFlashcards,
@@ -66,6 +75,66 @@ const AISidebarComponent: React.FC<AISidebarProps> = ({
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<AiTab>("summary");
   const uploadId = useId();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isDragOver, setIsDragOver] = useState(false);
+
+  const {
+    attachments,
+    uploadFiles,
+    isUploading,
+    uploadProgress,
+    deleteAttachment,
+    isDeleting,
+  } = useAttachments(leafId);
+
+  const handleFileChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (e.target.files?.length) {
+        uploadFiles(e.target.files);
+        e.target.value = "";
+      }
+    },
+    [uploadFiles],
+  );
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      setIsDragOver(false);
+      if (e.dataTransfer.files.length) {
+        uploadFiles(e.dataTransfer.files);
+      }
+    },
+    [uploadFiles],
+  );
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(true);
+  }, []);
+
+  const handleDragLeave = useCallback(() => {
+    setIsDragOver(false);
+  }, []);
+
+  const formatSize = (bytes: number) => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
+  const getFileIcon = (mimeType: string) => {
+    if (mimeType.startsWith("image/")) return <ImageIcon className="h-4 w-4" />;
+    if (mimeType.startsWith("audio/")) return <Music className="h-4 w-4" />;
+    if (
+      mimeType === "application/pdf" ||
+      mimeType.startsWith("text/") ||
+      mimeType.includes("word") ||
+      mimeType.includes("document")
+    )
+      return <FileText className="h-4 w-4" />;
+    return <File className="h-4 w-4" />;
+  };
 
   return (
     <div
@@ -256,20 +325,107 @@ const AISidebarComponent: React.FC<AISidebarProps> = ({
         )}
 
         {activeTab === "arquivos" && (
-          <EmptyState
-            icon={<Upload className="h-6 w-6" />}
-            title="Anexar Arquivos"
-            description="Arraste arquivos ou clique para fazer upload de imagens, PDFs e documentos para esta folha."
-            action={
-              <label htmlFor={uploadId} className="cursor-pointer">
-                <div className="ai-upload-button">
-                  <Upload className="h-4 w-4" />
-                  Selecionar Arquivos
+          <div className="flex flex-col h-full gap-4">
+            {/* Área de drag & drop */}
+            <div
+              onDrop={handleDrop}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onClick={() => fileInputRef.current?.click()}
+              className={`flex flex-col items-center justify-center gap-3 p-6 rounded-2xl border-2 border-dashed cursor-pointer transition-all ${
+                isDragOver
+                  ? "border-brand-500 bg-brand-50 dark:bg-brand-950/20"
+                  : "border-slate-200 dark:border-dark-700 hover:border-brand-400 hover:bg-slate-50 dark:hover:bg-dark-800/50"
+              }`}
+            >
+              <Upload
+                className={`h-6 w-6 ${isDragOver ? "text-brand-500" : "text-slate-400 dark:text-dark-400"}`}
+              />
+              <div className="text-center">
+                <p className="text-sm font-semibold text-slate-700 dark:text-dark-200">
+                  {isDragOver ? "Solte aqui" : "Arraste arquivos ou clique"}
+                </p>
+                <p className="text-xs text-slate-400 dark:text-dark-400 mt-1">
+                  PDF, DOCX, PNG, JPEG, áudio (até 10 MB)
+                </p>
+              </div>
+              <input
+                ref={fileInputRef}
+                id={uploadId}
+                type="file"
+                multiple
+                accept=".pdf,.doc,.docx,.txt,.md,.csv,.html,.png,.jpg,.jpeg,.gif,.webp,.mp3,.wav,.ogg,.webm,.m4a,.aac,.flac"
+                className="hidden"
+                onChange={handleFileChange}
+              />
+            </div>
+
+            {/* Barra de progresso */}
+            {isUploading && Object.keys(uploadProgress).length > 0 && (
+              <div className="flex flex-col gap-2">
+                {Object.entries(uploadProgress).map(([name, pct]) => (
+                  <div key={name} className="flex flex-col gap-1">
+                    <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-dark-400">
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                      <span className="truncate">{name}</span>
+                      <span className="ml-auto">{pct}%</span>
+                    </div>
+                    <div className="h-1.5 bg-slate-100 dark:bg-dark-800 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-brand-500 rounded-full transition-all duration-300"
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Lista de arquivos */}
+            {attachments.length > 0 ? (
+              <div className="flex flex-col gap-2">
+                <span className="text-xs font-bold text-slate-400 dark:text-dark-400">
+                  {attachments.length} arquivo{attachments.length !== 1 ? "s" : ""}
+                </span>
+                <div className="flex flex-col gap-1.5 max-h-[40vh] overflow-y-auto pr-1">
+                  {attachments.map((att) => (
+                    <div
+                      key={att.id}
+                      className="flex items-center gap-3 p-3 rounded-xl bg-slate-50/50 dark:bg-dark-950/30 border border-slate-100 dark:border-dark-800 group"
+                    >
+                      <div className="flex-shrink-0 p-2 rounded-lg bg-slate-100 dark:bg-dark-800 text-slate-500 dark:text-dark-400">
+                        {getFileIcon(att.mimeType)}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-semibold text-slate-700 dark:text-dark-200 truncate">
+                          {att.fileName}
+                        </p>
+                        <p className="text-[10px] text-slate-400 dark:text-dark-400">
+                          {formatSize(att.size)}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => deleteAttachment(att.id)}
+                        disabled={isDeleting}
+                        className="flex-shrink-0 p-1.5 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-all duration-150 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                        title="Remover arquivo"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
                 </div>
-                <input id={uploadId} type="file" multiple className="hidden" />
-              </label>
-            }
-          />
+              </div>
+            ) : (
+              !isUploading && (
+                <div className="text-center py-4">
+                  <p className="text-xs text-slate-400 dark:text-dark-400">
+                    Nenhum arquivo anexado ainda.
+                  </p>
+                </div>
+              )
+            )}
+          </div>
         )}
       </div>
     </div>

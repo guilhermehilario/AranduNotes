@@ -57,12 +57,12 @@ export class AttachmentsService {
     }
     if (file.size > MAX_FILE_SIZE) {
       throw new BadRequestException(
-        "Arquivo muito grande. O limite é de 5 MB por arquivo.",
+        "Arquivo muito grande. O limite é de 10 MB por arquivo.",
       );
     }
     if (!ALLOWED_MIME_TYPES.has(file.mimetype)) {
       throw new BadRequestException(
-        "Tipo de arquivo não permitido. Envie apenas imagens, áudios ou arquivos de texto (até 5 MB).",
+        "Tipo de arquivo não permitido. Envie apenas imagens, áudios ou arquivos de texto (até 10 MB).",
       );
     }
   }
