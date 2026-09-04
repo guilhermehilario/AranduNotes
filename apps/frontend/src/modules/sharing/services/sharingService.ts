@@ -59,6 +59,13 @@ export const sharingService = {
     await api.delete(`/shares/${shareId}`);
   },
 
+  async leaveNotebook(notebookId: string): Promise<{ success: boolean }> {
+    const response = await api.delete<{ success: boolean }>(
+      `/shares/notebook/${notebookId}/self`,
+    );
+    return response.data;
+  },
+
   async getInbox(): Promise<InboxItem[]> {
     const response = await api.get<InboxItem[]>('/shares/inbox');
     return response.data;

@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Edit2, Trash2, Play, BookmarkIcon, Share2 } from 'lucide-react';
+import { Edit2, Trash2, Play, BookmarkIcon, Share2, Ban } from 'lucide-react';
 import { Button } from '../../../components/ui/Button.tsx';
 import type { Notebook } from '../types';
 
@@ -11,7 +11,10 @@ interface NotebookHeaderProps {
   onOpenEditModal: () => void;
   onDelete: () => void;
   onShare?: () => void;
+  onCancelShare?: () => void;
+  isCancelingShare?: boolean;
   isOwner?: boolean;
+  canEdit?: boolean;
 }
 
 export const NotebookHeader: React.FC<NotebookHeaderProps> = ({
@@ -21,7 +24,10 @@ export const NotebookHeader: React.FC<NotebookHeaderProps> = ({
   onOpenEditModal,
   onDelete,
   onShare,
+  onCancelShare,
+  isCancelingShare,
   isOwner = true,
+  canEdit = true,
 }) => {
   const navigate = useNavigate();
 
@@ -63,15 +69,27 @@ export const NotebookHeader: React.FC<NotebookHeaderProps> = ({
           <Button variant="outline" onClick={onShare} leftIcon={<Share2 className="h-4.5 w-4.5" />}>
             Compartilhar
           </Button>
-        ) : null}
+        ) : (
+          <Button
+            variant="outline"
+            onClick={onCancelShare}
+            isLoading={isCancelingShare}
+            className="text-rose-500 border-rose-200 hover:bg-rose-50 dark:hover:bg-rose-950/20"
+            leftIcon={<Ban className="h-4.5 w-4.5" />}
+          >
+            Cancelar Compartilhamento
+          </Button>
+        )}
 
-        <Button
-          variant="outline"
-          onClick={onOpenEditModal}
-          leftIcon={<Edit2 className="h-4.5 w-4.5" />}
-        >
-          Editar
-        </Button>
+        {canEdit && (
+          <Button
+            variant="outline"
+            onClick={onOpenEditModal}
+            leftIcon={<Edit2 className="h-4.5 w-4.5" />}
+          >
+            Editar
+          </Button>
+        )}
 
         {isOwner ? (
           <Button

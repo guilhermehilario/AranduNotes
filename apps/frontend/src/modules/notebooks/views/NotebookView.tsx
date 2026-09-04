@@ -16,6 +16,7 @@ import { EditFlashcardModal } from "../components/EditFlashcardModal";
 import { EditNotebookModal } from "../components/EditNotebookModal";
 import { ConfirmDialog } from "../../../components/ui/ConfirmDialog.tsx";
 import { NotebookShareSettings } from "../../sharing/components/NotebookShareSettings.tsx";
+import { useLeaveNotebook } from "../../sharing/hooks/useLeaveNotebook";
 
 type NotebookTab = 'conteudo' | 'compartilhar';
 
@@ -96,6 +97,21 @@ export const NotebookView: React.FC = () => {
     createLeaf,
   });
 
+  // ── Hook: Cancelar compartilhamento (sair do caderno compartilhado) ──
+  const { leaveNotebook, isLeaving } = useLeaveNotebook();
+  const [confirmLeaveOpen, setConfirmLeaveOpen] = useState(false);
+
+  // ── Permissões derivadas ──
+  const isOwner = notebook?.access === 'owner';
+  const canEditContent = isOwner || notebook?.permissions?.canEditContent === true;
+  const canCreateLeaves = isOwner || notebook?.permissions?.canCreateLeaves === true;
+
+  const handleLeaveConfirm = async () => {
+    await leaveNotebook(notebookId || "");
+    setConfirmLeaveOpen(false);
+    navigate("/dashboard");
+  };
+
   // ── Loading state ──
   if (isLoading) {
     return (
@@ -129,7 +145,10 @@ export const NotebookView: React.FC = () => {
         onOpenEditModal={handleOpenEditModal}
         onDelete={() => setConfirmDeleteOpen(true)}
         onShare={() => setTab('compartilhar')}
-        isOwner={notebook.access !== 'editor'}
+        onCancelShare={() => setConfirmLeaveOpen(true)}
+        isCancelingShare={isLeaving}
+        isOwner={isOwner}
+        canEdit={canEditContent}
       />
 
       {/* Abas */}
@@ -149,7 +168,7 @@ export const NotebookView: React.FC = () => {
           <LayoutGrid className="h-4 w-4" />
           Conteúdo
         </button>
-        {notebook.access !== 'editor' && (
+        {isOwner && (
           <button
             type="button"
             onClick={() => setTab('compartilhar')}
@@ -165,7 +184,7 @@ export const NotebookView: React.FC = () => {
         )}
       </div>
 
-      {tab === 'compartilhar' && notebook.access !== 'editor' ? (
+      {tab === 'compartilhar' && isOwner ? (
         <div className="mt-6 rounded-2xl p-5" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)' }}>
           <NotebookShareSettings
             notebookId={notebook.id}
@@ -183,17 +202,19 @@ export const NotebookView: React.FC = () => {
             Folhas de Anotação ({leaves.length})
           </h2>
           <div className="flex gap-2 self-end sm:self-auto">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                setParentLeafId(undefined);
-                setIsModalOpen(true);
-              }}
-              leftIcon={<Plus className="h-4 w-4" />}
-            >
-              Nova Folha
-            </Button>
+            {canCreateLeaves && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setParentLeafId(undefined);
+                  setIsModalOpen(true);
+                }}
+                leftIcon={<Plus className="h-4 w-4" />}
+              >
+                Nova Folha
+              </Button>
+            )}
           </div>
         </div>
 
@@ -203,17 +224,19 @@ export const NotebookView: React.FC = () => {
             title="Nenhuma folha criada neste caderno"
             description="Crie folhas para anotar os conteúdos de suas aulas e gerar materiais de estudo por IA."
             action={
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  setParentLeafId(undefined);
-                  setIsModalOpen(true);
-                }}
-                leftIcon={<Plus className="h-4 w-4" />}
-                className="mt-4 text-brand-500"
-              >
-                Criar primeira folha
-              </Button>
+              canCreateLeaves ? (
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    setParentLeafId(undefined);
+                    setIsModalOpen(true);
+                  }}
+                  leftIcon={<Plus className="h-4 w-4" />}
+                  className="mt-4 text-brand-500"
+                >
+                  Criar primeira folha
+                </Button>
+              ) : undefined
             }
           />
         ) : (
@@ -223,6 +246,7 @@ export const NotebookView: React.FC = () => {
                 key={leaf.id}
                 leaf={leaf}
                 notebookId={notebookId || ""}
+                canCreateSubLeaf={canCreateLeaves}
                 onCreateSubLeaf={() => {
                   setParentLeafId(leaf.id);
                   setIsModalOpen(true);
@@ -315,6 +339,19 @@ export const NotebookView: React.FC = () => {
         confirmLabel="Sim, Mover para Lixeira"
         cancelLabel="Cancelar"
         variant="danger"
+      />
+
+      {/* Confirmar cancelamento de compartilhamento */}
+      <ConfirmDialog
+        isOpen={confirmLeaveOpen}
+        onClose={() => setConfirmLeaveOpen(false)}
+        onConfirm={handleLeaveConfirm}
+        title="Cancelar Compartilhamento?"
+        message="Você deixará de ter acesso a este caderno compartilhado. Tem certeza?"
+        confirmLabel="Sim, Cancelar Compartilhamento"
+        cancelLabel="Manter Acesso"
+        variant="danger"
+        isLoading={isLeaving}
       />
 
       {actionError && !isEditModalOpen && !confirmDeleteOpen && (

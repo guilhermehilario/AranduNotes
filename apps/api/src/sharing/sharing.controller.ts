@@ -65,6 +65,14 @@ export class SharingController {
     return this.sharingService.listSharedWithMe(userId);
   }
 
+  @Delete("notebook/:notebookId/self")
+  async removeSelf(
+    @CurrentUser("id") userId: string,
+    @Param("notebookId") notebookId: string,
+  ) {
+    return this.sharingService.removeShareForSelf(notebookId, userId);
+  }
+
   @Delete(":id")
   async remove(@CurrentUser("id") userId: string, @Param("id") shareId: string) {
     await this.sharingService.removeShare(shareId, userId);

@@ -25,9 +25,10 @@ interface LeafCardProps {
   leaf: LeafCardData;
   notebookId: string;
   onCreateSubLeaf: () => void;
+  canCreateSubLeaf?: boolean;
 }
 
-export const LeafCard: React.FC<LeafCardProps> = ({ leaf, notebookId, onCreateSubLeaf }) => {
+export const LeafCard: React.FC<LeafCardProps> = ({ leaf, notebookId, onCreateSubLeaf, canCreateSubLeaf = true }) => {
   const navigate = useNavigate();
   const [expanded, setExpanded] = useState(false);
   const hasChildren = leaf.children && leaf.children.length > 0;
@@ -88,18 +89,20 @@ export const LeafCard: React.FC<LeafCardProps> = ({ leaf, notebookId, onCreateSu
               {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
             </button>
           )}
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onCreateSubLeaf();
-            }}
-            className="p-1.5 rounded-lg cursor-pointer hover:bg-[var(--bg-surface-hover)] transition-colors"
-            style={{ color: 'var(--text-secondary)' }}
-            title="Criar sub-folha"
-          >
-            <Plus className="h-3.5 w-3.5" />
-          </button>
+          {canCreateSubLeaf && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onCreateSubLeaf();
+              }}
+              className="p-1.5 rounded-lg cursor-pointer hover:bg-[var(--bg-surface-hover)] transition-colors"
+              style={{ color: 'var(--text-secondary)' }}
+              title="Criar sub-folha"
+            >
+              <Plus className="h-3.5 w-3.5" />
+            </button>
+          )}
           <ChevronRight className="h-5 w-5 flex-shrink-0" style={{ color: 'var(--text-secondary)' }} />
         </div>
       </Card>

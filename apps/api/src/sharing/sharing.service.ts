@@ -865,6 +865,31 @@ export class SharingService {
     );
   }
 
+  /**
+   * Remove o próprio usuário de um compartilhamento de caderno
+   * ("cancelar compartilhamento" / sair do caderno compartilhado).
+   */
+  async removeShareForSelf(notebookId: string, userId: string) {
+    const ctx = await this.resolveContext("notebook", notebookId);
+    if (ctx?.ownerId === userId) {
+      throw new ForbiddenException(
+        "Você é o dono deste caderno e não pode cancelar o compartilhamento dele.",
+      );
+    }
+
+    await this.prisma.withConnection(
+      () =>
+        this.prisma.share.deleteMany({
+          where: {
+            resourceType: "notebook",
+            resourceId: notebookId,
+            sharedWithUserId: userId,
+          },
+        }),
+    );
+    return { success: true };
+  }
+
   /** Recursos do tipo indicado compartilhados COM o usuário (para listas). */
   async listSharedResourcesOfType(
     userId: string,
