@@ -7,6 +7,7 @@ import { useShares } from '../hooks/useSharing';
 import { useToastStore } from '../../../store/toastStore';
 import { extractApiError } from '../../../utils/api-errors';
 import { buildPublicUrl, RESOURCE_TYPE_LABELS } from '../types';
+import { EMAIL_REGEX } from '../constants';
 import { friendsService } from '../../friends/services/friendsService';
 import type { SearchResult } from '../../friends/types';
 import type { ShareResourceType, SharePermission } from '../types';
@@ -20,8 +21,6 @@ interface ShareModalProps {
   initialIsPublic?: boolean;
   initialToken?: string | null;
 }
-
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 interface PermissionPickerProps {
   value: SharePermission;
