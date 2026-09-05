@@ -18,7 +18,6 @@ export const DASHBOARD_PATH = "/dashboard";
 export const NAV_ITEMS: NavItemConfig[] = [
   { path: "/friends", label: "Amigos", icon: Users },
   { path: "/shared", label: "Compartilhados", icon: Share2 },
-  { path: "/todos", label: "Tarefas", icon: ListChecks },
   { path: "/tags", label: "Tags", icon: Tags },
   { path: "/bookmarks", label: "Marcadores", icon: BookmarkIcon },
   { path: "/archived", label: "Arquivados", icon: Archive },
@@ -30,6 +29,7 @@ export const PLANNING_SUB_ITEMS: PlanningSubItem[] = [
   { path: "/planning/cronograma", label: "Cronograma", icon: Timeline },
   { path: "/planning/metas", label: "Metas", icon: Target },
   { path: "/planning/pomodoro", label: "Pomodoro", icon: Timer },
+  { path: "/todos", label: "Tarefas", icon: ListChecks },
 ] as const;
 
 export const TRASH_ITEM: NavItemConfig = {

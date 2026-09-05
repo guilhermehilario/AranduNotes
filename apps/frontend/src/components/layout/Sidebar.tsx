@@ -31,7 +31,10 @@ export const Sidebar: React.FC = () => {
   const sidebarCollapsed = rawCollapsed && !mobileSidebarOpen;
 
   const isTrashActive = location.pathname.startsWith("/trash");
-  const isPlanningActive = location.pathname.startsWith("/planning");
+  // Tarefas ficou sob o submenu de Planejamento
+  const isPlanningActive =
+    location.pathname.startsWith("/planning") ||
+    location.pathname.startsWith("/todos");
 
   // null = auto (segue a rota), true = expandido, false = colapsado
   const [planningExpandedByUser, setPlanningExpandedByUser] = useState<boolean | null>(null);
@@ -127,7 +130,7 @@ export const Sidebar: React.FC = () => {
           onClick={closeAll}
         />
 
-        {/* Demais itens (Tags, Marcadores, Arquivados, Tarefas) */}
+        {/* Demais itens (Tags, Marcadores, Arquivados) */}
         {NAV_ITEMS.map((item) => (
           <SidebarNavLink
             key={item.path}
