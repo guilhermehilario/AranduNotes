@@ -43,7 +43,12 @@ export const EditorView: React.FC = () => {
     path: `/notebooks/${notebookId}/leaves/${leafId}`,
   });
   const softDeleteLeaf = useSoftDeleteLeaf();
-  const editorStatus = useEditorStatusStore();
+  // Seletores individuais (ações estáveis) — NUNCA o store inteiro, senão a
+  // identidade muda a cada setSaveStatus/setLastUpdate e re-executa efeitos
+  // do editor (risco de loop infinito) em toda alteração de status.
+  const showEditorStatus = useEditorStatusStore((s) => s.show);
+  const setEditorStatusLastUpdate = useEditorStatusStore((s) => s.setLastUpdate);
+  const setSaveStatus = useEditorStatusStore((s) => s.setSaveStatus);
   const isArchived = leaf?.archivedAt != null;
 
   // ── Permissões de edição (do backend via leaf.permissions) ──
@@ -62,7 +67,8 @@ export const EditorView: React.FC = () => {
     leaf,
     leafId: leafId || "",
     updateLeaf,
-    editorStatus,
+    showEditorStatus,
+    setEditorStatusLastUpdate,
     editable: canEditContent,
   });
 
@@ -222,7 +228,7 @@ export const EditorView: React.FC = () => {
           editor={editor}
           localTitle={localTitle}
           setLocalTitle={setLocalTitle}
-          setSaveStatus={editorStatus.setSaveStatus}
+          setSaveStatus={setSaveStatus}
           annotationTrigger={annotationTrigger}
           readOnly={readOnly}
           className={`max-lg:transition-all max-lg:duration-300 max-lg:ease-in-out ${

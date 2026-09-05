@@ -42,12 +42,9 @@ interface UseEditorContentParams {
     content: string;
     rawText: string;
   }) => Promise<unknown>;
-  editorStatus: {
-    show: () => void;
-    hide: () => void;
-    setSaveStatus: (status: "idle" | "saving" | "saved" | "error") => void;
-    setLastUpdate: (timestamp: string) => void;
-  };
+  /** Ações ESTÁVEIS do store de status do editor (não passar o store inteiro). */
+  showEditorStatus: () => void;
+  setEditorStatusLastUpdate: (timestamp: string) => void;
   /** Quando false, o editor fica em modo somente leitura (sem salvar). */
   editable?: boolean;
 }
@@ -75,7 +72,8 @@ export function useEditorContent({
   leaf,
   leafId,
   updateLeaf,
-  editorStatus,
+  showEditorStatus,
+  setEditorStatusLastUpdate,
   editable = true,
 }: UseEditorContentParams): UseEditorContentReturn {
   const [localTitle, setLocalTitle] = useState("");
@@ -217,19 +215,19 @@ export function useEditorContent({
     });
 
     // Marca o sync como concluído de forma SÍNCRONA logo após atualizar os
-    // refs acima (que já estão com o conteúdo real). Manter isso síncrono é o
-    // que corta loops: como editorStatus muda de referência a cada
-    // setLastUpdate()/show() e está nas deps deste efeito, um guarda adiado
-    // (dependente de igualdade) deixaria o efeito re-executar infinitamente.
+    // refs acima (que já estão com o conteúdo real). Isso corta loops: se o
+    // efeito re-executar por qualquer mudança de dep, o guarda já impede o
+    // trabalho. As ações do store são estáveis (seleções individuais), então
+    // este efeito só re-roda quando leaf/editor mudam de verdade.
     initialSyncDoneRef.current = true;
 
-    editorStatus.show();
-    editorStatus.setLastUpdate(
+    showEditorStatus();
+    setEditorStatusLastUpdate(
       typeof leaf.updatedAt === "string"
         ? leaf.updatedAt
         : leaf.updatedAt.toISOString(),
     );
-  }, [leaf, editor, editorStatus]);
+  }, [leaf, editor, showEditorStatus, setEditorStatusLastUpdate]);
 
   // Mantém latestValuesRef atualizado com os valores mais recentes
   useEffect(() => {
