@@ -1,6 +1,7 @@
 import { NestFactory } from "@nestjs/core";
 import cookieParser from "cookie-parser";
 import helmet from "helmet";
+import { randomBytes } from "node:crypto";
 import { Request, Response, NextFunction } from "express";
 import { AppModule } from "./app.module";
 
@@ -22,10 +23,14 @@ async function bootstrap() {
           "fly secrets set JWT_SECRET=<valor>",
       );
     } else {
-      process.env.JWT_SECRET = "dev-jwt-secret";
+      // 🔐 SEC-005: em dev geramos um secret aleatório a cada boot em vez de
+      // usar um valor fixo hardcoded. Tokens emitidos em um boot não
+      // sobrevivem a um restart (aceitável para desenvolvimento) e nunca há
+      // um segredo conhecido/publicado circulando no código.
+      process.env.JWT_SECRET = randomBytes(48).toString("hex");
       warnings.push(
-        "JWT_SECRET não definido. Usando fallback 'dev-jwt-secret' " +
-          "(apenas para desenvolvimento local).",
+        "JWT_SECRET não definido. Gerado secret aleatório em memória " +
+          "(já que não há NODE_ENV=production).",
       );
     }
   }
@@ -37,10 +42,10 @@ async function bootstrap() {
           "fly secrets set REFRESH_SECRET=<valor>",
       );
     } else {
-      process.env.REFRESH_SECRET = "dev-refresh-secret";
+      process.env.REFRESH_SECRET = randomBytes(48).toString("hex");
       warnings.push(
-        "REFRESH_SECRET não definido. Usando fallback 'dev-refresh-secret' " +
-          "(apenas para desenvolvimento local).",
+        "REFRESH_SECRET não definido. Gerado secret aleatório em memória " +
+          "(já que não há NODE_ENV=production).",
       );
     }
   }

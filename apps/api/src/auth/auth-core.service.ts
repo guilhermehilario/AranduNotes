@@ -14,7 +14,7 @@ import { PrismaService } from "../prisma/prisma.service";
 import { EmailService } from "../common/email/email.service";
 import { hashToken } from "../common/utils/token-hash";
 import { UserPublic, AuthTokens } from "./auth.types";
-import { stripPassword, validateEmail, validatePassword, SALT_ROUNDS } from "./auth.utils";
+import { stripPassword, validateEmail, validatePassword, passwordRequirementMessage, SALT_ROUNDS } from "./auth.utils";
 
 /** Vida útil do refresh token (7 dias — mesmo valor do JWT) */
 const REFRESH_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000;
@@ -131,9 +131,7 @@ export class AuthCoreService {
     }
 
     if (!validatePassword(password)) {
-      throw new UnauthorizedException(
-        `A senha deve ter no mínimo 8 caracteres`,
-      );
+      throw new UnauthorizedException(passwordRequirementMessage());
     }
 
     if (!acceptedTerms) {

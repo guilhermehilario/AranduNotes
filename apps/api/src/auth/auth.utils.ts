@@ -9,16 +9,33 @@ export const SALT_ROUNDS = 14;
 export const MIN_PASSWORD_LENGTH = 8;
 export const MAX_PASSWORD_LENGTH = 128;
 
+// 🔐 SEC-009: além do comprimento, a senha exige pelo menos uma letra maiúscula,
+// uma minúscula e um número (requisito definido na auditoria — ver RELATORIO_SEGURANCA SEC-09).
+const HAS_UPPERCASE = /[A-Z]/;
+const HAS_LOWERCASE = /[a-z]/;
+const HAS_DIGIT = /\d/;
+
+export function validatePassword(password: string): boolean {
+  return (
+    password.length >= MIN_PASSWORD_LENGTH &&
+    password.length <= MAX_PASSWORD_LENGTH &&
+    HAS_UPPERCASE.test(password) &&
+    HAS_LOWERCASE.test(password) &&
+    HAS_DIGIT.test(password)
+  );
+}
+
+/** Mensagem exibida ao usuário quando a senha não cumpre os requisitos SEC-009. */
+export function passwordRequirementMessage(): string {
+  return `A senha deve ter entre ${MIN_PASSWORD_LENGTH} e ${MAX_PASSWORD_LENGTH} caracteres, incluindo pelo menos uma letra maiúscula, uma minúscula e um número.`;
+}
+
 // 🔐 SEC-014: regex própria substituída pela validação robusta do class-validator
 // (mesmo validador usado pelos DTOs via @IsEmail). A regex antiga
 // /^[^\s@]+@[^\s@]+\.[^\s@]+$/ aceitava emails inválidos como "a@b..c" ou
 // "a@b.c..d".
 export function validateEmail(email: string): boolean {
   return isEmail(email);
-}
-
-export function validatePassword(password: string): boolean {
-  return password.length >= MIN_PASSWORD_LENGTH && password.length <= MAX_PASSWORD_LENGTH;
 }
 
 const THEME_VALUES: ThemePreference[] = ["light", "dark", "system"];

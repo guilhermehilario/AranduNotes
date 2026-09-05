@@ -3,6 +3,7 @@ import { Lock } from 'lucide-react';
 import { Button } from '../../components/ui/Button.tsx';
 import { Input } from '../../components/ui/Input.tsx';
 import { api } from '../../core/api/client';
+import { PasswordSchema } from '../auth/types';
 
 export const PasswordChangeForm: React.FC = () => {
   const [showPasswordForm, setShowPasswordForm] = useState(false);
@@ -17,8 +18,9 @@ export const PasswordChangeForm: React.FC = () => {
     setPasswordError(null);
     setPasswordSuccess(null);
 
-    if (newPassword.length < 6) {
-      setPasswordError('A nova senha deve ter no mínimo 6 caracteres');
+    const parsed = PasswordSchema.safeParse(newPassword);
+    if (!parsed.success) {
+      setPasswordError(parsed.error.issues[0]?.message ?? 'A nova senha não atende aos requisitos');
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -75,7 +77,7 @@ export const PasswordChangeForm: React.FC = () => {
             type="password"
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
-            placeholder="Mínimo 6 caracteres"
+            placeholder="Mínimo 8 caracteres, com maiúscula, minúscula e número"
             autoComplete="new-password"
           />
           <Input

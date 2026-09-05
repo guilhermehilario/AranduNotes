@@ -27,12 +27,19 @@ import { AllExceptionsFilter } from "./common/filters/http-exception.filter";
     ConfigModule.forRoot({
       isGlobal: true,
     }),
-    ThrottlerModule.forRoot([
-      {
-        ttl: 60000, // 1 minuto
-        limit: 60, // 60 requisições por minuto (global)
-      },
-    ]),
+    ThrottlerModule.forRoot({
+      errorMessage: "Muitas requisições. Aguarde um instante e tente novamente.",
+      throttlers: [
+        {
+          ttl: 60000, // 1 minuto
+          limit: 60, // 60 requisições por minuto (global)
+        },
+      ],
+      // 🔐 SEC-013: em produção não expomos os headers X-RateLimit-* (não
+      // queremos informar limites/remaining a um possível atacante). Em dev
+      // continuam visíveis para facilitar o desenvolvimento.
+      setHeaders: process.env.NODE_ENV !== "production",
+    }),
     PrismaModule,
     AuthModule,
     NotebooksModule,

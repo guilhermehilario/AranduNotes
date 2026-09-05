@@ -16,6 +16,14 @@ export const UserSchema = z.object({
 
 export type User = z.infer<typeof UserSchema>;
 
+export const PasswordSchema = z
+  .string()
+  .min(8, 'A senha deve ter no mínimo 8 caracteres')
+  .max(128, 'A senha deve ter no máximo 128 caracteres')
+  .regex(/[A-Z]/, 'A senha deve conter pelo menos uma letra maiúscula')
+  .regex(/[a-z]/, 'A senha deve conter pelo menos uma letra minúscula')
+  .regex(/\d/, 'A senha deve conter pelo menos um número');
+
 export const LoginSchema = z.object({
   email: z.string().email('E-mail inválido'),
   password: z.string().min(8, 'A senha deve ter pelo menos 8 caracteres'),
@@ -26,7 +34,7 @@ export type LoginInput = z.infer<typeof LoginSchema>;
 export const RegisterSchema = z.object({
   name: z.string().min(2, 'O nome deve ter pelo menos 2 caracteres'),
   email: z.string().email('E-mail inválido'),
-  password: z.string().min(8, 'A senha deve ter pelo menos 8 caracteres'),
+  password: PasswordSchema,
   confirmPassword: z.string(),
   acceptedTerms: z
     .boolean()

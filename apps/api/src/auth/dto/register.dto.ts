@@ -1,4 +1,4 @@
-import { IsString, IsEmail, MinLength, MaxLength, IsBoolean, Equals } from 'class-validator';
+import { IsString, IsEmail, MinLength, MaxLength, IsBoolean, Equals, Matches } from 'class-validator';
 
 export class RegisterDto {
   @IsString()
@@ -12,6 +12,9 @@ export class RegisterDto {
   @IsString()
   @MinLength(8, { message: 'A senha deve ter no mínimo 8 caracteres' })
   @MaxLength(128, { message: 'A senha deve ter no máximo 128 caracteres' })
+  @Matches(/[A-Z]/, { message: 'A senha deve conter pelo menos uma letra maiúscula' })
+  @Matches(/[a-z]/, { message: 'A senha deve conter pelo menos uma letra minúscula' })
+  @Matches(/\d/, { message: 'A senha deve conter pelo menos um número' })
   password: string;
 
   @IsBoolean({ message: 'O campo de aceite dos Termos deve ser um valor booleano' })

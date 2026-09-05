@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { z } from 'zod';
 import { authService } from '../services/authService';
+import { PasswordSchema } from '../types';
 import { Input } from '../../../components/ui/Input.tsx';
 import { Button } from '../../../components/ui/Button.tsx';
 import { ApiErrorAlert } from '../../../components/ui/ApiErrorAlert.tsx';
@@ -13,8 +14,8 @@ import { Lock, CheckCircle, AlertTriangle, ArrowLeft } from 'lucide-react';
 
 const ResetPasswordSchema = z
   .object({
-    password: z.string().min(8, 'A senha deve ter no mínimo 8 caracteres'),
-    confirmPassword: z.string().min(8, 'A confirmação de senha deve ter no mínimo 8 caracteres'),
+    password: PasswordSchema,
+    confirmPassword: z.string(),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: 'As senhas não coincidem',

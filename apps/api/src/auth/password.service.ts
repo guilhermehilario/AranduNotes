@@ -9,7 +9,7 @@ import { randomBytes } from "node:crypto";
 import { PrismaService } from "../prisma/prisma.service";
 import { EmailService } from "../common/email/email.service";
 import { hashToken } from "../common/utils/token-hash";
-import { validatePassword, SALT_ROUNDS } from "./auth.utils";
+import { validatePassword, passwordRequirementMessage, SALT_ROUNDS } from "./auth.utils";
 
 @Injectable()
 export class PasswordService {
@@ -26,9 +26,7 @@ export class PasswordService {
     newPassword: string,
   ): Promise<{ message: string }> {
     if (!validatePassword(newPassword)) {
-      throw new UnauthorizedException(
-        `A nova senha deve ter no mínimo 8 caracteres`,
-      );
+      throw new UnauthorizedException(passwordRequirementMessage());
     }
 
     this.logger.log(`Solicitação de alteração de senha: ${userId}`);
@@ -152,9 +150,7 @@ export class PasswordService {
     this.logger.log(`Iniciando redefinição de senha com token`);
 
     if (!validatePassword(newPassword)) {
-      throw new BadRequestException(
-        `A nova senha deve ter no mínimo 8 caracteres`,
-      );
+      throw new BadRequestException(passwordRequirementMessage());
     }
 
     const hashedPassword = await bcrypt.hash(newPassword, SALT_ROUNDS);
