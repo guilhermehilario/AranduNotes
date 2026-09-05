@@ -87,6 +87,14 @@ export function useEditorContent({
   const serverContentRef = useRef("");
   const lastSavedRef = useRef({ title: "", content: "" });
   const saveInFlightRef = useRef(false);
+  // true quando houver edição real do usuário (digitação/delete no editor).
+  // Garante que um save com conteúdo vazio só sobrescreva o que já existia
+  // se o usuário realmente limpou o conteúdo.
+  const userEditedRef = useRef(false);
+  // Sinaliza que o sync inicial foi disparado mas o conteúdo local ainda não
+  // foi confirmado pelo React (startTransition). O save só é liberado depois.
+  const pendingInitialSyncRef = useRef(false);
+  const previousLeafIdRef = useRef(leafId);
 
   // Refs para acesso aos valores mais recentes em event listeners (beforeunload, etc.)
   const latestValuesRef = useRef({ title: "", content: "", rawText: "" });
@@ -97,6 +105,7 @@ export function useEditorContent({
     ({ editor: ed }: { editor: Editor }) => {
       const currentHtml = ed.getHTML();
       if (currentHtml === serverContentRef.current) return;
+      userEditedRef.current = true;
 
       setLocalContent(currentHtml);
       setLocalRawText(ed.getText());
@@ -166,6 +175,25 @@ export function useEditorContent({
     });
   }, [editor]);
 
+  // Quando o usuário navega para outra folha (o EditorView permanece montado),
+  // reseta o estado de sync para que o conteúdo/campos da nova folha sejam
+  // carregados. Sem isso o editor continuaria mostrando a folha anterior.
+  useEffect(() => {
+    if (previousLeafIdRef.current === leafId) return;
+    previousLeafIdRef.current = leafId;
+
+    pendingInitialSyncRef.current = false;
+    initialSyncDoneRef.current = false;
+    userEditedRef.current = false;
+    serverContentRef.current = "";
+    lastSavedRef.current = { title: "", content: "" };
+
+    setContentReady(false);
+    setLocalTitle("");
+    setLocalContent("");
+    setLocalRawText("");
+  }, [leafId]);
+
   // Sync inicial: carrega o conteúdo do servidor para o editor
   useEffect(() => {
     if (!leaf || !editor || initialSyncDoneRef.current) return;
@@ -181,9 +209,12 @@ export function useEditorContent({
       setLocalContent(serverContent);
       setLocalRawText(leaf.rawText || "");
       setContentReady(true);
+      // O sync só é marcado como concluído depois que o React confirmar o
+      // conteúdo local (ver efeito de latestValuesRef). Assim nenhum save é
+      // disparado com conteúdo vazio durante a janela de carregamento.
+      pendingInitialSyncRef.current = true;
     });
 
-    initialSyncDoneRef.current = true;
     editorStatus.show();
     editorStatus.setLastUpdate(
       typeof leaf.updatedAt === "string"
@@ -199,6 +230,17 @@ export function useEditorContent({
       content: localContent,
       rawText: localRawText,
     };
+
+    // Só libera o salvamento quando o conteúdo local (localContent) já reflete
+    // o que veio do servidor — fecha a janela onde latestValuesRef ainda
+    // poderia estar vazio e um save vazio sobrescreveria o conteúdo.
+    if (
+      pendingInitialSyncRef.current &&
+      localContent === serverContentRef.current
+    ) {
+      pendingInitialSyncRef.current = false;
+      initialSyncDoneRef.current = true;
+    }
   }, [localTitle, localContent, localRawText]);
 
   // ── Salvamento (delegado ao hook especializado) ──
@@ -212,6 +254,7 @@ export function useEditorContent({
     lastSavedRef,
     saveInFlightRef,
     latestValuesRef,
+    userEditedRef,
   });
 
   return {

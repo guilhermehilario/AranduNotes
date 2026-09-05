@@ -26,6 +26,7 @@ interface UseEditorSaveParams {
     content: string;
     rawText: string;
   }>;
+  userEditedRef: MutableRefObject<boolean>;
 }
 
 interface UseEditorSaveReturn {
@@ -49,6 +50,7 @@ export function useEditorSave({
   lastSavedRef,
   saveInFlightRef,
   latestValuesRef,
+  userEditedRef,
 }: UseEditorSaveParams): UseEditorSaveReturn {
   const leafIdRef = useRef(leafId);
 
@@ -75,6 +77,14 @@ export function useEditorSave({
       title && title.length > 0 ? title : lastSavedRef.current.title;
 
     const lastSaved = lastSavedRef.current;
+    // Nunca sobrescreve conteúdo salvo com vazio sem ter havido edição real
+    // do usuário (protege contra a janela de carregamento/erro de sync).
+    if (
+      content === "" &&
+      lastSaved.content !== "" &&
+      !userEditedRef.current
+    )
+      return;
     if (titleToSave === lastSaved.title && content === lastSaved.content)
       return;
     if (saveInFlightRef.current) return;
@@ -104,6 +114,7 @@ export function useEditorSave({
     lastSavedRef,
     latestValuesRef,
     saveInFlightRef,
+    userEditedRef,
   ]);
 
   // ── Salvamento de emergência (keepalive) ──
@@ -122,6 +133,13 @@ export function useEditorSave({
     const titleToSave =
       title && title.length > 0 ? title : lastSavedRef.current.title;
     const lastSaved = lastSavedRef.current;
+    // Mesma proteção do flushSave: não envia conteúdo vazio sem edição real.
+    if (
+      content === "" &&
+      lastSaved.content !== "" &&
+      !userEditedRef.current
+    )
+      return;
     if (titleToSave === lastSaved.title && content === lastSaved.content)
       return;
 
@@ -148,7 +166,7 @@ export function useEditorSave({
       // Silencia erros — é um salvamento best-effort de emergência
     });
   // refs são objetos estáveis (criados via useRef no pai) — seguros nas deps
-  }, [initialSyncDoneRef, lastSavedRef, latestValuesRef]);
+  }, [initialSyncDoneRef, lastSavedRef, latestValuesRef, userEditedRef]);
 
   // ── Atualização das refs das funções ──
 
@@ -209,6 +227,13 @@ export function useEditorSave({
         : lastSaved.title;
 
     if (
+      debouncedContent === "" &&
+      lastSaved.content !== "" &&
+      !userEditedRef.current
+    )
+      return;
+
+    if (
       titleToSave !== lastSaved.title ||
       debouncedContent !== lastSaved.content
     ) {
@@ -258,6 +283,7 @@ export function useEditorSave({
     initialSyncDoneRef,
     lastSavedRef,
     saveInFlightRef,
+    userEditedRef,
   ]);
   // 🔴 editorStatus removido das deps — acessa store diretamente via getState() para evitar loop
 
