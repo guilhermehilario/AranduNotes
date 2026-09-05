@@ -60,8 +60,17 @@ export interface ReleaseNote {
 
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
-    version: 'Julho 2026',
+    version: 'Setembro 2026',
     latest: true,
+    highlights: [
+      'Compartilhamento de cadernos: tela refatorada em componentes e hooks reutilizáveis (convite por e-mail, permissões e mudança de escopo)',
+      'Colaborador com permissão "editor" recebe capacidades de edição completas corretamente',
+      'Correção: folha não volta mais em branco após a página ficar aberta por muito tempo e ser recarregada',
+      'Correção: loop infinito que travava o editor em produção — sync inicial e salvamento do conteúdo endurecidos',
+    ],
+  },
+  {
+    version: 'Julho 2026',
     highlights: [
       'Tema Claro/Escuro/Automático com sincronização na conta entre dispositivos',
       'Toasts de feedback ao salvar o tema (sucesso/erro)',
