@@ -91,9 +91,6 @@ export function useEditorContent({
   // Garante que um save com conteúdo vazio só sobrescreva o que já existia
   // se o usuário realmente limpou o conteúdo.
   const userEditedRef = useRef(false);
-  // Sinaliza que o sync inicial foi disparado mas o conteúdo local ainda não
-  // foi confirmado pelo React (startTransition). O save só é liberado depois.
-  const pendingInitialSyncRef = useRef(false);
   const previousLeafIdRef = useRef(leafId);
 
   // Refs para acesso aos valores mais recentes em event listeners (beforeunload, etc.)
@@ -182,7 +179,6 @@ export function useEditorContent({
     if (previousLeafIdRef.current === leafId) return;
     previousLeafIdRef.current = leafId;
 
-    pendingInitialSyncRef.current = false;
     initialSyncDoneRef.current = false;
     userEditedRef.current = false;
     serverContentRef.current = "";
@@ -202,6 +198,15 @@ export function useEditorContent({
     serverContentRef.current = serverContent;
     lastSavedRef.current = { title: leaf.title, content: serverContent };
 
+    // Sincroniza latestValuesRef IMEDIATAMENTE (antes de qualquer transição)
+    // para que nenhum save (flush/keepalive/autosave) leia conteúdo vazio
+    // durante a janela de carregamento — fecha o wipe do "folha em branco".
+    latestValuesRef.current = {
+      title: leaf.title,
+      content: serverContent,
+      rawText: leaf.rawText || "",
+    };
+
     editor.commands.setContent(serverContent);
 
     startTransition(() => {
@@ -209,11 +214,14 @@ export function useEditorContent({
       setLocalContent(serverContent);
       setLocalRawText(leaf.rawText || "");
       setContentReady(true);
-      // O sync só é marcado como concluído depois que o React confirmar o
-      // conteúdo local (ver efeito de latestValuesRef). Assim nenhum save é
-      // disparado com conteúdo vazio durante a janela de carregamento.
-      pendingInitialSyncRef.current = true;
     });
+
+    // Marca o sync como concluído de forma SÍNCRONA logo após atualizar os
+    // refs acima (que já estão com o conteúdo real). Manter isso síncrono é o
+    // que corta loops: como editorStatus muda de referência a cada
+    // setLastUpdate()/show() e está nas deps deste efeito, um guarda adiado
+    // (dependente de igualdade) deixaria o efeito re-executar infinitamente.
+    initialSyncDoneRef.current = true;
 
     editorStatus.show();
     editorStatus.setLastUpdate(
@@ -223,24 +231,13 @@ export function useEditorContent({
     );
   }, [leaf, editor, editorStatus]);
 
-  // Mantém latestValuesRef atualizado
+  // Mantém latestValuesRef atualizado com os valores mais recentes
   useEffect(() => {
     latestValuesRef.current = {
       title: localTitle,
       content: localContent,
       rawText: localRawText,
     };
-
-    // Só libera o salvamento quando o conteúdo local (localContent) já reflete
-    // o que veio do servidor — fecha a janela onde latestValuesRef ainda
-    // poderia estar vazio e um save vazio sobrescreveria o conteúdo.
-    if (
-      pendingInitialSyncRef.current &&
-      localContent === serverContentRef.current
-    ) {
-      pendingInitialSyncRef.current = false;
-      initialSyncDoneRef.current = true;
-    }
   }, [localTitle, localContent, localRawText]);
 
   // ── Salvamento (delegado ao hook especializado) ──
